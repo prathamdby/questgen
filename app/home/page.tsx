@@ -9,6 +9,8 @@ import {
   getViewMode,
   setViewMode,
   getPapersMetadata,
+  getPaper,
+  getPaperContent,
   deletePaper,
   type ViewMode,
 } from "@/lib/storage";
@@ -30,6 +32,7 @@ export default function Home() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<ViewMode>("card");
   const [isHydrated, setIsHydrated] = useState(false);
+  const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Initialize view mode from storage after hydration
@@ -95,10 +98,68 @@ export default function Home() {
     });
   };
 
-  const handleQuickExport = (paperId: string) => {
-    // TODO: Implement quick export functionality
-    console.log("Quick export paper:", paperId);
-    setOpenMenuId(null);
+  const handleQuickExport = async (paperId: string) => {
+    setExportingPaperId(paperId);
+
+    try {
+      // Get paper data from storage
+      const metadata = getPaper(paperId);
+      let content = getPaperContent(paperId);
+
+      if (!metadata || !content) {
+        throw new Error("Paper not found");
+      }
+
+      // Clean content to remove any code fence wrappers
+      content = content.trim();
+      content = content.replace(/^```(?:markdown|md)?\s*\n/i, "");
+      content = content.replace(/\n```\s*$/i, "");
+      content = content.trim();
+
+      // Call the export API
+      const response = await fetch("/api/export-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: metadata.title,
+          pattern: metadata.pattern,
+          duration: metadata.duration,
+          totalMarks: metadata.totalMarks,
+          content: content,
+          createdAt: metadata.createdAt,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to export PDF");
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create a download link and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${metadata.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(
+        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setExportingPaperId(null);
+      setOpenMenuId(null);
+    }
   };
 
   const handleDuplicate = (paperId: string) => {
@@ -330,23 +391,55 @@ export default function Home() {
                               e.stopPropagation();
                               handleQuickExport(paper.id);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
+                            disabled={exportingPaperId === paper.id}
+                            className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
+                              exportingPaperId === paper.id
+                                ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
+                                : "text-[#171717] hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
+                            }`}
                           >
-                            <svg
-                              className="h-4 w-4 text-[#737373]"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                              />
-                            </svg>
-                            <span className="font-[500]">Quick Export</span>
+                            {exportingPaperId === paper.id ? (
+                              <svg
+                                className="h-4 w-4 animate-spin text-[#737373]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="3"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="h-4 w-4 text-[#737373]"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                              </svg>
+                            )}
+                            <span className="font-[500]">
+                              {exportingPaperId === paper.id
+                                ? "Exporting..."
+                                : "Quick Export"}
+                            </span>
                           </button>
                           <button
                             onClick={(e) => {
@@ -568,23 +661,55 @@ export default function Home() {
                               e.stopPropagation();
                               handleQuickExport(paper.id);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
+                            disabled={exportingPaperId === paper.id}
+                            className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
+                              exportingPaperId === paper.id
+                                ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
+                                : "text-[#171717] hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
+                            }`}
                           >
-                            <svg
-                              className="h-4 w-4 text-[#737373]"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                              />
-                            </svg>
-                            <span className="font-[500]">Quick Export</span>
+                            {exportingPaperId === paper.id ? (
+                              <svg
+                                className="h-4 w-4 animate-spin text-[#737373]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="3"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="h-4 w-4 text-[#737373]"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                              </svg>
+                            )}
+                            <span className="font-[500]">
+                              {exportingPaperId === paper.id
+                                ? "Exporting..."
+                                : "Quick Export"}
+                            </span>
                           </button>
                           <button
                             onClick={(e) => {

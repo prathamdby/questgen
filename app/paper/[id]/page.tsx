@@ -29,6 +29,7 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,18 +73,53 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  const getFileIcon = (type: string) => {
-    switch (type.toLowerCase()) {
+  const getFileIcon = (filename: string) => {
+    // Extract extension from filename
+    const extension = filename.split(".").pop()?.toLowerCase() || "";
+
+    switch (extension) {
       case "pdf":
         return (
           <svg
             className="h-4 w-4 text-[#ef4444]"
-            fill="currentColor"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-            <path d="M14 2v6h6M9 13h6M9 17h3" />
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M10 9H8" />
+            <path d="M16 13H8" />
+            <path d="M16 17H8" />
+          </svg>
+        );
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+      case "svg":
+      case "webp":
+      case "bmp":
+      case "ico":
+        return (
+          <svg
+            className="h-4 w-4 text-[#8b5cf6]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <circle cx="10" cy="12" r="2" />
+            <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" />
           </svg>
         );
       case "docx":
@@ -193,9 +229,55 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
     setIsRegenerating(false);
   };
 
-  const handleExport = () => {
-    // TODO: Implement export logic (PDF/DOCX)
-    console.log("Exporting paper:", paper.id);
+  const handleExport = async () => {
+    if (!paper) return;
+
+    setIsExporting(true);
+
+    try {
+      // Call the export API
+      const response = await fetch("/api/export-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: paper.title,
+          pattern: paper.pattern,
+          duration: paper.duration,
+          totalMarks: paper.totalMarks,
+          content: paper.content,
+          createdAt: paper.createdAt,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to export PDF");
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create a download link and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${paper.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(
+        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDelete = () => {
@@ -283,15 +365,19 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
                   className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
+                  <path d="M8 2v4" />
+                  <path d="M12 2v4" />
+                  <path d="M16 2v4" />
+                  <rect width="16" height="18" x="4" y="4" rx="2" />
+                  <path d="M8 10h6" />
+                  <path d="M8 14h8" />
+                  <path d="M8 18h5" />
                 </svg>
                 Pattern
               </div>
@@ -309,15 +395,18 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
                   className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                  <path d="M12 2a10 10 0 0 1 7.38 16.75" />
+                  <path d="M12 6v6l4 2" />
+                  <path d="M2.5 8.875a10 10 0 0 0-.5 3" />
+                  <path d="M2.83 16a10 10 0 0 0 2.43 3.4" />
+                  <path d="M4.636 5.235a10 10 0 0 1 .891-.857" />
+                  <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
                 </svg>
                 Duration
               </div>
@@ -332,15 +421,15 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
                   className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
+                  <rect width="8" height="18" x="3" y="3" rx="1" />
+                  <path d="M7 3v18" />
+                  <path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z" />
                 </svg>
                 Total Marks
               </div>
@@ -364,15 +453,16 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
                     className="h-4 w-4 text-[#737373]"
                     fill="none"
                     stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                    />
+                    <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                    <path d="M2 15h10" />
+                    <path d="m9 18 3-3-3-3" />
                   </svg>
                   <span className="text-[14px] font-[500] text-[#171717] dark:text-white">
                     Source Files ({paper.files.length})
@@ -405,7 +495,7 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-[#fafafa] dark:bg-[#171717]">
-                          {getFileIcon(file.type)}
+                          {getFileIcon(file.name)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[14px] font-[500] text-[#171717] dark:text-white">
@@ -483,36 +573,65 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
 
             <button
               onClick={handleExport}
-              disabled={isRegenerating}
+              disabled={isRegenerating || isExporting}
               className={`flex h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[6px] border px-3 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 sm:h-[44px] sm:flex-initial sm:gap-2 sm:px-6 sm:text-[15px] ${
-                isRegenerating
+                isRegenerating || isExporting
                   ? "cursor-not-allowed border-[#e5e5e5] bg-[#fafafa] text-[#a3a3a3] dark:border-[#333333] dark:bg-[#171717] dark:text-[#666666]"
                   : "border-[#e5e5e5] bg-white text-[#171717] hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:ring-[#171717] active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
               }`}
               style={{ touchAction: "manipulation" }}
+              aria-busy={isExporting}
             >
-              <svg
-                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              <span>Export</span>
+              {isExporting ? (
+                <>
+                  <svg
+                    className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  <span>Export</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={handleDelete}
-              disabled={isRegenerating}
+              disabled={isRegenerating || isExporting}
               className={`flex h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[6px] border px-3 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 sm:h-[44px] sm:flex-initial sm:gap-2 sm:px-6 sm:text-[15px] ${
-                isRegenerating
+                isRegenerating || isExporting
                   ? "cursor-not-allowed border-[#e5e5e5] bg-[#fafafa] text-[#a3a3a3] dark:border-[#333333] dark:bg-[#171717] dark:text-[#666666]"
                   : "border-[#e5e5e5] bg-white text-[#ef4444] hover:border-[#fca5a5] hover:bg-[#fef2f2] focus:ring-[#ef4444] active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-[#f87171] dark:hover:border-[#7f1d1d] dark:hover:bg-[#450a0a] dark:focus:ring-[#f87171]"
               }`}
