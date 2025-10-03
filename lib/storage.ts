@@ -559,6 +559,30 @@ export function completePaper(
   return paper;
 }
 
+/**
+ * Duplicate a paper with all its content
+ */
+export function duplicatePaper(paperId: string): PaperMetadata | null {
+  const originalPaper = getPaper(paperId);
+  if (!originalPaper) return null;
+
+  const originalContent = getPaperContent(paperId);
+  if (!originalContent) return null;
+
+  const newPaper: PaperMetadata = {
+    ...originalPaper,
+    id: `paper_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    title: `${originalPaper.title} (Copy)`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  upsertPaper(newPaper);
+  setPaperContent(newPaper.id, originalContent);
+
+  return newPaper;
+}
+
 // ==================== UTILITY FUNCTIONS ====================
 
 /**

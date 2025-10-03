@@ -12,6 +12,7 @@ import {
   getPaper,
   getPaperContent,
   deletePaper,
+  duplicatePaper,
   type ViewMode,
 } from "@/lib/storage";
 
@@ -163,8 +164,11 @@ export default function Home() {
   };
 
   const handleDuplicate = (paperId: string) => {
-    // TODO: Implement duplicate functionality
-    console.log("Duplicate paper:", paperId);
+    const duplicatedPaper = duplicatePaper(paperId);
+    if (duplicatedPaper) {
+      // Reload papers from storage
+      setPapers(getPapersMetadata());
+    }
     setOpenMenuId(null);
   };
 
