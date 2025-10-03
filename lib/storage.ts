@@ -28,6 +28,7 @@ export enum StorageKey {
   // App Data
   PAPERS_METADATA = "papers_metadata",
   LAST_SYNC = "last_sync_timestamp",
+  GENERATE_FORM_DRAFT = "generate_form_draft",
 
   // System
   STORAGE_VERSION = "storage_version",
@@ -54,6 +55,13 @@ export interface PaperMetadata {
 
 export type ViewMode = "card" | "list";
 export type Theme = "light" | "dark" | "system";
+
+export interface GenerateFormDraft {
+  paperName: string;
+  paperPattern: string;
+  duration: string;
+  totalMarks: string;
+}
 
 /**
  * Check if we're in a browser environment
@@ -379,6 +387,29 @@ export function getTheme(): Theme {
  */
 export function setTheme(theme: Theme): boolean {
   return localStorage.set(StorageKey.THEME, theme);
+}
+
+// ==================== GENERATE FORM DRAFT ====================
+
+/**
+ * Get generate form draft
+ */
+export function getGenerateFormDraft(): GenerateFormDraft | null {
+  return localStorage.get<GenerateFormDraft>(StorageKey.GENERATE_FORM_DRAFT);
+}
+
+/**
+ * Set generate form draft
+ */
+export function setGenerateFormDraft(draft: GenerateFormDraft): boolean {
+  return localStorage.set(StorageKey.GENERATE_FORM_DRAFT, draft);
+}
+
+/**
+ * Clear generate form draft
+ */
+export function clearGenerateFormDraft(): boolean {
+  return localStorage.remove(StorageKey.GENERATE_FORM_DRAFT);
 }
 
 // ==================== PAPERS METADATA ====================

@@ -4,6 +4,11 @@ import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { isAuthenticated } from "@/lib/openrouter-auth";
+import {
+  getGenerateFormDraft,
+  setGenerateFormDraft,
+  clearGenerateFormDraft,
+} from "@/lib/storage";
 
 interface UploadedFile {
   file: File;
@@ -27,6 +32,30 @@ export default function Home() {
       router.push("/signin");
     }
   }, [router]);
+
+  // Load form draft on mount
+  useEffect(() => {
+    const draft = getGenerateFormDraft();
+    if (draft) {
+      setPaperName(draft.paperName);
+      setPaperPattern(draft.paperPattern);
+      setDuration(draft.duration);
+      setTotalMarks(draft.totalMarks);
+    }
+  }, []);
+
+  // Persist form values whenever they change
+  useEffect(() => {
+    // Only persist if at least one field has a value
+    if (paperName || paperPattern || duration || totalMarks) {
+      setGenerateFormDraft({
+        paperName,
+        paperPattern,
+        duration,
+        totalMarks,
+      });
+    }
+  }, [paperName, paperPattern, duration, totalMarks]);
 
   const acceptedFileTypes = [".pdf", ".md", ".docx", ".txt", "image/*"];
 
@@ -109,6 +138,9 @@ export default function Home() {
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Clear the form draft after successful generation
+      clearGenerateFormDraft();
     } catch (error) {
       console.error("Error generating paper:", error);
     } finally {
