@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { isAuthenticated, clearStoredApiKey } from "@/lib/openrouter-auth";
-import { getViewMode, setViewMode, type ViewMode } from "@/lib/storage";
+import {
+  getViewMode,
+  setViewMode,
+  getPapersMetadata,
+  deletePaper,
+  type ViewMode,
+} from "@/lib/storage";
 
 interface QuestionPaper {
   id: string;
@@ -17,41 +23,10 @@ interface QuestionPaper {
   status: "completed" | "in_progress";
 }
 
-// Mock data - replace with actual API call
-const mockPapers: QuestionPaper[] = [
-  {
-    id: "1",
-    title: "Mathematics Final Exam",
-    pattern: "Section A: 10 MCQs, Section B: 5 Short Answers",
-    duration: "3 hours",
-    totalMarks: 100,
-    createdAt: "2025-10-01",
-    status: "completed",
-  },
-  {
-    id: "2",
-    title: "Physics Midterm",
-    pattern: "Section A: 15 MCQs, Section B: 3 Long Answers",
-    duration: "2 hours",
-    totalMarks: 75,
-    createdAt: "2025-09-28",
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Chemistry Quiz",
-    pattern: "Section A: 20 MCQs",
-    duration: "1 hour",
-    totalMarks: 50,
-    createdAt: "2025-09-25",
-    status: "in_progress",
-  },
-];
-
 export default function Home() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [papers] = useState<QuestionPaper[]>(mockPapers);
+  const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<ViewMode>("card");
   const [isHydrated, setIsHydrated] = useState(false);
@@ -62,6 +37,12 @@ export default function Home() {
     const savedViewMode = getViewMode();
     setViewModeState(savedViewMode);
     setIsHydrated(true);
+  }, []);
+
+  // Load papers from storage
+  useEffect(() => {
+    const loadedPapers = getPapersMetadata();
+    setPapers(loadedPapers);
   }, []);
 
   // Redirect to sign in if not authenticated
@@ -127,8 +108,15 @@ export default function Home() {
   };
 
   const handleDelete = (paperId: string) => {
-    // TODO: Implement delete with confirmation
-    console.log("Delete paper:", paperId);
+    if (
+      confirm(
+        "Are you sure you want to delete this paper? This action cannot be undone."
+      )
+    ) {
+      deletePaper(paperId);
+      // Reload papers from storage
+      setPapers(getPapersMetadata());
+    }
     setOpenMenuId(null);
   };
 

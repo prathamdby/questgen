@@ -27,6 +27,7 @@ export enum StorageKey {
 
   // App Data
   PAPERS_METADATA = "papers_metadata",
+  PAPER_CONTENT_PREFIX = "paper_content_",
   LAST_SYNC = "last_sync_timestamp",
   GENERATE_FORM_DRAFT = "generate_form_draft",
 
@@ -51,6 +52,13 @@ export interface PaperMetadata {
   updatedAt: string;
   status: "completed" | "in_progress";
   tags?: string[];
+  files?: FileDescriptor[];
+}
+
+export interface FileDescriptor {
+  name: string;
+  size: number;
+  type: string;
 }
 
 export type ViewMode = "card" | "list";
@@ -456,6 +464,7 @@ export function upsertPaper(paper: PaperMetadata): boolean {
 export function deletePaper(paperId: string): boolean {
   const papers = getPapersMetadata();
   const filtered = papers.filter((p) => p.id !== paperId);
+  deletePaperContent(paperId);
   return setPapersMetadata(filtered);
 }
 
@@ -479,6 +488,75 @@ export function clearPapersMetadata(): boolean {
  */
 export function getLastSync(): number | null {
   return localStorage.get<number>(StorageKey.LAST_SYNC);
+}
+
+/**
+ * Get paper content (markdown) by ID
+ */
+export function getPaperContent(paperId: string): string | null {
+  return localStorage.getRaw(`${StorageKey.PAPER_CONTENT_PREFIX}${paperId}`);
+}
+
+/**
+ * Set paper content (markdown) by ID
+ */
+export function setPaperContent(paperId: string, content: string): boolean {
+  return localStorage.setRaw(
+    `${StorageKey.PAPER_CONTENT_PREFIX}${paperId}`,
+    content
+  );
+}
+
+/**
+ * Delete paper content by ID
+ */
+export function deletePaperContent(paperId: string): boolean {
+  return localStorage.remove(`${StorageKey.PAPER_CONTENT_PREFIX}${paperId}`);
+}
+
+/**
+ * Create a new paper with "in_progress" status
+ */
+export function createPaper(
+  title: string,
+  pattern: string,
+  duration: string,
+  totalMarks: number,
+  files?: FileDescriptor[]
+): PaperMetadata {
+  const paper: PaperMetadata = {
+    id: `paper_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    title,
+    pattern,
+    duration,
+    totalMarks,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: "in_progress",
+    files: files || [],
+  };
+
+  upsertPaper(paper);
+  return paper;
+}
+
+/**
+ * Update paper status and content
+ */
+export function completePaper(
+  paperId: string,
+  content: string
+): PaperMetadata | null {
+  const paper = getPaper(paperId);
+  if (!paper) return null;
+
+  paper.status = "completed";
+  paper.updatedAt = new Date().toISOString();
+
+  setPaperContent(paperId, content);
+  upsertPaper(paper);
+
+  return paper;
 }
 
 // ==================== UTILITY FUNCTIONS ====================

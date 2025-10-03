@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { getPaper, getPaperContent, deletePaper } from "@/lib/storage";
 
 interface UploadedFile {
   name: string;
@@ -24,198 +25,44 @@ interface QuestionPaper {
   content: string;
 }
 
-// Mock data - replace with actual API call
-const mockPapers: Record<string, QuestionPaper> = {
-  "1": {
-    id: "1",
-    title: "Mathematics Final Exam",
-    pattern: "Section A: 10 MCQs, Section B: 5 Short Answers",
-    duration: "3 hours",
-    totalMarks: 100,
-    createdAt: "2025-10-01",
-    status: "completed",
-    files: [
-      { name: "Calculus_Notes.pdf", type: "pdf", size: 2456789 },
-      { name: "Linear_Algebra_Chapter.docx", type: "docx", size: 1234567 },
-      { name: "Practice_Problems.md", type: "md", size: 45678 },
-    ],
-    content: `# Mathematics Final Exam
-
-**Class:** Grade 12  
-**Duration:** 3 hours  
-**Total Marks:** 100
-
----
-
-## Section A: Multiple Choice Questions (10 × 2 = 20 marks)
-
-**Instructions:** Choose the correct answer for each question.
-
-1. What is the derivative of \`f(x) = x²\`?
-   - a) x
-   - b) 2x
-   - c) x³
-   - d) 2
-
-2. Which of the following is a prime number?
-   - a) 15
-   - b) 21
-   - c) 23
-   - d) 27
-
-3. The value of sin(90°) is:
-   - a) 0
-   - b) 1
-   - c) -1
-   - d) ∞
-
----
-
-## Section B: Short Answer Questions (5 × 8 = 40 marks)
-
-**Instructions:** Answer all questions. Show your work.
-
-### Question 1 (8 marks)
-Find the integral of \`∫(3x² + 2x - 1)dx\`.
-
-### Question 2 (8 marks)
-Solve the system of linear equations:
-\`\`\`
-2x + 3y = 12
-x - y = 1
-\`\`\`
-
-### Question 3 (8 marks)
-Given the matrix **A** = [[1, 2], [3, 4]], find the determinant and inverse of **A**.
-
-### Question 4 (8 marks)
-A ball is thrown vertically upward with an initial velocity of 20 m/s. Calculate:
-- The maximum height reached
-- The time taken to reach maximum height
-
-### Question 5 (8 marks)
-Prove that the sum of angles in a triangle is 180°.
-
----
-
-## Section C: Long Answer Questions (2 × 20 = 40 marks)
-
-**Instructions:** Choose any TWO questions. Provide detailed solutions.
-
-### Question 1 (20 marks)
-Consider the function \`f(x) = x³ - 6x² + 9x + 1\`.
-
-a) Find all critical points of the function.  
-b) Determine the nature of each critical point (maximum, minimum, or inflection).  
-c) Sketch the graph of the function.
-
-### Question 2 (20 marks)
-A rectangular garden is to be fenced with 100 meters of fencing material. One side of the garden borders a wall and does not need fencing.
-
-a) Express the area of the garden as a function of one variable.  
-b) Find the dimensions that maximize the area.  
-c) What is the maximum area?
-
-### Question 3 (20 marks)
-Using mathematical induction, prove that for all positive integers n:
-\`\`\`
-1 + 2 + 3 + ... + n = n(n+1)/2
-\`\`\`
-
----
-
-**End of Examination**
-
-*Good luck!*`,
-  },
-  "2": {
-    id: "2",
-    title: "Physics Midterm",
-    pattern: "Section A: 15 MCQs, Section B: 3 Long Answers",
-    duration: "2 hours",
-    totalMarks: 75,
-    createdAt: "2025-09-28",
-    status: "completed",
-    files: [
-      { name: "Mechanics_Textbook.pdf", type: "pdf", size: 5678901 },
-      { name: "Thermodynamics_Summary.docx", type: "docx", size: 987654 },
-    ],
-    content: `# Physics Midterm Examination
-
-**Duration:** 2 hours  
-**Total Marks:** 75
-
----
-
-## Section A: Multiple Choice (15 × 2 = 30 marks)
-
-1. Newton's first law states:
-   - a) F = ma
-   - b) An object in motion stays in motion
-   - c) Every action has an equal reaction
-   - d) Energy cannot be created
-
-2. The SI unit of force is:
-   - a) Joule
-   - b) Newton
-   - c) Watt
-   - d) Pascal
-
----
-
-## Section B: Long Answer Questions (3 × 15 = 45 marks)
-
-### Question 1
-Derive the equations of motion for uniformly accelerated motion.
-
-### Question 2
-Explain the laws of thermodynamics with practical examples.
-
-### Question 3
-A car accelerates from rest to 60 km/h in 10 seconds. Calculate the acceleration and distance traveled.`,
-  },
-  "3": {
-    id: "3",
-    title: "Chemistry Quiz",
-    pattern: "Section A: 20 MCQs",
-    duration: "1 hour",
-    totalMarks: 50,
-    createdAt: "2025-09-25",
-    status: "in_progress",
-    files: [
-      { name: "Periodic_Table_Reference.pdf", type: "pdf", size: 234567 },
-    ],
-    content: `# Chemistry Quiz
-
-**Duration:** 1 hour  
-**Total Marks:** 50
-
----
-
-## Multiple Choice Questions (20 × 2.5 = 50 marks)
-
-1. What is the atomic number of Carbon?
-   - a) 6
-   - b) 12
-   - c) 14
-   - d) 8
-
-2. Which element is a noble gas?
-   - a) Oxygen
-   - b) Nitrogen
-   - c) Helium
-   - d) Hydrogen
-
-*[Additional questions to be added]*`,
-  },
-};
-
 export default function PaperPreview({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [paper, setPaper] = useState<QuestionPaper | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const paper = mockPapers[params.id];
+  // Load paper from storage
+  useEffect(() => {
+    const metadata = getPaper(params.id);
+    let content = getPaperContent(params.id);
+
+    if (metadata && content) {
+      // Clean content to remove any code fence wrappers
+      content = content.trim();
+      content = content.replace(/^```(?:markdown|md)?\s*\n/i, "");
+      content = content.replace(/\n```\s*$/i, "");
+      content = content.trim();
+
+      setPaper({
+        id: metadata.id,
+        title: metadata.title,
+        pattern: metadata.pattern,
+        duration: metadata.duration,
+        totalMarks: metadata.totalMarks,
+        createdAt: metadata.createdAt,
+        status: metadata.status,
+        files: metadata.files?.map((f) => ({
+          name: f.name,
+          type: f.type,
+          size: f.size,
+        })),
+        content,
+      });
+    }
+
+    setIsLoading(false);
+  }, [params.id]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -290,6 +137,36 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
+        <div className="text-center">
+          <svg
+            className="mx-auto h-8 w-8 animate-spin text-[#737373]"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <p className="mt-4 text-[15px] text-[#737373]">Loading paper...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!paper) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
@@ -322,13 +199,14 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = () => {
-    // TODO: Implement delete with confirmation
+    if (!paper) return;
+
     if (
       confirm(
         "Are you sure you want to delete this paper? This action cannot be undone."
       )
     ) {
-      console.log("Deleting paper:", paper.id);
+      deletePaper(paper.id);
       router.push("/home");
     }
   };

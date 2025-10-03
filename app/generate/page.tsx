@@ -8,7 +8,11 @@ import {
   getGenerateFormDraft,
   setGenerateFormDraft,
   clearGenerateFormDraft,
+  createPaper,
+  completePaper,
+  type FileDescriptor,
 } from "@/lib/storage";
+import { generateQuestionPaper } from "@/lib/openrouter-client";
 
 interface UploadedFile {
   file: File;
@@ -57,17 +61,11 @@ export default function Home() {
     }
   }, [paperName, paperPattern, duration, totalMarks]);
 
-  const acceptedFileTypes = [".pdf", ".md", ".docx", ".txt", "image/*"];
+  const acceptedFileTypes = [".pdf", "image/*"];
 
   const isFileTypeAccepted = (file: File): boolean => {
     const extension = "." + file.name.split(".").pop()?.toLowerCase();
-    return (
-      extension === ".pdf" ||
-      extension === ".md" ||
-      extension === ".docx" ||
-      extension === ".txt" ||
-      file.type.startsWith("image/")
-    );
+    return extension === ".pdf" || file.type.startsWith("image/");
   };
 
   const handleFiles = (files: FileList | null) => {
@@ -127,22 +125,51 @@ export default function Home() {
     setIsGenerating(true);
 
     try {
-      // TODO: Implement paper generation logic
-      console.log("Generating paper with:", {
+      // Create file descriptors for storage
+      const fileDescriptors: FileDescriptor[] = uploadedFiles.map((uf) => ({
+        name: uf.file.name,
+        size: uf.file.size,
+        type: uf.file.type,
+      }));
+
+      // Create paper with "in_progress" status
+      const paper = createPaper(
+        paperName,
+        paperPattern,
+        duration,
+        parseInt(totalMarks),
+        fileDescriptors
+      );
+
+      // Call OpenRouter API to generate the paper
+      const result = await generateQuestionPaper({
         paperName,
         paperPattern,
         duration,
         totalMarks,
-        files: uploadedFiles,
+        files: uploadedFiles.map((uf) => uf.file),
       });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (!result.success) {
+        alert(`Failed to generate paper: ${result.error}`);
+        return;
+      }
+
+      // Update paper status to completed and store content
+      completePaper(paper.id, result.content);
 
       // Clear the form draft after successful generation
       clearGenerateFormDraft();
+
+      // Navigate to the paper page
+      router.push(`/paper/${paper.id}`);
     } catch (error) {
       console.error("Error generating paper:", error);
+      alert(
+        `An error occurred: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -336,9 +363,7 @@ export default function Home() {
               <p className="mb-2 text-[15px] font-[500] text-[#171717] dark:text-white">
                 Click to upload or drag and drop
               </p>
-              <p className="text-[13px] text-[#737373]">
-                PDF, MD, DOCX, TXT, or Images
-              </p>
+              <p className="text-[13px] text-[#737373]">PDF or Images only</p>
             </div>
             <input
               ref={fileInputRef}
