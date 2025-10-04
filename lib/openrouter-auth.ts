@@ -53,7 +53,7 @@ export async function initiateOpenRouterAuth() {
       : "http://localhost:3000/auth/openrouter/callback";
 
   const authUrl = `https://openrouter.ai/auth?callback_url=${encodeURIComponent(
-    callbackUrl
+    callbackUrl,
   )}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
 
   // Redirect to OpenRouter
@@ -64,7 +64,7 @@ export async function initiateOpenRouterAuth() {
  * Exchanges authorization code for API key
  */
 export async function exchangeCodeForKey(
-  code: string
+  code: string,
 ): Promise<{ key: string } | { error: string }> {
   const codeVerifier = getCodeVerifier();
 

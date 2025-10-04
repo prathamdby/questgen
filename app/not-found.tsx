@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -11,14 +11,20 @@ export default function NotFound() {
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="relative h-32 w-32">
               {/* Floating Paper 1 */}
-              <div className="absolute left-0 top-0 h-20 w-16 animate-[float_6s_ease-in-out_infinite] rounded-[4px] bg-[#fafafa] opacity-40 dark:bg-[#171717]"
-                   style={{ transform: 'rotate(-12deg)' }} />
+              <div
+                className="absolute left-0 top-0 h-20 w-16 animate-[float_6s_ease-in-out_infinite] rounded-[4px] bg-[#fafafa] opacity-40 dark:bg-[#171717]"
+                style={{ transform: "rotate(-12deg)" }}
+              />
               {/* Floating Paper 2 */}
-              <div className="absolute right-0 top-4 h-20 w-16 animate-[float_6s_ease-in-out_infinite_2s] rounded-[4px] bg-[#f5f5f5] opacity-40 dark:bg-[#262626]"
-                   style={{ transform: 'rotate(8deg)' }} />
+              <div
+                className="absolute right-0 top-4 h-20 w-16 animate-[float_6s_ease-in-out_infinite_2s] rounded-[4px] bg-[#f5f5f5] opacity-40 dark:bg-[#262626]"
+                style={{ transform: "rotate(8deg)" }}
+              />
               {/* Floating Paper 3 */}
-              <div className="absolute bottom-0 left-8 h-20 w-16 animate-[float_6s_ease-in-out_infinite_4s] rounded-[4px] bg-[#f0f0f0] opacity-40 dark:bg-[#1a1a1a]"
-                   style={{ transform: 'rotate(-5deg)' }} />
+              <div
+                className="absolute bottom-0 left-8 h-20 w-16 animate-[float_6s_ease-in-out_infinite_4s] rounded-[4px] bg-[#f0f0f0] opacity-40 dark:bg-[#1a1a1a]"
+                style={{ transform: "rotate(-5deg)" }}
+              />
             </div>
           </div>
 
@@ -34,7 +40,8 @@ export default function NotFound() {
             This page took a study break
           </h2>
           <p className="mt-4 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-            The page you're looking for doesn't exist or has been moved. Let's get you back on track.
+            The page you're looking for doesn't exist or has been moved. Let's
+            get you back on track.
           </p>
         </div>
 
@@ -43,7 +50,7 @@ export default function NotFound() {
           <Link
             href="/home"
             className="group flex h-[44px] w-full items-center justify-center gap-2 rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white sm:w-auto"
-            style={{ touchAction: 'manipulation' }}
+            style={{ touchAction: "manipulation" }}
           >
             <span>Go Home</span>
             <svg
@@ -89,7 +96,8 @@ export default function NotFound() {
 
       <style jsx>{`
         @keyframes float {
-          0%, 100% {
+          0%,
+          100% {
             transform: translateY(0px) rotate(var(--rotate));
           }
           50% {

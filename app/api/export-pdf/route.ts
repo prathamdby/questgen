@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!title || !content) {
       return NextResponse.json(
         { error: "Missing required fields: title and content are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -443,7 +443,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to generate PDF",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

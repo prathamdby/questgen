@@ -120,7 +120,7 @@ function buildSystemPrompt(
   paperName: string,
   paperPattern: string,
   duration: string,
-  totalMarks: string
+  totalMarks: string,
 ): string {
   const marksAnalysis = analyzePatternMarks(paperPattern);
   const marksConsistencySection = marksAnalysis
@@ -279,7 +279,7 @@ Generate the complete examination paper now.`;
  * Build user message with multimodal content
  */
 async function buildUserMessage(
-  files: File[]
+  files: File[],
 ): Promise<OpenRouterMessage["content"]> {
   const contentParts: Array<{
     type: string;
@@ -325,7 +325,7 @@ async function buildUserMessage(
  * Generate question paper using OpenRouter
  */
 export async function generateQuestionPaper(
-  params: GeneratePaperParams
+  params: GeneratePaperParams,
 ): Promise<
   { success: true; content: string } | { success: false; error: string }
 > {
@@ -351,7 +351,7 @@ export async function generateQuestionPaper(
       params.paperName,
       params.paperPattern,
       params.duration,
-      params.totalMarks
+      params.totalMarks,
     );
 
     const userContent = await buildUserMessage(params.files);
@@ -420,7 +420,7 @@ export async function generateQuestionPaper(
 }
 
 export async function regenerateQuestionPaper(
-  params: RegeneratePaperParams
+  params: RegeneratePaperParams,
 ): Promise<
   { success: true; content: string } | { success: false; error: string }
 > {
@@ -440,7 +440,7 @@ export async function regenerateQuestionPaper(
       params.paperName,
       params.paperPattern,
       params.duration,
-      params.totalMarks
+      params.totalMarks,
     );
 
     const instructionSummary = normalizedInstructions

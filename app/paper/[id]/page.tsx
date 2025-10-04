@@ -262,7 +262,9 @@ export default function PaperPreview({
               This paper went missing
             </h1>
             <p className="mt-4 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-              {"The paper you\u2019re looking for doesn\u2019t exist or may have been deleted. Let\u2019s get you back on track."}
+              {
+                "The paper you\u2019re looking for doesn\u2019t exist or may have been deleted. Let\u2019s get you back on track."
+              }
             </p>
           </div>
 
@@ -361,12 +363,9 @@ export default function PaperPreview({
       setRegenNotes("");
       setIsRegenPanelOpen(false);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : "Unknown error";
       alert(`Failed to regenerate paper: ${message}`);
-      setPaper((prev) =>
-        prev ? { ...prev, status: "completed" } : prev
-      );
+      setPaper((prev) => (prev ? { ...prev, status: "completed" } : prev));
       setPaperStatus(paper.id, "completed");
     } finally {
       setIsRegenerating(false);
@@ -417,7 +416,7 @@ export default function PaperPreview({
     } catch (error) {
       console.error("Export error:", error);
       alert(
-        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsExporting(false);
@@ -429,7 +428,7 @@ export default function PaperPreview({
 
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone."
+        "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
       deletePaper(paper.id);
@@ -487,7 +486,7 @@ export default function PaperPreview({
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <span
               className={`rounded-[4px] px-2 py-0.5 text-[12px] font-[500] ${getStatusStyles(
-                paper.status
+                paper.status,
               )}`}
             >
               {paper.status === "completed" ? "Completed" : "In Progress"}
@@ -827,7 +826,9 @@ export default function PaperPreview({
                 id="regen-notes-helper"
                 className="mt-2 text-[12px] leading-[1.6] text-[#6d6d6d] dark:text-[#737373]"
               >
-                {"Keep the structure intact\u2014only describe the adjustments you want. Leave blank and use Skip instructions to rerun as-is."}
+                {
+                  "Keep the structure intact\u2014only describe the adjustments you want. Leave blank and use Skip instructions to rerun as-is."
+                }
               </p>
               <div className="mt-3 flex flex-wrap gap-2 sm:justify-end">
                 <button
@@ -842,7 +843,9 @@ export default function PaperPreview({
                       : "bg-[#171717] text-white hover:bg-[#404040] focus:ring-[#171717] active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white"
                   }`}
                 >
-                  {isRegenerating ? "Regenerating..." : "Regenerate with instructions"}
+                  {isRegenerating
+                    ? "Regenerating..."
+                    : "Regenerate with instructions"}
                 </button>
                 <button
                   type="button"

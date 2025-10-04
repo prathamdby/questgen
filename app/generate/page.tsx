@@ -97,11 +97,12 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const presetsPanelId = "paper-pattern-presets-panel";
   const activePreset = selectedPresetId
-    ? patternPresets.find((preset) => preset.id === selectedPresetId) ?? null
+    ? (patternPresets.find((preset) => preset.id === selectedPresetId) ?? null)
     : null;
-  const paperPatternDescribedBy = patternPresets.length > 0
-    ? "paper-pattern-presets-heading paper-pattern-description"
-    : "paper-pattern-description";
+  const paperPatternDescribedBy =
+    patternPresets.length > 0
+      ? "paper-pattern-presets-heading paper-pattern-description"
+      : "paper-pattern-description";
 
   // Redirect to sign in if not authenticated
   useEffect(() => {
@@ -121,10 +122,11 @@ export default function Home() {
       setTotalMarks(
         draft.totalMarks !== undefined && draft.totalMarks !== null
           ? String(draft.totalMarks)
-          : ""
+          : "",
       );
       const matchedPreset = patternPresets.find(
-        (preset) => normalizePattern(preset.pattern) === normalizePattern(draftPattern)
+        (preset) =>
+          normalizePattern(preset.pattern) === normalizePattern(draftPattern),
       );
       setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
       setArePresetsExpanded(Boolean(matchedPreset));
@@ -153,7 +155,8 @@ export default function Home() {
       return;
     }
     const matchedPreset = patternPresets.find(
-      (preset) => normalizePattern(preset.pattern) === normalizePattern(nextPattern)
+      (preset) =>
+        normalizePattern(preset.pattern) === normalizePattern(nextPattern),
     );
     setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
   };
@@ -165,7 +168,10 @@ export default function Home() {
       const textarea = paperPatternRef.current;
       textarea.focus();
       requestAnimationFrame(() => {
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        textarea.setSelectionRange(
+          textarea.value.length,
+          textarea.value.length,
+        );
       });
     }
   };
@@ -245,7 +251,7 @@ export default function Home() {
         paperPattern,
         duration,
         parseInt(totalMarks),
-        fileDescriptors
+        fileDescriptors,
       );
 
       // Call OpenRouter API to generate the paper
@@ -275,7 +281,7 @@ export default function Home() {
       alert(
         `An error occurred: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setIsGenerating(false);
@@ -389,10 +395,7 @@ export default function Home() {
                 className="mb-3"
                 hidden={!arePresetsExpanded}
               >
-                <legend
-                  id="paper-pattern-presets-heading"
-                  className="sr-only"
-                >
+                <legend id="paper-pattern-presets-heading" className="sr-only">
                   Paper Pattern Presets
                 </legend>
                 <div

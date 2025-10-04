@@ -271,7 +271,7 @@ export function initializeStorage(): void {
   } else if (currentVersion !== STORAGE_VERSION) {
     // Handle migrations if needed in the future
     console.log(
-      `Migrating storage from ${currentVersion} to ${STORAGE_VERSION}`
+      `Migrating storage from ${currentVersion} to ${STORAGE_VERSION}`,
     );
     localStorage.setRaw(StorageKey.STORAGE_VERSION, STORAGE_VERSION);
   }
@@ -478,7 +478,7 @@ export function getPaper(paperId: string): PaperMetadata | null {
 
 export function setPaperStatus(
   paperId: string,
-  status: PaperMetadata["status"]
+  status: PaperMetadata["status"],
 ): PaperMetadata | null {
   const paper = getPaper(paperId);
   if (!paper) {
@@ -518,7 +518,7 @@ export function getPaperContent(paperId: string): string | null {
 export function setPaperContent(paperId: string, content: string): boolean {
   return localStorage.setRaw(
     `${StorageKey.PAPER_CONTENT_PREFIX}${paperId}`,
-    content
+    content,
   );
 }
 
@@ -537,7 +537,7 @@ export function createPaper(
   pattern: string,
   duration: string,
   totalMarks: number,
-  files?: FileDescriptor[]
+  files?: FileDescriptor[],
 ): PaperMetadata {
   const paper: PaperMetadata = {
     id: `paper_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -560,7 +560,7 @@ export function createPaper(
  */
 export function completePaper(
   paperId: string,
-  content: string
+  content: string,
 ): PaperMetadata | null {
   const paper = getPaper(paperId);
   if (!paper) return null;

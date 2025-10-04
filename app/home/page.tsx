@@ -104,7 +104,7 @@ export default function Home() {
   const filteredPapers = papers.filter(
     (paper) =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase())
+      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const getStatusStyles = (status: QuestionPaper["status"]) => {
@@ -183,7 +183,7 @@ export default function Home() {
     } catch (error) {
       console.error("Export error:", error);
       alert(
-        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setExportingPaperId(null);
@@ -203,7 +203,7 @@ export default function Home() {
   const handleDelete = (paperId: string) => {
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone."
+        "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
       deletePaper(paperId);
@@ -397,7 +397,7 @@ export default function Home() {
                           e.preventDefault();
                           e.stopPropagation();
                           setOpenMenuId(
-                            openMenuId === paper.id ? null : paper.id
+                            openMenuId === paper.id ? null : paper.id,
                           );
                         }}
                         className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus:ring-white"
@@ -531,7 +531,7 @@ export default function Home() {
                   <div className="flex flex-wrap items-center gap-3 text-[13px]">
                     <span
                       className={`rounded-[4px] px-2 py-0.5 text-[12px] font-[500] ${getStatusStyles(
-                        paper.status
+                        paper.status,
                       )}`}
                     >
                       {paper.status === "completed"
@@ -602,7 +602,7 @@ export default function Home() {
                         </h3>
                         <span
                           className={`flex-shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] font-[500] ${getStatusStyles(
-                            paper.status
+                            paper.status,
                           )}`}
                         >
                           {paper.status === "completed"
@@ -667,7 +667,7 @@ export default function Home() {
                           e.preventDefault();
                           e.stopPropagation();
                           setOpenMenuId(
-                            openMenuId === paper.id ? null : paper.id
+                            openMenuId === paper.id ? null : paper.id,
                           );
                         }}
                         className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus-visible:ring-white"
