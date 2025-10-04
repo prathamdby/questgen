@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -25,7 +25,12 @@ interface QuestionPaper {
   content: string;
 }
 
-export default function PaperPreview({ params }: { params: { id: string } }) {
+export default function PaperPreview({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -35,8 +40,8 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
 
   // Load paper from storage
   useEffect(() => {
-    const metadata = getPaper(params.id);
-    let content = getPaperContent(params.id);
+    const metadata = getPaper(id);
+    let content = getPaperContent(id);
 
     if (metadata && content) {
       // Clean content to remove any code fence wrappers
@@ -63,7 +68,7 @@ export default function PaperPreview({ params }: { params: { id: string } }) {
     }
 
     setIsLoading(false);
-  }, [params.id]);
+  }, [id]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
