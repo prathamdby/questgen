@@ -40,8 +40,8 @@ export default function NotFound() {
             This page took a study break
           </h2>
           <p className="mt-4 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-            The page you're looking for doesn't exist or has been moved. Let's
-            get you back on track.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved. Let&apos;s get you back on track.
           </p>
         </div>
 

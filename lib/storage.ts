@@ -86,7 +86,7 @@ function isBrowser(): boolean {
 class SafeStorage {
   private storage: Storage | null = null;
   private isSession: boolean;
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, unknown> = new Map();
 
   constructor(useSessionStorage = false) {
     this.isSession = useSessionStorage;
@@ -240,7 +240,7 @@ class SafeStorage {
 
     try {
       return this.storage.getItem(key) !== null;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -615,10 +615,10 @@ export function clearAllData(): boolean {
 /**
  * Export all storage data (for backup/debugging)
  */
-export function exportStorageData(): Record<string, any> {
+export function exportStorageData(): Record<string, unknown> {
   if (!isBrowser()) return {};
 
-  const data: Record<string, any> = {};
+  const data: Record<string, unknown> = {};
 
   try {
     Object.values(StorageKey).forEach((key) => {

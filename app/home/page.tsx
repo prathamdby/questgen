@@ -32,7 +32,6 @@ export default function Home() {
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<ViewMode>("card");
-  const [isHydrated, setIsHydrated] = useState(false);
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +39,6 @@ export default function Home() {
   useEffect(() => {
     const savedViewMode = getViewMode();
     setViewModeState(savedViewMode);
-    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
