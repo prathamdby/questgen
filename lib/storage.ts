@@ -112,7 +112,7 @@ class SafeStorage {
   get<T>(key: string, defaultValue?: T): T | null {
     // Check cache first for performance
     if (this.cache.has(key)) {
-      return this.cache.get(key);
+      return this.cache.get(key) as T;
     }
 
     if (!this.storage) {

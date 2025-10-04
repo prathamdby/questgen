@@ -429,7 +429,7 @@ export async function POST(request: NextRequest) {
     await browser.close();
 
     // Return PDF with proper headers
-    return new NextResponse(pdf, {
+    return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${title.replace(/[^a-z0-9]/gi, "_")}.pdf"`,

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exchangeCodeForKey } from "@/lib/openrouter-auth";
 
-export default function OpenRouterCallback() {
+function OpenRouterCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "error">("loading");
@@ -154,5 +154,44 @@ export default function OpenRouterCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OpenRouterCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
+          <div className="mx-auto w-full max-w-2xl px-6 text-center">
+            <div className="mb-6 flex justify-center">
+              <svg
+                className="h-12 w-12 animate-spin text-[#171717] dark:text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-[24px] font-[550] text-[#171717] dark:text-white">
+              Loading...
+            </h1>
+          </div>
+        </div>
+      }
+    >
+      <OpenRouterCallbackContent />
+    </Suspense>
   );
 }
