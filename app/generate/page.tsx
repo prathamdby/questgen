@@ -19,16 +19,89 @@ interface UploadedFile {
   id: string;
 }
 
+interface PatternPreset {
+  id: string;
+  label: string;
+  description: string;
+  pattern: string;
+}
+
+const normalizePattern = (value: string): string =>
+  value.replace(/\r\n/g, "\n").trim();
+
+const patternPresets: PatternPreset[] = [
+  {
+    id: "balanced-assessment",
+    label: "Balanced Assessment",
+    description: "Classic mix of objective, short, and long-form answers.",
+    pattern: [
+      "Section A: 10 MCQs (20 marks)",
+      "Section B: 5 Short Answers (30 marks)",
+      "Section C: 3 Long Answers (50 marks)",
+    ].join("\n"),
+  },
+  {
+    id: "foundation-focus",
+    label: "Foundation Focus",
+    description: "Prioritizes core definitions and recall for fundamentals.",
+    pattern: [
+      "Section A: 20 Terminology Checks (40 marks)",
+      "Section B: 6 Concept Summaries (30 marks)",
+      "Section C: 2 Reflection Prompts (30 marks)",
+    ].join("\n"),
+  },
+  {
+    id: "blooms-depth",
+    label: "Bloom\u2019s Depth",
+    description: "Progressively deeper questions from recall to analysis.",
+    pattern: [
+      "Section A: 8 Recall Questions (16 marks)",
+      "Section B: 6 Application Problems (24 marks)",
+      "Section C: 4 Analytical Essays (60 marks)",
+    ].join("\n"),
+  },
+  {
+    id: "rapid-quiz",
+    label: "Rapid Quiz",
+    description: "Fast-paced checkpoints for formative assessments.",
+    pattern: [
+      "Round 1: 15 Quick Response Questions (30 marks)",
+      "Round 2: 10 Concept Checks (30 marks)",
+      "Round 3: 5 Case Scenarios (40 marks)",
+    ].join("\n"),
+  },
+  {
+    id: "applied-project",
+    label: "Applied Project",
+    description: "Combines planning, execution, and review for projects.",
+    pattern: [
+      "Phase 1: Project Brief & Constraints (20 marks)",
+      "Phase 2: Implementation Tasks (40 marks)",
+      "Phase 3: Critical Review & Presentation (40 marks)",
+    ].join("\n"),
+  },
+];
+
 export default function Home() {
   const router = useRouter();
   const [paperName, setPaperName] = useState("");
   const [paperPattern, setPaperPattern] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [arePresetsExpanded, setArePresetsExpanded] = useState(false);
   const [duration, setDuration] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const paperPatternRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const presetsPanelId = "paper-pattern-presets-panel";
+  const activePreset = selectedPresetId
+    ? patternPresets.find((preset) => preset.id === selectedPresetId) ?? null
+    : null;
+  const paperPatternDescribedBy = patternPresets.length > 0
+    ? "paper-pattern-presets-heading paper-pattern-description"
+    : "paper-pattern-description";
 
   // Redirect to sign in if not authenticated
   useEffect(() => {
@@ -41,10 +114,20 @@ export default function Home() {
   useEffect(() => {
     const draft = getGenerateFormDraft();
     if (draft) {
-      setPaperName(draft.paperName);
-      setPaperPattern(draft.paperPattern);
-      setDuration(draft.duration);
-      setTotalMarks(draft.totalMarks);
+      setPaperName(draft.paperName ?? "");
+      const draftPattern = draft.paperPattern ?? "";
+      setPaperPattern(draftPattern);
+      setDuration(draft.duration ?? "");
+      setTotalMarks(
+        draft.totalMarks !== undefined && draft.totalMarks !== null
+          ? String(draft.totalMarks)
+          : ""
+      );
+      const matchedPreset = patternPresets.find(
+        (preset) => normalizePattern(preset.pattern) === normalizePattern(draftPattern)
+      );
+      setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
+      setArePresetsExpanded(Boolean(matchedPreset));
     }
   }, []);
 
@@ -62,6 +145,30 @@ export default function Home() {
   }, [paperName, paperPattern, duration, totalMarks]);
 
   const acceptedFileTypes = [".pdf", "image/*"];
+
+  const applyPaperPattern = (nextPattern: string, presetId?: string | null) => {
+    setPaperPattern(nextPattern);
+    if (presetId !== undefined) {
+      setSelectedPresetId(presetId);
+      return;
+    }
+    const matchedPreset = patternPresets.find(
+      (preset) => normalizePattern(preset.pattern) === normalizePattern(nextPattern)
+    );
+    setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
+  };
+
+  const handlePresetSelect = (preset: PatternPreset) => {
+    applyPaperPattern(preset.pattern, preset.id);
+    setArePresetsExpanded(true);
+    if (paperPatternRef.current) {
+      const textarea = paperPatternRef.current;
+      textarea.focus();
+      requestAnimationFrame(() => {
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      });
+    }
+  };
 
   const isFileTypeAccepted = (file: File): boolean => {
     const extension = "." + file.name.split(".").pop()?.toLowerCase();
@@ -240,21 +347,127 @@ export default function Home() {
 
           {/* Paper Pattern Input */}
           <div className="group">
-            <label
-              htmlFor="paper-pattern"
-              className="mb-3 block text-[13px] font-[500] text-[#525252] dark:text-[#a3a3a3]"
-            >
-              Paper Pattern <span className="text-[#ef4444]">*</span>
-            </label>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <label
+                htmlFor="paper-pattern"
+                className="text-[13px] font-[500] text-[#525252] dark:text-[#a3a3a3]"
+              >
+                Paper Pattern <span className="text-[#ef4444]">*</span>
+              </label>
+              {patternPresets.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setArePresetsExpanded((prev) => !prev)}
+                  aria-expanded={arePresetsExpanded}
+                  aria-controls={presetsPanelId}
+                  className="inline-flex items-center gap-2 rounded-full border border-transparent px-2 py-1 text-[12px] font-[500] uppercase tracking-[0.18em] text-[#6b6b6b] transition-colors hover:text-[#171717] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#171717] dark:text-[#969696] dark:hover:text-white dark:focus-visible:outline-white"
+                >
+                  <span>Presets</span>
+                  <span className="max-w-[140px] truncate text-[11px] font-[500] tracking-normal text-[#a3a3a3] dark:text-[#bfbfbf]">
+                    {activePreset ? activePreset.label : "Browse"}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 transition-transform duration-150 ${
+                      arePresetsExpanded ? "rotate-180" : ""
+                    }`}
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {patternPresets.length > 0 && (
+              <fieldset
+                aria-labelledby="paper-pattern-presets-heading"
+                className="mb-3"
+                hidden={!arePresetsExpanded}
+              >
+                <legend
+                  id="paper-pattern-presets-heading"
+                  className="sr-only"
+                >
+                  Paper Pattern Presets
+                </legend>
+                <div
+                  id={presetsPanelId}
+                  role="radiogroup"
+                  aria-describedby="paper-pattern-description"
+                  className="flex flex-col gap-1"
+                >
+                  {patternPresets.map((preset) => {
+                    const isActive = selectedPresetId === preset.id;
+                    const descriptionId = `paper-pattern-preset-${preset.id}-description`;
+                    return (
+                      <label key={preset.id} className="group/radio block">
+                        <input
+                          type="radio"
+                          name="paper-pattern-preset"
+                          value={preset.id}
+                          checked={isActive}
+                          onChange={() => handlePresetSelect(preset)}
+                          className="peer sr-only"
+                          aria-describedby={descriptionId}
+                        />
+                        <div
+                          className={`flex min-h-[42px] items-center justify-between gap-3 rounded-[9px] border px-3 transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-[#171717] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-white dark:peer-focus-visible:ring-white dark:peer-focus-visible:ring-offset-[#050505] ${
+                            isActive
+                              ? "border-[#171717] bg-white text-[#171717] shadow-[0_12px_32px_-26px_rgba(0,0,0,0.85)] dark:border-[#f1f1f1] dark:bg-[#101010] dark:text-[#f5f5f5]"
+                              : "border-[#ededed] bg-transparent text-[#2f2f2f] hover:border-[#d6d6d6] dark:border-[#1a1a1a] dark:text-[#cecece] dark:hover:border-[#262626]"
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-[13px] font-[500] tracking-[-0.01em]">
+                              {preset.label}
+                            </span>
+                            <p
+                              id={descriptionId}
+                              className={`overflow-hidden text-[12px] leading-[1.45] text-[#5c5c5c] transition-[max-height,opacity] duration-150 ease-out dark:text-[#8f8f8f] ${
+                                isActive
+                                  ? "max-h-16 opacity-100"
+                                  : "max-h-0 opacity-0 group-hover/radio:max-h-16 group-hover/radio:opacity-100 peer-focus-visible:max-h-16 peer-focus-visible:opacity-100"
+                              }`}
+                            >
+                              {preset.description}
+                            </p>
+                          </div>
+                          <span
+                            className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
+                              isActive
+                                ? "border-[#171717] bg-[#171717] dark:border-white dark:bg-white"
+                                : "border-[#dcdcdc] bg-transparent dark:border-[#333333]"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full bg-white transition-opacity duration-150 ${
+                                isActive ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                          </span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
             <textarea
               id="paper-pattern"
+              ref={paperPatternRef}
               value={paperPattern}
-              onChange={(e) => setPaperPattern(e.target.value)}
+              onChange={(e) => applyPaperPattern(e.target.value)}
               placeholder="Section A: 10 MCQs (20 marks)&#x0A;Section B: 5 Short Answers (30 marks)&#x0A;Section C: 3 Long Answers (50 marks)"
               required
               rows={3}
               className="block w-full resize-y rounded-[6px] border border-[#e5e5e5] bg-white px-3 py-3 text-[15px] leading-[1.6] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
-              aria-describedby="paper-pattern-description"
+              aria-describedby={paperPatternDescribedBy}
             />
             <p
               id="paper-pattern-description"
@@ -512,7 +725,7 @@ export default function Home() {
             {/* Loading Feedback */}
             {isGenerating && (
               <p className="mt-3 text-center text-[13px] leading-[1.5] text-[#737373] dark:text-[#737373]">
-                This may take a few moments. Please don't close this page.
+                This may take a few moments. Please don\u2019t close this page.
               </p>
             )}
           </div>
