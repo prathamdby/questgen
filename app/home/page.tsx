@@ -43,10 +43,38 @@ export default function Home() {
     setIsHydrated(true);
   }, []);
 
-  // Load papers from storage
   useEffect(() => {
-    const loadedPapers = getPapersMetadata();
-    setPapers(loadedPapers);
+    const loadPapers = () => {
+      setPapers(getPapersMetadata());
+    };
+
+    loadPapers();
+
+    const handleFocus = () => {
+      loadPapers();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadPapers();
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key.includes("paper")) {
+        loadPapers();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   // Redirect to sign in if not authenticated

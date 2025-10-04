@@ -15,6 +15,15 @@ interface GeneratePaperParams {
   files: File[];
 }
 
+interface RegeneratePaperParams {
+  paperName: string;
+  paperPattern: string;
+  duration: string;
+  totalMarks: string;
+  previousContent: string;
+  instructions?: string;
+}
+
 interface OpenRouterMessage {
   role: "system" | "user" | "assistant";
   content:
@@ -401,6 +410,107 @@ export async function generateQuestionPaper(
     return {
       success: true,
       content: cleanedContent,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+    };
+  }
+}
+
+export async function regenerateQuestionPaper(
+  params: RegeneratePaperParams
+): Promise<
+  { success: true; content: string } | { success: false; error: string }
+> {
+  try {
+    const apiKey = getStoredApiKey();
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: "No API key found. Please sign in again.",
+      };
+    }
+
+    const normalizedInstructions = params.instructions?.trim();
+
+    const systemPrompt = buildSystemPrompt(
+      params.paperName,
+      params.paperPattern,
+      params.duration,
+      params.totalMarks
+    );
+
+    const instructionSummary = normalizedInstructions
+      ? `Apply the following regeneration instructions while keeping the existing structure and metadata intact:\n${normalizedInstructions}`
+      : "No additional user instructions were provided. Refresh the paper while preserving the structure, tone, and difficulty implied by the metadata.";
+
+    const userMessage: OpenRouterMessage["content"] = [
+      {
+        type: "text",
+        text: [
+          "Regenerate the question paper using the specifications above.",
+          "Maintain the same section structure, formatting, and metadata.",
+          instructionSummary,
+          "Use the previous paper version below purely as context. Produce a refreshed paper that fully complies with the authoritative metadata and marks budget.",
+        ].join("\n\n"),
+      },
+      {
+        type: "text",
+        text: `Previous paper content:\n${params.previousContent}`,
+      },
+    ];
+
+    const messages: OpenRouterMessage[] = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
+        role: "user",
+        content: userMessage,
+      },
+    ];
+
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Question Paper Generator",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error:
+          errorData.error?.message ||
+          `API request failed: ${response.status} ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return {
+        success: false,
+        error: "No content received from the API.",
+      };
+    }
+
+    return {
+      success: true,
+      content: cleanMarkdownContent(content),
     };
   } catch (error) {
     return {

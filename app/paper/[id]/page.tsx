@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getPaper, getPaperContent, deletePaper } from "@/lib/storage";
+import {
+  getPaper,
+  getPaperContent,
+  deletePaper,
+  completePaper,
+  setPaperStatus,
+} from "@/lib/storage";
+import { regenerateQuestionPaper } from "@/lib/openrouter-client";
 
 interface UploadedFile {
   name: string;
@@ -20,6 +27,7 @@ interface QuestionPaper {
   duration: string;
   totalMarks: number;
   createdAt: string;
+  updatedAt: string;
   status: "completed" | "in_progress";
   files?: UploadedFile[];
   content: string;
@@ -35,8 +43,12 @@ export default function PaperPreview({
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isRegenPanelOpen, setIsRegenPanelOpen] = useState(false);
+  const [regenNotes, setRegenNotes] = useState("");
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const regenTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const regenPanelId = "paper-regenerate-panel";
 
   // Load paper from storage
   useEffect(() => {
@@ -57,6 +69,7 @@ export default function PaperPreview({
         duration: metadata.duration,
         totalMarks: metadata.totalMarks,
         createdAt: metadata.createdAt,
+        updatedAt: metadata.updatedAt,
         status: metadata.status,
         files: metadata.files?.map((f) => ({
           name: f.name,
@@ -69,6 +82,15 @@ export default function PaperPreview({
 
     setIsLoading(false);
   }, [id]);
+
+  useEffect(() => {
+    if (isRegenPanelOpen && regenTextareaRef.current) {
+      const textarea = regenTextareaRef.current;
+      textarea.focus();
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [isRegenPanelOpen]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -240,8 +262,7 @@ export default function PaperPreview({
               This paper went missing
             </h1>
             <p className="mt-4 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-              The paper you're looking for doesn't exist or may have been
-              deleted. Let's get you back on track.
+              {"The paper you\u2019re looking for doesn\u2019t exist or may have been deleted. Let\u2019s get you back on track."}
             </p>
           </div>
 
@@ -297,12 +318,59 @@ export default function PaperPreview({
     );
   }
 
-  const handleRegenerate = async () => {
+  const handleRegenButtonClick = () => {
+    if (isRegenerating) return;
+    setIsRegenPanelOpen((prev) => !prev);
+  };
+
+  const triggerRegeneration = async (notes: string) => {
+    if (!paper || isRegenerating) return;
+
+    const trimmedNotes = notes.trim();
+
     setIsRegenerating(true);
-    // TODO: Implement regeneration logic
-    console.log("Regenerating paper:", paper.id);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsRegenerating(false);
+    setPaper((prev) => (prev ? { ...prev, status: "in_progress" } : prev));
+    setPaperStatus(paper.id, "in_progress");
+
+    try {
+      const result = await regenerateQuestionPaper({
+        paperName: paper.title,
+        paperPattern: paper.pattern,
+        duration: paper.duration,
+        totalMarks: String(paper.totalMarks),
+        previousContent: paper.content,
+        instructions: trimmedNotes.length > 0 ? trimmedNotes : undefined,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const updatedMetadata = completePaper(paper.id, result.content);
+
+      setPaper((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          content: result.content,
+          status: "completed",
+          updatedAt: updatedMetadata?.updatedAt ?? prev.updatedAt,
+        };
+      });
+
+      setRegenNotes("");
+      setIsRegenPanelOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
+      alert(`Failed to regenerate paper: ${message}`);
+      setPaper((prev) =>
+        prev ? { ...prev, status: "completed" } : prev
+      );
+      setPaperStatus(paper.id, "completed");
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const handleExport = async () => {
@@ -592,7 +660,7 @@ export default function PaperPreview({
           {/* Action Buttons */}
           <div className="flex gap-2 sm:gap-3">
             <button
-              onClick={handleRegenerate}
+              onClick={handleRegenButtonClick}
               disabled={isRegenerating}
               className={`group flex h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[6px] px-3 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-[44px] sm:flex-initial sm:gap-2 sm:px-6 sm:text-[15px] ${
                 isRegenerating
@@ -601,6 +669,8 @@ export default function PaperPreview({
               }`}
               style={{ touchAction: "manipulation" }}
               aria-busy={isRegenerating}
+              aria-expanded={isRegenPanelOpen}
+              aria-controls={regenPanelId}
             >
               {isRegenerating ? (
                 <>
@@ -730,6 +800,67 @@ export default function PaperPreview({
               <span>Delete</span>
             </button>
           </div>
+
+          {isRegenPanelOpen && (
+            <div
+              id={regenPanelId}
+              className="mt-3 rounded-[8px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]"
+            >
+              <label
+                htmlFor="regen-notes"
+                className="mb-2 block text-[13px] font-[500] text-[#525252] dark:text-[#a3a3a3]"
+              >
+                Regeneration notes
+              </label>
+              <textarea
+                id="regen-notes"
+                ref={regenTextareaRef}
+                value={regenNotes}
+                onChange={(e) => setRegenNotes(e.target.value)}
+                rows={3}
+                placeholder="Example: Tighten the Section B difficulty and add a case-study question in Section C."
+                className="block w-full resize-none rounded-[6px] border border-[#e5e5e5] bg-white px-3 py-2 text-[14px] leading-[1.5] text-[#171717] placeholder-[#a3a3a3] transition-colors duration-150 focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:focus:border-white dark:focus:ring-white"
+                disabled={isRegenerating}
+                aria-describedby="regen-notes-helper"
+              />
+              <p
+                id="regen-notes-helper"
+                className="mt-2 text-[12px] leading-[1.6] text-[#6d6d6d] dark:text-[#737373]"
+              >
+                {"Keep the structure intact\u2014only describe the adjustments you want. Leave blank and use Skip instructions to rerun as-is."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void triggerRegeneration(regenNotes);
+                  }}
+                  disabled={isRegenerating || regenNotes.trim().length === 0}
+                  className={`inline-flex h-[36px] items-center justify-center rounded-[6px] px-4 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    isRegenerating || regenNotes.trim().length === 0
+                      ? "cursor-not-allowed bg-[#e5e5e5] text-[#a3a3a3] dark:bg-[#1a1a1a] dark:text-[#4d4d4d]"
+                      : "bg-[#171717] text-white hover:bg-[#404040] focus:ring-[#171717] active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white"
+                  }`}
+                >
+                  {isRegenerating ? "Regenerating..." : "Regenerate with instructions"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void triggerRegeneration("");
+                  }}
+                  disabled={isRegenerating}
+                  className={`inline-flex h-[36px] items-center justify-center rounded-[6px] border px-4 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    isRegenerating
+                      ? "cursor-not-allowed border-[#e5e5e5] text-[#a3a3a3] dark:border-[#2a2a2a] dark:text-[#4d4d4d]"
+                      : "border-[#e5e5e5] text-[#171717] hover:border-[#d4d4d4] hover:bg-[#f5f5f5] focus:ring-[#171717] dark:border-[#333333] dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
+                  }`}
+                >
+                  {isRegenerating ? "Please wait" : "Skip instructions"}
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Markdown Preview */}

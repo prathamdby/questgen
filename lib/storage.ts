@@ -476,6 +476,21 @@ export function getPaper(paperId: string): PaperMetadata | null {
   return papers.find((p) => p.id === paperId) ?? null;
 }
 
+export function setPaperStatus(
+  paperId: string,
+  status: PaperMetadata["status"]
+): PaperMetadata | null {
+  const paper = getPaper(paperId);
+  if (!paper) {
+    return null;
+  }
+
+  paper.status = status;
+  paper.updatedAt = new Date().toISOString();
+  upsertPaper(paper);
+  return paper;
+}
+
 /**
  * Clear all papers metadata
  */
