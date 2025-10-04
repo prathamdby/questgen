@@ -27,6 +27,50 @@ interface OpenRouterMessage {
       }>;
 }
 
+interface PatternMarksAnalysis {
+  total: number;
+  lines: Array<{ text: string; marks: number }>;
+}
+
+function analyzePatternMarks(pattern: string): PatternMarksAnalysis | null {
+  const lines = pattern
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const markRegex = /(\d+(?:\.\d+)?)\s*(?:marks?|pts?|points?)/gi;
+  const entries: Array<{ text: string; marks: number }> = [];
+  let total = 0;
+
+  for (const line of lines) {
+    let match: RegExpExecArray | null = null;
+    let lineTotal = 0;
+
+    while ((match = markRegex.exec(line)) !== null) {
+      const value = parseFloat(match[1]);
+      if (!Number.isNaN(value)) {
+        lineTotal += value;
+      }
+    }
+
+    if (lineTotal > 0) {
+      total += lineTotal;
+      entries.push({ text: line, marks: lineTotal });
+    }
+
+    markRegex.lastIndex = 0;
+  }
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return {
+    total,
+    lines: entries,
+  };
+}
+
 /**
  * Convert File to base64 data URL
  */
@@ -69,6 +113,22 @@ function buildSystemPrompt(
   duration: string,
   totalMarks: string
 ): string {
+  const marksAnalysis = analyzePatternMarks(paperPattern);
+  const marksConsistencySection = marksAnalysis
+    ? `**MARK CONSISTENCY ENFORCEMENT**
+- Detected mark allocations from pattern:
+${marksAnalysis.lines
+  .map((entry) => `  - ${entry.text} → ${entry.marks} marks`)
+  .join("\n")}
+- Detected total marks from pattern: ${marksAnalysis.total}
+- Regardless of detected values, ${totalMarks} is the authoritative maximum. Adjust question and section marks so the paper sums to ${totalMarks} while preserving the pattern's structure.
+
+`
+    : `**MARK CONSISTENCY ENFORCEMENT**
+- No explicit mark values detected in the provided pattern. Use ${totalMarks} as the authoritative maximum and distribute marks accordingly.
+
+`;
+
   return `You are an expert academic assessment designer with deep expertise in creating high-quality examination papers across all subjects and educational levels. You excel at analyzing source materials, identifying key concepts, and crafting questions that effectively evaluate student understanding.
 
 **EXAMINATION SPECIFICATIONS**
@@ -94,7 +154,7 @@ Carefully parse the pattern specification "${paperPattern}" to understand:
 - Question types expected in each section
 - Any special instructions or constraints
 
-**QUESTION GENERATION GUIDELINES**
+${marksConsistencySection}**QUESTION GENERATION GUIDELINES**
 
 **General Principles:**
 - All questions must be directly derived from the uploaded materials
@@ -139,6 +199,7 @@ Carefully parse the pattern specification "${paperPattern}" to understand:
 - Distribute marks proportionally across topics based on their coverage in materials
 - Clearly indicate marks for each question and sub-question
 - If pattern specifies choice (e.g., "attempt 3 out of 5"), ensure offered marks exceed total section marks appropriately
+- When the pattern's stated marks exceed or differ from ${totalMarks}, rebalance question and section marks (without altering intended structure) so the final paper totals exactly ${totalMarks}
 
 **QUALITY ASSURANCE CHECKLIST**
 Before finalizing, verify:
