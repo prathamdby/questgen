@@ -5,7 +5,8 @@
 import { getStoredApiKey } from "./openrouter-auth";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.0-flash-exp:free";
+const PRIMARY_MODEL = "google/gemini-2.0-flash-exp:free";
+const FALLBACK_MODEL = "mistralai/mistral-small-3.2-24b-instruct:free";
 
 interface GeneratePaperParams {
   paperName: string;
@@ -322,6 +323,81 @@ async function buildUserMessage(
 }
 
 /**
+ * Helper to call OpenRouter API with a specific model
+ * Returns structured response with success/error details
+ */
+async function callOpenRouter(
+  model: string,
+  messages: OpenRouterMessage[],
+  apiKey: string,
+): Promise<
+  | { success: true; content: string }
+  | { success: false; error: string; isOverloaded: boolean }
+> {
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Question Paper Generator",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage =
+        errorData.error?.message ||
+        `API request failed: ${response.status} ${response.statusText}`;
+
+      // Detect overload conditions
+      const isOverloaded =
+        response.status === 429 ||
+        response.status === 529 ||
+        errorMessage.toLowerCase().includes("overloaded") ||
+        errorMessage.toLowerCase().includes("capacity") ||
+        errorMessage.toLowerCase().includes("rate limit");
+
+      return {
+        success: false,
+        error: errorMessage,
+        isOverloaded,
+      };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return {
+        success: false,
+        error: "No content received from the API.",
+        isOverloaded: false,
+      };
+    }
+
+    // Clean the content to remove any code fence wrappers
+    const cleanedContent = cleanMarkdownContent(content);
+
+    return {
+      success: true,
+      content: cleanedContent,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+      isOverloaded: false,
+    };
+  }
+}
+
+/**
  * Generate question paper using OpenRouter
  */
 export async function generateQuestionPaper(
@@ -367,49 +443,36 @@ export async function generateQuestionPaper(
       },
     ];
 
-    // Call OpenRouter API
-    const response = await fetch(OPENROUTER_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Question Paper Generator",
-      },
-      body: JSON.stringify({
-        model: MODEL,
+    // Try primary model first
+    const primaryResult = await callOpenRouter(PRIMARY_MODEL, messages, apiKey);
+
+    if (primaryResult.success) {
+      return primaryResult;
+    }
+
+    // If primary model is overloaded, try fallback
+    if (primaryResult.isOverloaded) {
+      const fallbackResult = await callOpenRouter(
+        FALLBACK_MODEL,
         messages,
-      }),
-    });
+        apiKey,
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      if (fallbackResult.success) {
+        return fallbackResult;
+      }
+
+      // Both models failed
       return {
         success: false,
-        error:
-          errorData.error?.message ||
-          `API request failed: ${response.status} ${response.statusText}`,
+        error: `Primary model (${PRIMARY_MODEL}): ${primaryResult.error}. Fallback model (${FALLBACK_MODEL}): ${fallbackResult.error}`,
       };
     }
 
-    const data = await response.json();
-
-    // Extract the generated content
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return {
-        success: false,
-        error: "No content received from the API.",
-      };
-    }
-
-    // Clean the content to remove any code fence wrappers
-    const cleanedContent = cleanMarkdownContent(content);
-
+    // Primary model failed for non-overload reason
     return {
-      success: true,
-      content: cleanedContent,
+      success: false,
+      error: primaryResult.error,
     };
   } catch (error) {
     return {
@@ -474,43 +537,36 @@ export async function regenerateQuestionPaper(
       },
     ];
 
-    const response = await fetch(OPENROUTER_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Question Paper Generator",
-      },
-      body: JSON.stringify({
-        model: MODEL,
+    // Try primary model first
+    const primaryResult = await callOpenRouter(PRIMARY_MODEL, messages, apiKey);
+
+    if (primaryResult.success) {
+      return primaryResult;
+    }
+
+    // If primary model is overloaded, try fallback
+    if (primaryResult.isOverloaded) {
+      const fallbackResult = await callOpenRouter(
+        FALLBACK_MODEL,
         messages,
-      }),
-    });
+        apiKey,
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      if (fallbackResult.success) {
+        return fallbackResult;
+      }
+
+      // Both models failed
       return {
         success: false,
-        error:
-          errorData.error?.message ||
-          `API request failed: ${response.status} ${response.statusText}`,
+        error: `Primary model (${PRIMARY_MODEL}): ${primaryResult.error}. Fallback model (${FALLBACK_MODEL}): ${fallbackResult.error}`,
       };
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return {
-        success: false,
-        error: "No content received from the API.",
-      };
-    }
-
+    // Primary model failed for non-overload reason
     return {
-      success: true,
-      content: cleanMarkdownContent(content),
+      success: false,
+      error: primaryResult.error,
     };
   } catch (error) {
     return {
