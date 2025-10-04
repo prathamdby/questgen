@@ -3,6 +3,7 @@
 import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { isAuthenticated } from "@/lib/openrouter-auth";
 import {
   getGenerateFormDraft,
@@ -97,7 +98,7 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const presetsPanelId = "paper-pattern-presets-panel";
   const activePreset = selectedPresetId
-    ? (patternPresets.find((preset) => preset.id === selectedPresetId) ?? null)
+    ? patternPresets.find((preset) => preset.id === selectedPresetId) ?? null
     : null;
   const paperPatternDescribedBy =
     patternPresets.length > 0
@@ -122,11 +123,11 @@ export default function Home() {
       setTotalMarks(
         draft.totalMarks !== undefined && draft.totalMarks !== null
           ? String(draft.totalMarks)
-          : "",
+          : ""
       );
       const matchedPreset = patternPresets.find(
         (preset) =>
-          normalizePattern(preset.pattern) === normalizePattern(draftPattern),
+          normalizePattern(preset.pattern) === normalizePattern(draftPattern)
       );
       setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
       setArePresetsExpanded(Boolean(matchedPreset));
@@ -156,7 +157,7 @@ export default function Home() {
     }
     const matchedPreset = patternPresets.find(
       (preset) =>
-        normalizePattern(preset.pattern) === normalizePattern(nextPattern),
+        normalizePattern(preset.pattern) === normalizePattern(nextPattern)
     );
     setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
   };
@@ -170,7 +171,7 @@ export default function Home() {
       requestAnimationFrame(() => {
         textarea.setSelectionRange(
           textarea.value.length,
-          textarea.value.length,
+          textarea.value.length
         );
       });
     }
@@ -251,7 +252,7 @@ export default function Home() {
         paperPattern,
         duration,
         parseInt(totalMarks),
-        fileDescriptors,
+        fileDescriptors
       );
 
       // Call OpenRouter API to generate the paper
@@ -264,7 +265,11 @@ export default function Home() {
       });
 
       if (!result.success) {
-        alert(`Failed to generate paper: ${result.error}`);
+        toast.error("Unable to generate your paper", {
+          description: result.error.includes("Primary model")
+            ? "Both AI models are currently overloaded. Please try again in a few moments."
+            : result.error,
+        });
         return;
       }
 
@@ -278,11 +283,12 @@ export default function Home() {
       router.push(`/paper/${paper.id}`);
     } catch (error) {
       console.error("Error generating paper:", error);
-      alert(
-        `An error occurred: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      );
+      toast.error("Unable to generate your paper", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsGenerating(false);
     }

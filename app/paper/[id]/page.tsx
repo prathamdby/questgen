@@ -3,6 +3,7 @@
 import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -364,7 +365,11 @@ export default function PaperPreview({
       setIsRegenPanelOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert(`Failed to regenerate paper: ${message}`);
+      toast.error("Unable to regenerate your paper", {
+        description: message.includes("Primary model")
+          ? "Both AI models are currently overloaded. Please try again in a few moments."
+          : message,
+      });
       setPaper((prev) => (prev ? { ...prev, status: "completed" } : prev));
       setPaperStatus(paper.id, "completed");
     } finally {
@@ -415,9 +420,12 @@ export default function PaperPreview({
       document.body.removeChild(a);
     } catch (error) {
       console.error("Export error:", error);
-      alert(
-        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      toast.error("Unable to export your paper", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsExporting(false);
     }
@@ -428,7 +436,7 @@ export default function PaperPreview({
 
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone.",
+        "Are you sure you want to delete this paper? This action cannot be undone."
       )
     ) {
       deletePaper(paper.id);
@@ -486,7 +494,7 @@ export default function PaperPreview({
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <span
               className={`rounded-[4px] px-2 py-0.5 text-[12px] font-[500] ${getStatusStyles(
-                paper.status,
+                paper.status
               )}`}
             >
               {paper.status === "completed" ? "Completed" : "In Progress"}
