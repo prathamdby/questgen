@@ -3,21 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  ArrowRight,
-  LayoutGrid,
-  List,
-  MoreVertical,
-  Loader2,
-  Download,
-  Copy,
-  Trash2,
-  Clock,
-  FileText,
-  Plus,
-  Search,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { isAuthenticated, clearStoredApiKey } from "@/lib/openrouter-auth";
 import {
   getViewMode,
@@ -29,6 +15,13 @@ import {
   duplicatePaper,
   type ViewMode,
 } from "@/lib/storage";
+import { SignedInHeader } from "@/components/home/SignedInHeader";
+import { SearchBar } from "@/components/home/SearchBar";
+import { ViewToggle } from "@/components/home/ViewToggle";
+import { PaperCard } from "@/components/home/PaperCard";
+import { PaperListItem } from "@/components/home/PaperListItem";
+import { EmptyState } from "@/components/home/EmptyState";
+import { NoResultsState } from "@/components/home/NoResultsState";
 
 interface QuestionPaper {
   id: string;
@@ -118,26 +111,6 @@ export default function Home() {
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
-  const getStatusStyles = (status: QuestionPaper["status"]) => {
-    switch (status) {
-      case "completed":
-        return "bg-[#f0fdf4] text-[#15803d] dark:bg-[#052e16] dark:text-[#86efac]";
-      case "in_progress":
-        return "bg-[#fef08a] text-[#854d0e] dark:bg-[#422006] dark:text-[#fde047]";
-      default:
-        return "";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   const handleQuickExport = async (paperId: string) => {
     setExportingPaperId(paperId);
@@ -238,26 +211,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:py-24">
-        {/* Signed In Indicator */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373]">
-            <Image
-              src="/openrouter.svg"
-              alt=""
-              width={16}
-              height={16}
-              className="h-4 w-4 dark:invert"
-              aria-hidden="true"
-            />
-            <span>Signed in with OpenRouter</span>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
-          >
-            Sign out
-          </button>
-        </div>
+        <SignedInHeader onSignOut={handleSignOut} />
 
         {/* Header */}
         <header className="mb-12">
@@ -281,51 +235,15 @@ export default function Home() {
           </div>
 
           {/* Search Bar */}
-          <div className="relative mt-8">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-5 w-5 text-[#737373]" aria-hidden="true" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search papers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block h-[44px] w-full rounded-[6px] border border-[#e5e5e5] bg-white pl-10 pr-3 text-[15px] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
-              aria-label="Search question papers"
-            />
+          <div className="mt-8">
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
           </div>
 
           {/* View Toggle */}
-          <div className="mt-4 flex justify-end">
-            <div className="inline-flex gap-1 rounded-[6px] border border-[#e5e5e5] bg-white p-1 dark:border-[#333333] dark:bg-[#0a0a0a]">
-              <button
-                onClick={() => handleViewModeChange("card")}
-                aria-label="Card view"
-                aria-pressed={viewMode === "card"}
-                className={`flex h-7 w-7 items-center justify-center rounded-[4px] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white ${
-                  viewMode === "card"
-                    ? "bg-[#f5f5f5] text-[#171717] dark:bg-[#171717] dark:text-white"
-                    : "text-[#737373] hover:bg-[#fafafa] hover:text-[#171717] dark:hover:bg-[#171717] dark:hover:text-white"
-                }`}
-                style={{ touchAction: "manipulation" }}
-              >
-                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-              </button>
-              <button
-                onClick={() => handleViewModeChange("list")}
-                aria-label="List view"
-                aria-pressed={viewMode === "list"}
-                className={`flex h-7 w-7 items-center justify-center rounded-[4px] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white ${
-                  viewMode === "list"
-                    ? "bg-[#f5f5f5] text-[#171717] dark:bg-[#171717] dark:text-white"
-                    : "text-[#737373] hover:bg-[#fafafa] hover:text-[#171717] dark:hover:bg-[#171717] dark:hover:text-white"
-                }`}
-                style={{ touchAction: "manipulation" }}
-              >
-                <List className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+          <ViewToggle
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+          />
         </header>
 
         {/* Papers Grid/List */}
@@ -333,284 +251,44 @@ export default function Home() {
           viewMode === "card" ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {filteredPapers.map((paper) => (
-                <Link
+                <PaperCard
                   key={paper.id}
-                  href={`/paper/${paper.id}`}
-                  className="group block rounded-[6px] border border-[#e5e5e5] bg-white p-5 transition-all duration-150 hover:border-[#d4d4d4] dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040]"
-                >
-                  {/* Paper Header */}
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-[16px] font-[500] text-[#171717] dark:text-white">
-                        {paper.title}
-                      </h3>
-                      <p className="mt-1 text-[13px] text-[#737373] line-clamp-1">
-                        {paper.pattern}
-                      </p>
-                    </div>
-                    <div
-                      className="relative"
-                      ref={openMenuId === paper.id ? menuRef : null}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setOpenMenuId(
-                            openMenuId === paper.id ? null : paper.id,
-                          );
-                        }}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus:ring-white"
-                        aria-label="Paper options"
-                        aria-expanded={openMenuId === paper.id}
-                      >
-                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === paper.id && (
-                        <div className="absolute right-0 top-8 z-10 w-[180px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleQuickExport(paper.id);
-                            }}
-                            disabled={exportingPaperId === paper.id}
-                            className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
-                              exportingPaperId === paper.id
-                                ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
-                                : "text-[#171717] hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
-                            }`}
-                          >
-                            {exportingPaperId === paper.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-[#737373]" aria-hidden="true" />
-                            ) : (
-                              <Download className="h-4 w-4 text-[#737373]" aria-hidden="true" />
-                            )}
-                            <span className="font-[500]">
-                              {exportingPaperId === paper.id
-                                ? "Exporting..."
-                                : "Quick Export"}
-                            </span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDuplicate(paper.id);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
-                          >
-                            <Copy className="h-4 w-4 text-[#737373]" aria-hidden="true" />
-                            <span className="font-[500]">Duplicate</span>
-                          </button>
-                          <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDelete(paper.id);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#ef4444] transition-all duration-150 hover:bg-[#fef2f2] dark:text-[#f87171] dark:hover:bg-[#450a0a]"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            <span className="font-[500]">Delete</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Paper Metadata */}
-                  <div className="flex flex-wrap items-center gap-3 text-[13px]">
-                    <span
-                      className={`rounded-[4px] px-2 py-0.5 text-[12px] font-[500] ${getStatusStyles(
-                        paper.status,
-                      )}`}
-                    >
-                      {paper.status === "completed"
-                        ? "Completed"
-                        : "In Progress"}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[#737373]">
-                      <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                      {paper.duration}
-                    </span>
-                    <span className="flex items-center gap-1.5 tabular-nums text-[#737373]">
-                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                      {paper.totalMarks} marks
-                    </span>
-                  </div>
-
-                  {/* Paper Footer */}
-                  <div className="mt-4 flex items-center justify-between border-t border-[#f5f5f5] pt-4 dark:border-[#262626]">
-                    <span className="text-[12px] tabular-nums text-[#a3a3a3]">
-                      {formatDate(paper.createdAt)}
-                    </span>
-                    <span className="flex items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white">
-                      View details <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </span>
-                  </div>
-                </Link>
+                  paper={paper}
+                  isMenuOpen={openMenuId === paper.id}
+                  isExporting={exportingPaperId === paper.id}
+                  onMenuToggle={() =>
+                    setOpenMenuId(openMenuId === paper.id ? null : paper.id)
+                  }
+                  onExport={() => handleQuickExport(paper.id)}
+                  onDuplicate={() => handleDuplicate(paper.id)}
+                  onDelete={() => handleDelete(paper.id)}
+                  menuRef={menuRef}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-2">
               {filteredPapers.map((paper) => (
-                <Link
+                <PaperListItem
                   key={paper.id}
-                  href={`/paper/${paper.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-[6px] border border-[#e5e5e5] bg-white px-4 py-3 transition-all duration-150 hover:border-[#d4d4d4] dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040]"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="truncate text-[15px] font-[500] text-[#171717] dark:text-white">
-                          {paper.title}
-                        </h3>
-                        <span
-                          className={`flex-shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] font-[500] ${getStatusStyles(
-                            paper.status,
-                          )}`}
-                        >
-                          {paper.status === "completed"
-                            ? "Completed"
-                            : "In Progress"}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 truncate text-[13px] text-[#737373]">
-                        {paper.pattern}
-                      </p>
-                    </div>
-                    <div className="flex flex-shrink-0 items-center gap-4 text-[13px] text-[#737373]">
-                      <span className="hidden items-center gap-1.5 sm:flex">
-                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                        {paper.duration}
-                      </span>
-                      <span className="hidden items-center gap-1.5 tabular-nums sm:flex">
-                        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                        {paper.totalMarks} marks
-                      </span>
-                      <span className="tabular-nums text-[12px] text-[#a3a3a3]">
-                        {formatDate(paper.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    <span className="hidden items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white sm:flex">
-                      View <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </span>
-                    <div
-                      className="relative"
-                      ref={openMenuId === paper.id ? menuRef : null}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setOpenMenuId(
-                            openMenuId === paper.id ? null : paper.id,
-                          );
-                        }}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus-visible:ring-white"
-                        aria-label="Paper options"
-                        aria-expanded={openMenuId === paper.id}
-                      >
-                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === paper.id && (
-                        <div className="absolute right-0 top-8 z-10 w-[180px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleQuickExport(paper.id);
-                            }}
-                            disabled={exportingPaperId === paper.id}
-                            className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
-                              exportingPaperId === paper.id
-                                ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
-                                : "text-[#171717] hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
-                            }`}
-                          >
-                            {exportingPaperId === paper.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-[#737373]" aria-hidden="true" />
-                            ) : (
-                              <Download className="h-4 w-4 text-[#737373]" aria-hidden="true" />
-                            )}
-                            <span className="font-[500]">
-                              {exportingPaperId === paper.id
-                                ? "Exporting..."
-                                : "Quick Export"}
-                            </span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDuplicate(paper.id);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
-                          >
-                            <Copy className="h-4 w-4 text-[#737373]" aria-hidden="true" />
-                            <span className="font-[500]">Duplicate</span>
-                          </button>
-                          <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDelete(paper.id);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#ef4444] transition-all duration-150 hover:bg-[#fef2f2] dark:text-[#f87171] dark:hover:bg-[#450a0a]"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            <span className="font-[500]">Delete</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                  paper={paper}
+                  isMenuOpen={openMenuId === paper.id}
+                  isExporting={exportingPaperId === paper.id}
+                  onMenuToggle={() =>
+                    setOpenMenuId(openMenuId === paper.id ? null : paper.id)
+                  }
+                  onExport={() => handleQuickExport(paper.id)}
+                  onDuplicate={() => handleDuplicate(paper.id)}
+                  onDelete={() => handleDelete(paper.id)}
+                  menuRef={menuRef}
+                />
               ))}
             </div>
           )
         ) : searchQuery ? (
-          // No Search Results
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#fafafa] dark:bg-[#0a0a0a]">
-              <Search className="h-8 w-8 text-[#737373]" aria-hidden="true" />
-            </div>
-            <h3 className="text-[17px] font-[500] text-[#171717] dark:text-white">
-              No papers found
-            </h3>
-            <p className="mt-2 text-[14px] text-[#737373]">
-              Try adjusting your search query
-            </p>
-          </div>
+          <NoResultsState />
         ) : (
-          // Empty State
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#fafafa] dark:bg-[#0a0a0a]">
-              <FileText className="h-10 w-10 text-[#737373]" aria-hidden="true" />
-            </div>
-            <h3 className="text-[20px] font-[500] text-[#171717] dark:text-white">
-              No question papers yet
-            </h3>
-            <p className="mt-2 text-[15px] text-[#737373]">
-              Create your first question paper to get started
-            </p>
-            <Link
-              href="/generate"
-              className="mt-6 flex h-[44px] items-center justify-center gap-2 rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white"
-              style={{ touchAction: "manipulation" }}
-            >
-              Create your first paper
-            </Link>
-          </div>
+          <EmptyState />
         )}
       </div>
     </div>
