@@ -387,7 +387,7 @@ export function setViewMode(mode: ViewMode): boolean {
  * Get theme preference
  */
 export function getTheme(): Theme {
-  return localStorage.get<Theme>(StorageKey.THEME, "system") ?? "system";
+  return localStorage.get<Theme>(StorageKey.THEME, "dark") ?? "dark";
 }
 
 /**
