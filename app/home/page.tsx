@@ -40,9 +40,8 @@ export default function Home() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<ViewMode>("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Initialize view mode from storage after hydration
   useEffect(() => {
     const savedViewMode = getViewMode();
     setViewModeState(savedViewMode);
@@ -82,18 +81,19 @@ export default function Home() {
     };
   }, []);
 
-  // Redirect to sign in if not authenticated
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/signin");
     }
   }, [router]);
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
+      if (openMenuId) {
+        const menuElement = menuRefs.current.get(openMenuId);
+        if (menuElement && !menuElement.contains(event.target as Node)) {
+          setOpenMenuId(null);
+        }
       }
     };
 
@@ -116,7 +116,6 @@ export default function Home() {
     setExportingPaperId(paperId);
 
     try {
-      // Get paper data from storage
       const metadata = getPaper(paperId);
       let content = getPaperContent(paperId);
 
@@ -124,13 +123,11 @@ export default function Home() {
         throw new Error("Paper not found");
       }
 
-      // Clean content to remove any code fence wrappers
       content = content.trim();
       content = content.replace(/^```(?:markdown|md)?\s*\n/i, "");
       content = content.replace(/\n```\s*$/i, "");
       content = content.trim();
 
-      // Call the export API
       const response = await fetch("/api/export-pdf", {
         method: "POST",
         headers: {
@@ -151,24 +148,21 @@ export default function Home() {
         throw new Error(error.message || "Failed to export PDF");
       }
 
-      // Get the PDF blob
       const blob = await response.blob();
-
-      // Create a download link and trigger download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${metadata.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
-
-      // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
       console.error("Export error:", error);
       alert(
-        `Failed to export PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to export PDF: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     } finally {
       setExportingPaperId(null);
@@ -179,7 +173,6 @@ export default function Home() {
   const handleDuplicate = (paperId: string) => {
     const duplicatedPaper = duplicatePaper(paperId);
     if (duplicatedPaper) {
-      // Reload papers from storage
       setPapers(getPapersMetadata());
     }
     setOpenMenuId(null);
@@ -192,7 +185,6 @@ export default function Home() {
       )
     ) {
       deletePaper(paperId);
-      // Reload papers from storage
       setPapers(getPapersMetadata());
     }
     setOpenMenuId(null);
@@ -213,7 +205,6 @@ export default function Home() {
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:py-24">
         <SignedInHeader onSignOut={handleSignOut} />
 
-        {/* Header */}
         <header className="mb-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -237,22 +228,19 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Search Bar */}
           <div className="mt-8">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
           </div>
 
-          {/* View Toggle */}
           <ViewToggle
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
           />
         </header>
 
-        {/* Papers Grid/List */}
         {filteredPapers.length > 0 ? (
           viewMode === "card" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {filteredPapers.map((paper) => (
                 <PaperCard
                   key={paper.id}
@@ -265,7 +253,13 @@ export default function Home() {
                   onExport={() => handleQuickExport(paper.id)}
                   onDuplicate={() => handleDuplicate(paper.id)}
                   onDelete={() => handleDelete(paper.id)}
-                  menuRef={menuRef}
+                  menuRef={(el) => {
+                    if (el) {
+                      menuRefs.current.set(paper.id, el);
+                    } else {
+                      menuRefs.current.delete(paper.id);
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -283,7 +277,13 @@ export default function Home() {
                   onExport={() => handleQuickExport(paper.id)}
                   onDuplicate={() => handleDuplicate(paper.id)}
                   onDelete={() => handleDelete(paper.id)}
-                  menuRef={menuRef}
+                  menuRef={(el) => {
+                    if (el) {
+                      menuRefs.current.set(paper.id, el);
+                    } else {
+                      menuRefs.current.delete(paper.id);
+                    }
+                  }}
                 />
               ))}
             </div>

@@ -9,7 +9,9 @@ interface PaperMenuProps {
   onExport: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  menuRef: React.RefObject<HTMLDivElement | null>;
+  menuRef:
+    | React.RefObject<HTMLDivElement | null>
+    | ((el: HTMLDivElement | null) => void);
 }
 
 export function PaperMenu({
@@ -21,8 +23,15 @@ export function PaperMenu({
   onDelete,
   menuRef,
 }: PaperMenuProps) {
+  const refCallback = typeof menuRef === "function" ? menuRef : undefined;
+  const refObject = typeof menuRef === "function" ? undefined : menuRef;
+
   return (
-    <div className="relative" ref={menuRef}>
+    <div
+      className="relative"
+      data-menu-container
+      ref={refCallback || refObject}
+    >
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -37,7 +46,13 @@ export function PaperMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-8 z-10 w-[180px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+        <div
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="absolute right-0 top-8 z-10 w-[180px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+        >
           <button
             onClick={(e) => {
               e.preventDefault();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -40,12 +40,7 @@ interface QuestionPaper {
   content: string;
 }
 
-export default function PaperPreview({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function PaperContent({ id }: { id: string }) {
   const router = useRouter();
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -56,13 +51,11 @@ export default function PaperPreview({
   const [isLoading, setIsLoading] = useState(true);
   const regenPanelId = "paper-regenerate-panel";
 
-  // Load paper from storage
   useEffect(() => {
     const metadata = getPaper(id);
     let content = getPaperContent(id);
 
     if (metadata && content) {
-      // Clean content to remove any code fence wrappers
       content = content.trim();
       content = content.replace(/^```(?:markdown|md)?\s*\n/i, "");
       content = content.replace(/\n```\s*$/i, "");
@@ -151,7 +144,6 @@ export default function PaperPreview({
     setIsExporting(true);
 
     try {
-      // Call the export API
       const response = await fetch("/api/export-pdf", {
         method: "POST",
         headers: {
@@ -172,18 +164,13 @@ export default function PaperPreview({
         throw new Error(error.message || "Failed to export PDF");
       }
 
-      // Get the PDF blob
       const blob = await response.blob();
-
-      // Create a download link and trigger download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${paper.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
-
-      // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
@@ -233,7 +220,6 @@ export default function PaperPreview({
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
-        {/* Back Link */}
         <Link
           href="/home"
           className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
@@ -245,7 +231,6 @@ export default function PaperPreview({
           <span>Back to papers</span>
         </Link>
 
-        {/* Header */}
         <header className="mb-12">
           <PaperStatusBadge status={paper.status} createdAt={paper.createdAt} />
 
@@ -287,9 +272,37 @@ export default function PaperPreview({
           />
         </header>
 
-        {/* Markdown Preview */}
         <MarkdownPreview content={paper.content} />
       </div>
     </div>
+  );
+}
+
+function PaperContentWrapper({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return <PaperContent id={id} />;
+}
+
+export default function PaperPreview({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
+          <div className="text-center">
+            <Loader2
+              className="mx-auto h-8 w-8 animate-spin text-[#737373]"
+              aria-hidden="true"
+            />
+            <p className="mt-4 text-[15px] text-[#737373]">Loading paper...</p>
+          </div>
+        </div>
+      }
+    >
+      <PaperContentWrapper params={params} />
+    </Suspense>
   );
 }

@@ -24,7 +24,9 @@ interface PaperCardProps {
   onExport: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  menuRef: React.RefObject<HTMLDivElement | null>;
+  menuRef:
+    | React.RefObject<HTMLDivElement | null>
+    | ((el: HTMLDivElement | null) => void);
 }
 
 export function PaperCard({
@@ -40,49 +42,61 @@ export function PaperCard({
   return (
     <Link
       href={`/paper/${paper.id}`}
-      className="group block rounded-[6px] border border-[#e5e5e5] bg-white p-5 transition-all duration-150 hover:border-[#d4d4d4] dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040]"
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.closest("[data-menu-container]") ||
+          target.closest('button[aria-label="Paper options"]')
+        ) {
+          e.preventDefault();
+        }
+      }}
+      className="group block w-full rounded-[8px] border border-[#e5e5e5] bg-white p-5 transition-all duration-150 hover:border-[#d4d4d4] hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040] sm:rounded-[6px]"
     >
-      {/* Paper Header */}
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[16px] font-[500] text-[#171717] dark:text-white">
+          <h3 className="truncate text-[16px] font-[500] leading-[1.3] text-[#171717] dark:text-white">
             {paper.title}
           </h3>
-          <p className="mt-1 text-[13px] text-[#737373] line-clamp-1">
+          <p className="mt-1.5 line-clamp-1 text-[14px] leading-[1.5] text-[#737373]">
             {paper.pattern}
           </p>
         </div>
-        <PaperMenu
-          isOpen={isMenuOpen}
-          isExporting={isExporting}
-          onToggle={onMenuToggle}
-          onExport={onExport}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-          menuRef={menuRef}
-        />
+        <div className="flex-shrink-0">
+          <PaperMenu
+            isOpen={isMenuOpen}
+            isExporting={isExporting}
+            onToggle={onMenuToggle}
+            onExport={onExport}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            menuRef={menuRef}
+          />
+        </div>
       </div>
 
-      {/* Paper Metadata */}
-      <div className="flex flex-wrap items-center gap-3 text-[13px]">
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 text-[13px]">
         <StatusBadge status={paper.status} />
         <span className="flex items-center gap-1.5 text-[#737373]">
-          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-          {paper.duration}
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+          <span>{paper.duration}</span>
         </span>
         <span className="flex items-center gap-1.5 tabular-nums text-[#737373]">
-          <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-          {paper.totalMarks} marks
+          <FileText className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+          <span>{paper.totalMarks}&nbsp;marks</span>
         </span>
       </div>
 
-      {/* Paper Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-[#f5f5f5] pt-4 dark:border-[#262626]">
-        <span className="text-[12px] tabular-nums text-[#a3a3a3]">
+      <div className="flex items-center justify-between gap-3 border-t border-[#f5f5f5] pt-4 dark:border-[#262626]">
+        <span className="text-[13px] tabular-nums text-[#a3a3a3]">
           {formatDateShort(paper.createdAt)}
         </span>
-        <span className="flex items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white">
-          View details <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="flex items-center gap-1.5 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white">
+          <span>View</span>
+          <ArrowRight
+            className="h-3.5 w-3.5 flex-shrink-0"
+            aria-hidden="true"
+          />
         </span>
       </div>
     </Link>
