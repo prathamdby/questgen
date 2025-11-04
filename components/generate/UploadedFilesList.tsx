@@ -14,10 +14,7 @@ interface UploadedFilesListProps {
   onRemove: (id: string) => void;
 }
 
-export function UploadedFilesList({
-  files,
-  onRemove,
-}: UploadedFilesListProps) {
+export function UploadedFilesList({ files, onRemove }: UploadedFilesListProps) {
   if (files.length === 0) return null;
 
   return (
@@ -62,4 +59,3 @@ export function UploadedFilesList({
     </div>
   );
 }
-

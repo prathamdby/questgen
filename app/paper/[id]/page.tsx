@@ -204,7 +204,7 @@ export default function PaperPreview({
 
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone."
+        "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
       deletePaper(paper.id);
@@ -216,7 +216,10 @@ export default function PaperPreview({
     return (
       <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#737373]" aria-hidden="true" />
+          <Loader2
+            className="mx-auto h-8 w-8 animate-spin text-[#737373]"
+            aria-hidden="true"
+          />
           <p className="mt-4 text-[15px] text-[#737373]">Loading paper...</p>
         </div>
       </div>
@@ -235,7 +238,10 @@ export default function PaperPreview({
           href="/home"
           className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" aria-hidden="true" />
+          <ArrowLeft
+            className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
+            aria-hidden="true"
+          />
           <span>Back to papers</span>
         </Link>
 

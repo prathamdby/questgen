@@ -61,7 +61,8 @@ export function RegenerationPanel({
         id="regen-notes-helper"
         className="mt-2 text-[12px] leading-[1.6] text-[#6d6d6d] dark:text-[#737373]"
       >
-        Keep the structure intact—only describe the adjustments you want. Leave blank and use Skip instructions to rerun as-is.
+        Keep the structure intact—only describe the adjustments you want. Leave
+        blank and use Skip instructions to rerun as-is.
       </p>
       <div className="mt-3 flex flex-wrap gap-2 sm:justify-end">
         <button
@@ -92,4 +93,3 @@ export function RegenerationPanel({
     </div>
   );
 }
-

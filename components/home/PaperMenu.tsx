@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  MoreVertical,
-  Loader2,
-  Download,
-  Copy,
-  Trash2,
-} from "lucide-react";
+import { MoreVertical, Loader2, Download, Copy, Trash2 } from "lucide-react";
 
 interface PaperMenuProps {
   isOpen: boolean;
@@ -58,7 +52,10 @@ export function PaperMenu({
             }`}
           >
             {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin text-[#737373]" aria-hidden="true" />
+              <Loader2
+                className="h-4 w-4 animate-spin text-[#737373]"
+                aria-hidden="true"
+              />
             ) : (
               <Download className="h-4 w-4 text-[#737373]" aria-hidden="true" />
             )}
@@ -94,4 +91,3 @@ export function PaperMenu({
     </div>
   );
 }
-

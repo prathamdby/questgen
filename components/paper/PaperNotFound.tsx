@@ -20,7 +20,8 @@ export function PaperNotFound() {
             This paper went missing
           </h1>
           <p className="mt-4 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-            The paper you're looking for doesn't exist or may have been deleted. Let's get you back on track.
+            The paper you're looking for doesn't exist or may have been deleted.
+            Let's get you back on track.
           </p>
         </div>
 
@@ -32,7 +33,10 @@ export function PaperNotFound() {
             style={{ touchAction: "manipulation" }}
           >
             <span>Browse Papers</span>
-            <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
           </Link>
           <Link
             href="/generate"
@@ -62,4 +66,3 @@ export function PaperNotFound() {
     </div>
   );
 }
-

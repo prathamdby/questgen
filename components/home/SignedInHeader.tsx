@@ -29,4 +29,3 @@ export function SignedInHeader({ onSignOut }: SignedInHeaderProps) {
     </div>
   );
 }
-

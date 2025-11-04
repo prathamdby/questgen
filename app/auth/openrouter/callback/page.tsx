@@ -71,7 +71,10 @@ function OpenRouterCallbackContent() {
               {/* Error Icon */}
               <div className="relative flex justify-center">
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#fef2f2] dark:bg-[#450a0a]">
-                  <AlertTriangle className="h-12 w-12 text-[#ef4444] dark:text-[#f87171]" aria-hidden="true" />
+                  <AlertTriangle
+                    className="h-12 w-12 text-[#ef4444] dark:text-[#f87171]"
+                    aria-hidden="true"
+                  />
                 </div>
               </div>
             </div>
@@ -93,7 +96,10 @@ function OpenRouterCallbackContent() {
               style={{ touchAction: "manipulation" }}
             >
               <span>Try Again</span>
-              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+              <ArrowRight
+                className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
             </button>
 
             <style jsx>{`

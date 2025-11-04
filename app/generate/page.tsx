@@ -17,7 +17,10 @@ import {
 import { generateQuestionPaper } from "@/lib/openrouter-client";
 import { patternPresets } from "@/lib/pattern-presets";
 import { FormField } from "@/components/generate/FormField";
-import { PatternPresetsButton, PatternPresetsList } from "@/components/generate/PatternPresets";
+import {
+  PatternPresetsButton,
+  PatternPresetsList,
+} from "@/components/generate/PatternPresets";
 import { FileUploadZone } from "@/components/generate/FileUploadZone";
 import { UploadedFilesList } from "@/components/generate/UploadedFilesList";
 import { GenerateButton } from "@/components/generate/GenerateButton";
@@ -67,11 +70,11 @@ export default function Generate() {
       setTotalMarks(
         draft.totalMarks !== undefined && draft.totalMarks !== null
           ? String(draft.totalMarks)
-          : ""
+          : "",
       );
       const matchedPreset = patternPresets.find(
         (preset) =>
-          normalizePattern(preset.pattern) === normalizePattern(draftPattern)
+          normalizePattern(preset.pattern) === normalizePattern(draftPattern),
       );
       setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
       setArePresetsExpanded(Boolean(matchedPreset));
@@ -101,12 +104,12 @@ export default function Generate() {
     }
     const matchedPreset = patternPresets.find(
       (preset) =>
-        normalizePattern(preset.pattern) === normalizePattern(nextPattern)
+        normalizePattern(preset.pattern) === normalizePattern(nextPattern),
     );
     setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
   };
 
-  const handlePresetSelect = (preset: typeof patternPresets[0]) => {
+  const handlePresetSelect = (preset: (typeof patternPresets)[0]) => {
     applyPaperPattern(preset.pattern, preset.id);
     setArePresetsExpanded(true);
   };
@@ -158,7 +161,7 @@ export default function Generate() {
         paperPattern,
         duration,
         parseInt(totalMarks),
-        fileDescriptors
+        fileDescriptors,
       );
 
       // Call OpenRouter API to generate the paper
@@ -259,7 +262,9 @@ export default function Generate() {
                 <PatternPresetsButton
                   activePreset={
                     selectedPresetId
-                      ? patternPresets.find((p) => p.id === selectedPresetId) ?? null
+                      ? (patternPresets.find(
+                          (p) => p.id === selectedPresetId,
+                        ) ?? null)
                       : null
                   }
                   isExpanded={arePresetsExpanded}

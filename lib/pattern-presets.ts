@@ -52,4 +52,3 @@ export const patternPresets: PatternPreset[] = [
     ].join("\n"),
   },
 ];
-

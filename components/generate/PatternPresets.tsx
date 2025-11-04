@@ -69,7 +69,7 @@ export function PatternPresetsList({
       requestAnimationFrame(() => {
         textarea.setSelectionRange(
           textarea.value.length,
-          textarea.value.length
+          textarea.value.length,
         );
       });
     }
@@ -78,10 +78,7 @@ export function PatternPresetsList({
   if (presets.length === 0 || !isExpanded) return null;
 
   return (
-    <fieldset
-      aria-labelledby="paper-pattern-presets-heading"
-      className="mb-3"
-    >
+    <fieldset aria-labelledby="paper-pattern-presets-heading" className="mb-3">
       <legend id="paper-pattern-presets-heading" className="sr-only">
         Paper Pattern Presets
       </legend>
@@ -149,4 +146,3 @@ export function PatternPresetsList({
     </fieldset>
   );
 }
-

@@ -8,7 +8,11 @@ interface MetadataGridProps {
   totalMarks: number;
 }
 
-export function MetadataGrid({ pattern, duration, totalMarks }: MetadataGridProps) {
+export function MetadataGrid({
+  pattern,
+  duration,
+  totalMarks,
+}: MetadataGridProps) {
   return (
     <div className="mb-8 grid gap-4 sm:grid-cols-3">
       <div className="min-w-0 rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
@@ -29,9 +33,7 @@ export function MetadataGrid({ pattern, duration, totalMarks }: MetadataGridProp
           <Clock className="h-4 w-4" aria-hidden="true" />
           Duration
         </div>
-        <p className="text-[14px] text-[#171717] dark:text-white">
-          {duration}
-        </p>
+        <p className="text-[14px] text-[#171717] dark:text-white">{duration}</p>
       </div>
 
       <div className="rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
@@ -46,4 +48,3 @@ export function MetadataGrid({ pattern, duration, totalMarks }: MetadataGridProp
     </div>
   );
 }
-

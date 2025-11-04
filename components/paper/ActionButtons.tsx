@@ -34,12 +34,18 @@ export function ActionButtons({
       >
         {isRegenerating ? (
           <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" aria-hidden="true" />
+            <Loader2
+              className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4"
+              aria-hidden="true"
+            />
             <span>Regen...</span>
           </>
         ) : (
           <>
-            <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+            <RefreshCw
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+              aria-hidden="true"
+            />
             <span>Regen</span>
           </>
         )}
@@ -58,12 +64,18 @@ export function ActionButtons({
       >
         {isExporting ? (
           <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" aria-hidden="true" />
+            <Loader2
+              className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4"
+              aria-hidden="true"
+            />
             <span>Exporting...</span>
           </>
         ) : (
           <>
-            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+            <Download
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+              aria-hidden="true"
+            />
             <span>Export</span>
           </>
         )}
@@ -85,4 +97,3 @@ export function ActionButtons({
     </div>
   );
 }
-

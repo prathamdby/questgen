@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  FileText,
-  Image as ImageIcon,
-  File,
-} from "lucide-react";
+import { FileText, Image as ImageIcon, File } from "lucide-react";
 
 interface FileIconProps {
   filename: string;
@@ -17,7 +13,10 @@ export function FileIcon({ filename, className = "h-4 w-4" }: FileIconProps) {
   switch (extension) {
     case "pdf":
       return (
-        <FileText className={`${className} text-[#ef4444]`} aria-hidden="true" />
+        <FileText
+          className={`${className} text-[#ef4444]`}
+          aria-hidden="true"
+        />
       );
     case "jpg":
     case "jpeg":
@@ -28,17 +27,26 @@ export function FileIcon({ filename, className = "h-4 w-4" }: FileIconProps) {
     case "bmp":
     case "ico":
       return (
-        <ImageIcon className={`${className} text-[#8b5cf6]`} aria-hidden="true" />
+        <ImageIcon
+          className={`${className} text-[#8b5cf6]`}
+          aria-hidden="true"
+        />
       );
     case "docx":
     case "doc":
       return (
-        <FileText className={`${className} text-[#2b579a]`} aria-hidden="true" />
+        <FileText
+          className={`${className} text-[#2b579a]`}
+          aria-hidden="true"
+        />
       );
     case "md":
     case "txt":
       return (
-        <FileText className={`${className} text-[#737373]`} aria-hidden="true" />
+        <FileText
+          className={`${className} text-[#737373]`}
+          aria-hidden="true"
+        />
       );
     default:
       return (
@@ -46,4 +54,3 @@ export function FileIcon({ filename, className = "h-4 w-4" }: FileIconProps) {
       );
   }
 }
-

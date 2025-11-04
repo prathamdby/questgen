@@ -18,4 +18,3 @@ export function PaperStatusBadge({ status, createdAt }: PaperStatusBadgeProps) {
     </div>
   );
 }
-
