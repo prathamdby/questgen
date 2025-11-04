@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -53,20 +54,7 @@ export default function NotFound() {
             style={{ touchAction: "manipulation" }}
           >
             <span>Go Home</span>
-            <svg
-              className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
+            <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
           <Link
             href="/generate"

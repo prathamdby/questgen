@@ -4,6 +4,15 @@ import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Upload,
+  FileText,
+  X,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 import { isAuthenticated } from "@/lib/openrouter-auth";
 import {
   getGenerateFormDraft,
@@ -302,20 +311,10 @@ export default function Home() {
           href="/home"
           className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
         >
-          <svg
+          <ArrowLeft
             className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
             aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          />
           <span>Back to home</span>
         </Link>
 
@@ -378,20 +377,12 @@ export default function Home() {
                   <span className="max-w-[140px] truncate text-[11px] font-[500] tracking-normal text-[#a3a3a3] dark:text-[#bfbfbf]">
                     {activePreset ? activePreset.label : "Browse"}
                   </span>
-                  <svg
+                  <ChevronDown
                     className={`h-3 w-3 transition-transform duration-150 ${
                       arePresetsExpanded ? "rotate-180" : ""
                     }`}
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
                     aria-hidden="true"
-                  >
-                    <path d="M4 6l4 4 4-4" />
-                  </svg>
+                  />
                 </button>
               )}
             </div>
@@ -566,20 +557,10 @@ export default function Home() {
             >
               {/* Upload Icon */}
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-black">
-                <svg
+                <Upload
                   className="h-6 w-6 text-[#737373] transition-colors duration-200 group-hover:text-[#171717] dark:group-hover:text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
                   aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
+                />
               </div>
 
               <p className="mb-2 text-[15px] font-[500] text-[#171717] dark:text-white">
@@ -614,20 +595,10 @@ export default function Home() {
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       {/* File Icon */}
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-[#fafafa] dark:bg-[#171717]">
-                        <svg
+                        <FileText
                           className="h-4 w-4 text-[#737373]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
                           aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        />
                       </div>
 
                       {/* File Info */}
@@ -651,20 +622,7 @@ export default function Home() {
                       className="ml-4 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus:ring-white"
                       aria-label={`Remove ${uploadedFile.file.name}`}
                     >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+                      <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -688,45 +646,19 @@ export default function Home() {
               {isGenerating ? (
                 <>
                   {/* Loading Spinner */}
-                  <svg
+                  <Loader2
                     className="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
                     aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                  />
                   <span>Generating Paper...</span>
                 </>
               ) : (
                 <>
                   <span>Generate Paper</span>
-                  <svg
+                  <ArrowRight
                     className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
                     aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  />
                 </>
               )}
             </button>

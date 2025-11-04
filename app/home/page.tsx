@@ -4,6 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  ArrowRight,
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Loader2,
+  Download,
+  Copy,
+  Trash2,
+  Clock,
+  FileText,
+  Plus,
+  Search,
+} from "lucide-react";
 import { isAuthenticated, clearStoredApiKey } from "@/lib/openrouter-auth";
 import {
   getViewMode,
@@ -262,40 +276,14 @@ export default function Home() {
               style={{ touchAction: "manipulation" }}
             >
               <span>Create New Paper</span>
-              <svg
-                className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <Plus className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
             </Link>
           </div>
 
           {/* Search Bar */}
           <div className="relative mt-8">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg
-                className="h-5 w-5 text-[#737373]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="h-5 w-5 text-[#737373]" aria-hidden="true" />
             </div>
             <input
               type="text"
@@ -321,20 +309,7 @@ export default function Home() {
                 }`}
                 style={{ touchAction: "manipulation" }}
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-                  />
-                </svg>
+                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 onClick={() => handleViewModeChange("list")}
@@ -347,20 +322,7 @@ export default function Home() {
                 }`}
                 style={{ touchAction: "manipulation" }}
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                <List className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -402,14 +364,7 @@ export default function Home() {
                         aria-label="Paper options"
                         aria-expanded={openMenuId === paper.id}
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                        </svg>
+                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
                       </button>
 
                       {/* Dropdown Menu */}
@@ -429,41 +384,9 @@ export default function Home() {
                             }`}
                           >
                             {exportingPaperId === paper.id ? (
-                              <svg
-                                className="h-4 w-4 animate-spin text-[#737373]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="3"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
+                              <Loader2 className="h-4 w-4 animate-spin text-[#737373]" aria-hidden="true" />
                             ) : (
-                              <svg
-                                className="h-4 w-4 text-[#737373]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                              </svg>
+                              <Download className="h-4 w-4 text-[#737373]" aria-hidden="true" />
                             )}
                             <span className="font-[500]">
                               {exportingPaperId === paper.id
@@ -479,20 +402,7 @@ export default function Home() {
                             }}
                             className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
                           >
-                            <svg
-                              className="h-4 w-4 text-[#737373]"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
+                            <Copy className="h-4 w-4 text-[#737373]" aria-hidden="true" />
                             <span className="font-[500]">Duplicate</span>
                           </button>
                           <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
@@ -504,20 +414,7 @@ export default function Home() {
                             }}
                             className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#ef4444] transition-all duration-150 hover:bg-[#fef2f2] dark:text-[#f87171] dark:hover:bg-[#450a0a]"
                           >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                             <span className="font-[500]">Delete</span>
                           </button>
                         </div>
@@ -537,37 +434,11 @@ export default function Home() {
                         : "In Progress"}
                     </span>
                     <span className="flex items-center gap-1.5 text-[#737373]">
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
+                      <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                       {paper.duration}
                     </span>
                     <span className="flex items-center gap-1.5 tabular-nums text-[#737373]">
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                       {paper.totalMarks} marks
                     </span>
                   </div>
@@ -577,8 +448,8 @@ export default function Home() {
                     <span className="text-[12px] tabular-nums text-[#a3a3a3]">
                       {formatDate(paper.createdAt)}
                     </span>
-                    <span className="text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white">
-                      View details →
+                    <span className="flex items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white">
+                      View details <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                   </div>
                 </Link>
@@ -614,37 +485,11 @@ export default function Home() {
                     </div>
                     <div className="flex flex-shrink-0 items-center gap-4 text-[13px] text-[#737373]">
                       <span className="hidden items-center gap-1.5 sm:flex">
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
+                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                         {paper.duration}
                       </span>
                       <span className="hidden items-center gap-1.5 tabular-nums sm:flex">
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                         {paper.totalMarks} marks
                       </span>
                       <span className="tabular-nums text-[12px] text-[#a3a3a3]">
@@ -653,8 +498,8 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex flex-shrink-0 items-center gap-2">
-                    <span className="hidden text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white sm:block">
-                      View →
+                    <span className="hidden items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white sm:flex">
+                      View <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     <div
                       className="relative"
@@ -672,14 +517,7 @@ export default function Home() {
                         aria-label="Paper options"
                         aria-expanded={openMenuId === paper.id}
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                        </svg>
+                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
                       </button>
 
                       {/* Dropdown Menu */}
@@ -699,41 +537,9 @@ export default function Home() {
                             }`}
                           >
                             {exportingPaperId === paper.id ? (
-                              <svg
-                                className="h-4 w-4 animate-spin text-[#737373]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="3"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
+                              <Loader2 className="h-4 w-4 animate-spin text-[#737373]" aria-hidden="true" />
                             ) : (
-                              <svg
-                                className="h-4 w-4 text-[#737373]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                              </svg>
+                              <Download className="h-4 w-4 text-[#737373]" aria-hidden="true" />
                             )}
                             <span className="font-[500]">
                               {exportingPaperId === paper.id
@@ -749,20 +555,7 @@ export default function Home() {
                             }}
                             className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
                           >
-                            <svg
-                              className="h-4 w-4 text-[#737373]"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
+                            <Copy className="h-4 w-4 text-[#737373]" aria-hidden="true" />
                             <span className="font-[500]">Duplicate</span>
                           </button>
                           <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
@@ -774,20 +567,7 @@ export default function Home() {
                             }}
                             className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#ef4444] transition-all duration-150 hover:bg-[#fef2f2] dark:text-[#f87171] dark:hover:bg-[#450a0a]"
                           >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                             <span className="font-[500]">Delete</span>
                           </button>
                         </div>
@@ -802,20 +582,7 @@ export default function Home() {
           // No Search Results
           <div className="flex flex-col items-center justify-center py-20">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#fafafa] dark:bg-[#0a0a0a]">
-              <svg
-                className="h-8 w-8 text-[#737373]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="h-8 w-8 text-[#737373]" aria-hidden="true" />
             </div>
             <h3 className="text-[17px] font-[500] text-[#171717] dark:text-white">
               No papers found
@@ -828,20 +595,7 @@ export default function Home() {
           // Empty State
           <div className="flex flex-col items-center justify-center py-20">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#fafafa] dark:bg-[#0a0a0a]">
-              <svg
-                className="h-10 w-10 text-[#737373]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+              <FileText className="h-10 w-10 text-[#737373]" aria-hidden="true" />
             </div>
             <h3 className="text-[20px] font-[500] text-[#171717] dark:text-white">
               No question papers yet

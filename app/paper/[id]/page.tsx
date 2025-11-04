@@ -7,6 +7,20 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  ArrowLeft,
+  FileText,
+  Clock,
+  Calendar,
+  Download,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  ChevronDown,
+  FileType,
+  Image as ImageIcon,
+  File,
+} from "lucide-react";
+import {
   getPaper,
   getPaperContent,
   deletePaper,
@@ -108,22 +122,7 @@ export default function PaperPreview({
     switch (extension) {
       case "pdf":
         return (
-          <svg
-            className="h-4 w-4 text-[#ef4444]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-            <path d="M10 9H8" />
-            <path d="M16 13H8" />
-            <path d="M16 17H8" />
-          </svg>
+          <FileText className="h-4 w-4 text-[#ef4444]" aria-hidden="true" />
         );
       case "jpg":
       case "jpeg":
@@ -134,69 +133,21 @@ export default function PaperPreview({
       case "bmp":
       case "ico":
         return (
-          <svg
-            className="h-4 w-4 text-[#8b5cf6]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-            <circle cx="10" cy="12" r="2" />
-            <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" />
-          </svg>
+          <ImageIcon className="h-4 w-4 text-[#8b5cf6]" aria-hidden="true" />
         );
       case "docx":
       case "doc":
         return (
-          <svg
-            className="h-4 w-4 text-[#2b579a]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-            <path d="M14 2v6h6M10 18l-3-6h2l2 4 2-4h2l-3 6h-2z" />
-          </svg>
+          <FileText className="h-4 w-4 text-[#2b579a]" aria-hidden="true" />
         );
       case "md":
       case "txt":
         return (
-          <svg
-            className="h-4 w-4 text-[#737373]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
+          <FileText className="h-4 w-4 text-[#737373]" aria-hidden="true" />
         );
       default:
         return (
-          <svg
-            className="h-4 w-4 text-[#737373]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-            />
-          </svg>
+          <File className="h-4 w-4 text-[#737373]" aria-hidden="true" />
         );
     }
   };
@@ -205,26 +156,7 @@ export default function PaperPreview({
     return (
       <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
         <div className="text-center">
-          <svg
-            className="mx-auto h-8 w-8 animate-spin text-[#737373]"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="3"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#737373]" aria-hidden="true" />
           <p className="mt-4 text-[15px] text-[#737373]">Loading paper...</p>
         </div>
       </div>
@@ -238,22 +170,7 @@ export default function PaperPreview({
           {/* Icon */}
           <div className="mb-8 flex justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#fafafa] dark:bg-[#0a0a0a]">
-              <svg
-                className="h-10 w-10 text-[#737373]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-                <circle cx="18" cy="6" r="1" fill="currentColor" />
-                <circle cx="18" cy="6" r="2.5" fill="none" strokeWidth={1.5} />
-              </svg>
+              <FileText className="h-10 w-10 text-[#737373]" aria-hidden="true" />
             </div>
           </div>
 
@@ -277,20 +194,7 @@ export default function PaperPreview({
               style={{ touchAction: "manipulation" }}
             >
               <span>Browse Papers</span>
-              <svg
-                className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
+              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
             </Link>
             <Link
               href="/generate"
@@ -472,20 +376,7 @@ export default function PaperPreview({
           href="/home"
           className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
         >
-          <svg
-            className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ArrowLeft className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5" aria-hidden="true" />
           <span>Back to papers</span>
         </Link>
 
@@ -510,30 +401,13 @@ export default function PaperPreview({
 
           {/* Metadata Grid */}
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
+            <div className="min-w-0 rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
               <div className="mb-1 flex items-center gap-2 text-[13px] font-[500] text-[#737373]">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M8 2v4" />
-                  <path d="M12 2v4" />
-                  <path d="M16 2v4" />
-                  <rect width="16" height="18" x="4" y="4" rx="2" />
-                  <path d="M8 10h6" />
-                  <path d="M8 14h8" />
-                  <path d="M8 18h5" />
-                </svg>
+                <Calendar className="h-4 w-4" aria-hidden="true" />
                 Pattern
               </div>
               <p
-                className="truncate text-[14px] text-[#171717] dark:text-white"
+                className="min-w-0 truncate text-[14px] text-[#171717] dark:text-white"
                 title={paper.pattern}
               >
                 {paper.pattern}
@@ -542,23 +416,7 @@ export default function PaperPreview({
 
             <div className="rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
               <div className="mb-1 flex items-center gap-2 text-[13px] font-[500] text-[#737373]">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2a10 10 0 0 1 7.38 16.75" />
-                  <path d="M12 6v6l4 2" />
-                  <path d="M2.5 8.875a10 10 0 0 0-.5 3" />
-                  <path d="M2.83 16a10 10 0 0 0 2.43 3.4" />
-                  <path d="M4.636 5.235a10 10 0 0 1 .891-.857" />
-                  <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
-                </svg>
+                <Clock className="h-4 w-4" aria-hidden="true" />
                 Duration
               </div>
               <p className="text-[14px] text-[#171717] dark:text-white">
@@ -568,20 +426,7 @@ export default function PaperPreview({
 
             <div className="rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-4 dark:border-[#333333] dark:bg-[#0a0a0a]">
               <div className="mb-1 flex items-center gap-2 text-[13px] font-[500] text-[#737373]">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <rect width="8" height="18" x="3" y="3" rx="1" />
-                  <path d="M7 3v18" />
-                  <path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z" />
-                </svg>
+                <FileText className="h-4 w-4" aria-hidden="true" />
                 Total Marks
               </div>
               <p className="text-[14px] tabular-nums text-[#171717] dark:text-white">
@@ -600,41 +445,17 @@ export default function PaperPreview({
                 aria-controls="files-content"
               >
                 <div className="flex items-center gap-2">
-                  <svg
-                    className="h-4 w-4 text-[#737373]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
-                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                    <path d="M2 15h10" />
-                    <path d="m9 18 3-3-3-3" />
-                  </svg>
+                  <FileText className="h-4 w-4 text-[#737373]" aria-hidden="true" />
                   <span className="text-[14px] font-[500] text-[#171717] dark:text-white">
                     Source Files ({paper.files.length})
                   </span>
                 </div>
-                <svg
+                <ChevronDown
                   className={`h-4 w-4 text-[#737373] transition-transform duration-200 ${
                     notesExpanded ? "rotate-180" : ""
                   }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
                   aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
 
               {notesExpanded && (
@@ -681,44 +502,12 @@ export default function PaperPreview({
             >
               {isRegenerating ? (
                 <>
-                  <svg
-                    className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" aria-hidden="true" />
                   <span>Regen...</span>
                 </>
               ) : (
                 <>
-                  <svg
-                    className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
                   <span>Regen</span>
                 </>
               )}
@@ -737,44 +526,12 @@ export default function PaperPreview({
             >
               {isExporting ? (
                 <>
-                  <svg
-                    className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" aria-hidden="true" />
                   <span>Exporting...</span>
                 </>
               ) : (
                 <>
-                  <svg
-                    className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
+                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
                   <span>Export</span>
                 </>
               )}
@@ -790,20 +547,7 @@ export default function PaperPreview({
               }`}
               style={{ touchAction: "manipulation" }}
             >
-              <svg
-                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
               <span>Delete</span>
             </button>
           </div>
