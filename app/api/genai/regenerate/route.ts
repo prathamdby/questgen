@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cleanMarkdownContent, buildSystemPrompt } from "@/lib/paper-prompts";
-import { getGenAIClients, GEMINI_MODEL_NAME } from "@/lib/server/genai";
+import { getGenAIClient, GEMINI_MODEL_NAME } from "@/lib/server/genai";
 
 interface RegenerateRequestBody {
   paperName?: string;
@@ -11,16 +11,55 @@ interface RegenerateRequestBody {
   instructions?: string;
 }
 
+function safeTrim(value?: string | null): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+async function extractResponseText(result: unknown): Promise<string | undefined> {
+  const responseLike = (result as { response?: unknown })?.response;
+
+  if (responseLike) {
+    const textCandidate = (responseLike as { text?: unknown }).text;
+
+    if (typeof textCandidate === "string") {
+      return textCandidate.trim();
+    }
+
+    if (typeof textCandidate === "function") {
+      const value = textCandidate();
+      return typeof value === "string" ? value.trim() : (await value)?.trim();
+    }
+  }
+
+  const directText = (result as { text?: unknown }).text;
+
+  if (typeof directText === "string") {
+    return directText.trim();
+  }
+
+  if (typeof directText === "function") {
+    const value = directText();
+    return typeof value === "string" ? value.trim() : (await value)?.trim();
+  }
+
+  return undefined;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RegenerateRequestBody;
 
-    const paperName = body.paperName?.trim();
-    const paperPattern = body.paperPattern?.trim();
-    const duration = body.duration?.trim();
-    const totalMarks = body.totalMarks?.trim();
-    const previousContent = body.previousContent?.trim();
-    const instructions = body.instructions?.trim();
+    const paperName = safeTrim(body.paperName ?? null);
+    const paperPattern = safeTrim(body.paperPattern ?? null);
+    const duration = safeTrim(body.duration ?? null);
+    const totalMarks = safeTrim(body.totalMarks ?? null);
+    const previousContent = safeTrim(body.previousContent ?? null);
+    const instructions = safeTrim(body.instructions ?? null);
 
     if (!paperName || !paperPattern || !duration || !totalMarks) {
       return NextResponse.json(
@@ -36,8 +75,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { modelClient } = getGenAIClients();
-    const model = modelClient.getGenerativeModel({ model: GEMINI_MODEL_NAME });
+    const genAI = getGenAIClient();
 
     const systemPrompt = buildSystemPrompt(
       paperName,
@@ -64,10 +102,13 @@ export async function POST(request: Request) {
       },
     ];
 
-    const result = await model.generateContent({
-      systemInstruction: {
-        role: "system",
-        parts: [{ text: systemPrompt }],
+    const result = await genAI.models.generateContent({
+      model: GEMINI_MODEL_NAME,
+      config: {
+        systemInstruction: {
+          role: "system",
+          parts: [{ text: systemPrompt }],
+        },
       },
       contents: [
         {
@@ -77,12 +118,9 @@ export async function POST(request: Request) {
       ],
     });
 
-    const text =
-      typeof result?.response?.text === "function"
-        ? result.response.text()
-        : undefined;
+    const text = await extractResponseText(result);
 
-    if (!text || typeof text !== "string") {
+    if (!text) {
       return NextResponse.json(
         { error: "The AI response did not include any content." },
         { status: 502 },

@@ -1,24 +1,56 @@
-import { Buffer } from "node:buffer";
 import { NextResponse } from "next/server";
 import mime from "mime";
 import { cleanMarkdownContent, buildSystemPrompt } from "@/lib/paper-prompts";
-import { getGenAIClients, GEMINI_MODEL_NAME } from "@/lib/server/genai";
+import { getGenAIClient, GEMINI_MODEL_NAME } from "@/lib/server/genai";
+
+type UploadedFileResource = {
+  name: string;
+  uri: string;
+  mimeType: string;
+};
+
+function readFormValue(value: FormDataEntryValue | null): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function extractResponseText(result: unknown): Promise<string | undefined> {
+  const responseLike = (result as { response?: unknown })?.response;
+
+  if (responseLike) {
+    const textCandidate = (responseLike as { text?: unknown }).text;
+
+    if (typeof textCandidate === "string") {
+      return textCandidate.trim();
+    }
+
+    if (typeof textCandidate === "function") {
+      const value = textCandidate();
+      return typeof value === "string" ? value.trim() : (await value)?.trim();
+    }
+  }
+
+  const directText = (result as { text?: unknown }).text;
+
+  if (typeof directText === "string") {
+    return directText.trim();
+  }
+
+  if (typeof directText === "function") {
+    const value = directText();
+    return typeof value === "string" ? value.trim() : (await value)?.trim();
+  }
+
+  return undefined;
+}
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
 
-    const paperNameValue = formData.get("paperName");
-    const paperPatternValue = formData.get("paperPattern");
-    const durationValue = formData.get("duration");
-    const totalMarksValue = formData.get("totalMarks");
-
-    const paperName = typeof paperNameValue === "string" ? paperNameValue.trim() : "";
-    const paperPattern =
-      typeof paperPatternValue === "string" ? paperPatternValue.trim() : "";
-    const duration = typeof durationValue === "string" ? durationValue.trim() : "";
-    const totalMarks =
-      typeof totalMarksValue === "string" ? totalMarksValue.trim() : "";
+    const paperName = readFormValue(formData.get("paperName"));
+    const paperPattern = readFormValue(formData.get("paperPattern"));
+    const duration = readFormValue(formData.get("duration"));
+    const totalMarks = readFormValue(formData.get("totalMarks"));
 
     if (!paperName || !paperPattern || !duration || !totalMarks) {
       return NextResponse.json(
@@ -37,41 +69,34 @@ export async function POST(request: Request) {
       );
     }
 
-    const { modelClient, fileManager } = getGenAIClients();
-    const model = modelClient.getGenerativeModel({ model: GEMINI_MODEL_NAME });
+    const genAI = getGenAIClient();
 
-    const uploadedFiles: Array<{
-      name: string;
-      uri: string;
-      mimeType?: string;
-    }> = [];
+    const uploadedFiles: UploadedFileResource[] = [];
 
     try {
       for (const file of files) {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const mimeType =
+        const fallbackMime =
           file.type || mime.getType(file.name) || "application/octet-stream";
 
-        const uploadResult = await fileManager.uploadFile(buffer, {
-          mimeType,
-          displayName: file.name,
+        const uploaded = await genAI.files.upload({
+          file,
+          config: {
+            mimeType: fallbackMime,
+            displayName: file.name,
+          },
         });
 
-        const uploadedFile = uploadResult.file;
-        if (!uploadedFile || !uploadedFile.uri) {
-          throw new Error("Unable to upload file to Google GenAI.");
-        }
+        const name = uploaded?.name ?? uploaded?.uri;
+        const uri = uploaded?.uri ?? uploaded?.name;
 
-        const uploadedName = uploadedFile.name ?? uploadedFile.uri;
-        if (!uploadedName) {
-          throw new Error("Uploaded file is missing a reference name.");
+        if (!name || !uri) {
+          throw new Error("Uploaded file is missing a reference identifier.");
         }
 
         uploadedFiles.push({
-          name: uploadedName,
-          uri: uploadedFile.uri,
-          mimeType: uploadedFile.mimeType ?? mimeType,
+          name,
+          uri,
+          mimeType: uploaded?.mimeType ?? fallbackMime,
         });
       }
 
@@ -82,10 +107,10 @@ export async function POST(request: Request) {
         totalMarks,
       );
 
-      const fileParts = uploadedFiles.map((fileMetadata) => ({
+      const fileParts = uploadedFiles.map((fileResource) => ({
         fileData: {
-          fileUri: fileMetadata.uri,
-          mimeType: fileMetadata.mimeType || "application/octet-stream",
+          fileUri: fileResource.uri,
+          mimeType: fileResource.mimeType || "application/octet-stream",
         },
       }));
 
@@ -100,10 +125,13 @@ export async function POST(request: Request) {
         ...fileParts,
       ];
 
-      const result = await model.generateContent({
-        systemInstruction: {
-          role: "system",
-          parts: [{ text: systemPrompt }],
+      const result = await genAI.models.generateContent({
+        model: GEMINI_MODEL_NAME,
+        config: {
+          systemInstruction: {
+            role: "system",
+            parts: [{ text: systemPrompt }],
+          },
         },
         contents: [
           {
@@ -113,12 +141,9 @@ export async function POST(request: Request) {
         ],
       });
 
-      const text =
-        typeof result?.response?.text === "function"
-          ? result.response.text()
-          : undefined;
+      const text = await extractResponseText(result);
 
-      if (!text || typeof text !== "string") {
+      if (!text) {
         return NextResponse.json(
           { error: "The AI response did not include any content." },
           { status: 502 },
@@ -129,11 +154,16 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ content: cleanedContent });
     } finally {
-      await Promise.all(
-        uploadedFiles.map((file) =>
-          fileManager.deleteFile(file.name).catch(() => undefined),
-        ),
-      );
+      const filesModule = genAI.files as unknown as {
+        delete?: (params: { name: string }) => Promise<unknown>;
+      };
+
+      const deleteFn = filesModule.delete;
+      if (typeof deleteFn === "function") {
+        await Promise.all(
+          uploadedFiles.map((file) => deleteFn({ name: file.name }).catch(() => undefined)),
+        );
+      }
     }
   } catch (error) {
     console.error("GenAI generation error:", error);
