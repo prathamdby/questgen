@@ -77,10 +77,10 @@ export default function NotFound() {
           </Link>
           <span className="text-[#e5e5e5] dark:text-[#333333]">·</span>
           <Link
-            href="/signin"
+            href="/generate"
             className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
           >
-            Sign In
+            Generate a Paper
           </Link>
         </div>
       </div>

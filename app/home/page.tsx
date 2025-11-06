@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { isAuthenticated, clearStoredApiKey } from "@/lib/openrouter-auth";
 import {
   getViewMode,
   setViewMode,
@@ -15,7 +13,7 @@ import {
   duplicatePaper,
   type ViewMode,
 } from "@/lib/storage";
-import { SignedInHeader } from "@/components/home/SignedInHeader";
+import { HomeHeader } from "@/components/home/HomeHeader";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
 import { PaperCard } from "@/components/home/PaperCard";
@@ -34,7 +32,6 @@ interface QuestionPaper {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -80,12 +77,6 @@ export default function Home() {
       window.removeEventListener("storage", handleStorage);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push("/signin");
-    }
-  }, [router]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -190,11 +181,6 @@ export default function Home() {
     setOpenMenuId(null);
   };
 
-  const handleSignOut = () => {
-    clearStoredApiKey();
-    router.push("/signin");
-  };
-
   const handleViewModeChange = (mode: ViewMode) => {
     setViewModeState(mode);
     setViewMode(mode);
@@ -203,7 +189,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:py-24">
-        <SignedInHeader onSignOut={handleSignOut} />
+        <HomeHeader />
 
         <header className="mb-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">

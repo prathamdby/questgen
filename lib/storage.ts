@@ -15,12 +15,6 @@ const STORAGE_VERSION = "1.0.0";
 
 // Storage keys enum for type safety
 export enum StorageKey {
-  // Auth
-  API_KEY = "openrouter_api_key",
-  CODE_VERIFIER = "openrouter_code_verifier",
-  AUTH_STATUS = "auth_status",
-  AUTH_TIMESTAMP = "auth_timestamp",
-
   // User Preferences
   VIEW_MODE = "view_mode_preference",
   THEME = "theme_preference",
@@ -36,12 +30,6 @@ export enum StorageKey {
 }
 
 // Types for stored data
-export interface AuthStatus {
-  isAuthenticated: boolean;
-  hasApiKey: boolean;
-  timestamp: number;
-}
-
 export interface PaperMetadata {
   id: string;
   title: string;
@@ -255,7 +243,6 @@ class SafeStorage {
 
 // Singleton instances
 const localStorage = new SafeStorage(false);
-const sessionStorage = new SafeStorage(true);
 
 /**
  * Initialize storage with version check
@@ -275,96 +262,6 @@ export function initializeStorage(): void {
     );
     localStorage.setRaw(StorageKey.STORAGE_VERSION, STORAGE_VERSION);
   }
-}
-
-// ==================== AUTH DOMAIN ====================
-
-/**
- * Get stored API key
- */
-export function getApiKey(): string | null {
-  return localStorage.getRaw(StorageKey.API_KEY);
-}
-
-/**
- * Set API key
- */
-export function setApiKey(key: string): boolean {
-  const success = localStorage.setRaw(StorageKey.API_KEY, key);
-  if (success) {
-    updateAuthStatus(true);
-  }
-  return success;
-}
-
-/**
- * Clear API key
- */
-export function clearApiKey(): boolean {
-  const success = localStorage.remove(StorageKey.API_KEY);
-  if (success) {
-    updateAuthStatus(false);
-  }
-  return success;
-}
-
-/**
- * Get OAuth code verifier (session storage)
- */
-export function getCodeVerifier(): string | null {
-  return sessionStorage.getRaw(StorageKey.CODE_VERIFIER);
-}
-
-/**
- * Set OAuth code verifier (session storage)
- */
-export function setCodeVerifier(verifier: string): boolean {
-  return sessionStorage.setRaw(StorageKey.CODE_VERIFIER, verifier);
-}
-
-/**
- * Clear OAuth code verifier
- */
-export function clearCodeVerifier(): boolean {
-  return sessionStorage.remove(StorageKey.CODE_VERIFIER);
-}
-
-/**
- * Get authentication status
- */
-export function getAuthStatus(): AuthStatus | null {
-  return localStorage.get<AuthStatus>(StorageKey.AUTH_STATUS);
-}
-
-/**
- * Update authentication status
- */
-export function updateAuthStatus(isAuthenticated: boolean): boolean {
-  const status: AuthStatus = {
-    isAuthenticated,
-    hasApiKey: !!getApiKey(),
-    timestamp: Date.now(),
-  };
-  return localStorage.set(StorageKey.AUTH_STATUS, status);
-}
-
-/**
- * Check if user is authenticated
- */
-export function isAuthenticated(): boolean {
-  const apiKey = getApiKey();
-  return !!apiKey;
-}
-
-/**
- * Clear all auth data (sign out)
- */
-export function clearAuthData(): boolean {
-  clearApiKey();
-  clearCodeVerifier();
-  localStorage.remove(StorageKey.AUTH_STATUS);
-  localStorage.remove(StorageKey.AUTH_TIMESTAMP);
-  return true;
 }
 
 // ==================== USER PREFERENCES ====================
@@ -604,7 +501,6 @@ export function duplicatePaper(paperId: string): PaperMetadata | null {
  * Clear all app data (nuclear option)
  */
 export function clearAllData(): boolean {
-  clearAuthData();
   clearPapersMetadata();
   localStorage.remove(StorageKey.VIEW_MODE);
   localStorage.remove(StorageKey.THEME);

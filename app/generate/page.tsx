@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { isAuthenticated } from "@/lib/openrouter-auth";
 import {
   getGenerateFormDraft,
   setGenerateFormDraft,
@@ -14,7 +13,7 @@ import {
   completePaper,
   type FileDescriptor,
 } from "@/lib/storage";
-import { generateQuestionPaper } from "@/lib/openrouter-client";
+import { generateQuestionPaper } from "@/lib/genai-client";
 import { patternPresets } from "@/lib/pattern-presets";
 import { FormField } from "@/components/generate/FormField";
 import {
@@ -51,13 +50,6 @@ export default function Generate() {
     patternPresets.length > 0
       ? "paper-pattern-presets-heading paper-pattern-description"
       : "paper-pattern-description";
-
-  // Redirect to sign in if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push("/signin");
-    }
-  }, [router]);
 
   // Load form draft on mount
   useEffect(() => {
@@ -164,7 +156,7 @@ export default function Generate() {
         fileDescriptors,
       );
 
-      // Call OpenRouter API to generate the paper
+      // Generate the paper through Google GenAI
       const result = await generateQuestionPaper({
         paperName,
         paperPattern,
@@ -175,9 +167,8 @@ export default function Generate() {
 
       if (!result.success) {
         toast.error("Unable to generate your paper", {
-          description: result.error.includes("Primary model")
-            ? "Both AI models are currently overloaded. Please try again in a few moments."
-            : result.error,
+          description:
+            result.error ?? "An unexpected error occurred. Please try again.",
         });
         return;
       }

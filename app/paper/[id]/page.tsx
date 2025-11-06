@@ -12,7 +12,7 @@ import {
   completePaper,
   setPaperStatus,
 } from "@/lib/storage";
-import { regenerateQuestionPaper } from "@/lib/openrouter-client";
+import { regenerateQuestionPaper } from "@/lib/genai-client";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
 import { SourceFilesSection } from "@/components/paper/SourceFilesSection";
@@ -127,9 +127,7 @@ function PaperContent({ id }: { id: string }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       toast.error("Unable to regenerate your paper", {
-        description: message.includes("Primary model")
-          ? "Both AI models are currently overloaded. Please try again in a few moments."
-          : message,
+        description: message || "An unexpected error occurred. Please try again.",
       });
       setPaper((prev) => (prev ? { ...prev, status: "completed" } : prev));
       setPaperStatus(paper.id, "completed");
