@@ -4,22 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { isAuthenticated, clearStoredApiKey } from "@/lib/openrouter-auth";
-import {
-  getViewMode,
-  setViewMode,
-  getPapersMetadata,
-  getPaper,
-  getPaperContent,
-  deletePaper,
-  duplicatePaper,
-  type ViewMode,
-} from "@/lib/storage";
+import { useSession } from "@/lib/auth-client";
 import { SignedInHeader } from "@/components/home/SignedInHeader";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
 import { PaperCard } from "@/components/home/PaperCard";
 import { PaperListItem } from "@/components/home/PaperListItem";
+import { PaperCardSkeleton } from "@/components/home/PaperCardSkeleton";
+import { PaperListSkeleton } from "@/components/home/PaperListSkeleton";
 import { EmptyState } from "@/components/home/EmptyState";
 import { NoResultsState } from "@/components/home/NoResultsState";
 
@@ -31,67 +23,53 @@ interface QuestionPaper {
   totalMarks: number;
   createdAt: string;
   status: "completed" | "in_progress";
+  files: Array<{ name: string; size: number; mimeType: string }>;
 }
 
 export default function Home() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [viewMode, setViewModeState] = useState<ViewMode>("card");
+  const [viewMode, setViewModeState] = useState<"card" | "list">("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const menuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
-    const savedViewMode = getViewMode();
-    setViewModeState(savedViewMode);
-  }, []);
-
-  useEffect(() => {
-    const loadPapers = () => {
-      setPapers(getPapersMetadata());
-    };
-
-    loadPapers();
-
-    const handleFocus = () => {
-      loadPapers();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadPapers();
-      }
-    };
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key && event.key.includes("paper")) {
-        loadPapers();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isPending && !session) {
       router.push("/signin");
+      return;
     }
-  }, [router]);
+
+    if (session) {
+      fetchPapers();
+    }
+  }, [session, isPending, router]);
+
+  const fetchPapers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/papers");
+      const data = await response.json();
+      setPapers(data.papers || []);
+    } catch (error) {
+      console.error("Failed to fetch papers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openMenuId) {
         const menuElement = menuRefs.current.get(openMenuId);
-        if (menuElement && !menuElement.contains(event.target as Node)) {
+        if (
+          menuElement &&
+          event.target instanceof Node &&
+          !menuElement.contains(event.target)
+        ) {
           setOpenMenuId(null);
         }
       }
@@ -109,50 +87,51 @@ export default function Home() {
   const filteredPapers = papers.filter(
     (paper) =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
+      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleQuickExport = async (paperId: string) => {
     setExportingPaperId(paperId);
 
     try {
-      const metadata = getPaper(paperId);
-      let content = getPaperContent(paperId);
+      const response = await fetch(`/api/papers/${paperId}`);
+      const data = await response.json();
 
-      if (!metadata || !content) {
+      if (!data.paper) {
         throw new Error("Paper not found");
       }
 
-      content = content.trim();
-      content = content.replace(/^```(?:markdown|md)?\s*\n/i, "");
-      content = content.replace(/\n```\s*$/i, "");
-      content = content.trim();
+      const content = data.paper.content.trim();
+      const cleanedContent = content
+        .replace(/^```(?:markdown|md)?\s*\n/i, "")
+        .replace(/\n```\s*$/i, "")
+        .trim();
 
-      const response = await fetch("/api/export-pdf", {
+      const pdfResponse = await fetch("/api/export-pdf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: metadata.title,
-          pattern: metadata.pattern,
-          duration: metadata.duration,
-          totalMarks: metadata.totalMarks,
-          content: content,
-          createdAt: metadata.createdAt,
+          title: data.paper.title,
+          pattern: data.paper.pattern,
+          duration: data.paper.duration,
+          totalMarks: data.paper.totalMarks,
+          content: cleanedContent,
+          createdAt: data.paper.createdAt,
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
+      if (!pdfResponse.ok) {
+        const error = await pdfResponse.json();
         throw new Error(error.message || "Failed to export PDF");
       }
 
-      const blob = await response.blob();
+      const blob = await pdfResponse.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${metadata.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+      a.download = `${data.paper.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -162,7 +141,7 @@ export default function Home() {
       alert(
         `Failed to export PDF: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setExportingPaperId(null);
@@ -170,34 +149,73 @@ export default function Home() {
     }
   };
 
-  const handleDuplicate = (paperId: string) => {
-    const duplicatedPaper = duplicatePaper(paperId);
-    if (duplicatedPaper) {
-      setPapers(getPapersMetadata());
+  const handleDuplicate = async (paperId: string) => {
+    try {
+      const response = await fetch(`/api/papers/${paperId}`);
+      const data = await response.json();
+
+      if (!data.paper) {
+        throw new Error("Paper not found");
+      }
+
+      const duplicateResponse = await fetch("/api/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `${data.paper.title} (Copy)`,
+          pattern: data.paper.pattern,
+          duration: data.paper.duration,
+          totalMarks: data.paper.totalMarks,
+          content: data.paper.content,
+        }),
+      });
+
+      if (duplicateResponse.ok) {
+        fetchPapers();
+      }
+    } catch (error) {
+      console.error("Duplicate error:", error);
+      alert("Failed to duplicate paper");
     }
     setOpenMenuId(null);
   };
 
-  const handleDelete = (paperId: string) => {
+  const handleDelete = async (paperId: string) => {
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone.",
+        "Are you sure you want to delete this paper? This action cannot be undone."
       )
     ) {
-      deletePaper(paperId);
-      setPapers(getPapersMetadata());
+      try {
+        const response = await fetch(`/api/papers/${paperId}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          fetchPapers();
+        } else {
+          throw new Error("Failed to delete paper");
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Failed to delete paper");
+      }
     }
     setOpenMenuId(null);
   };
 
-  const handleSignOut = () => {
-    clearStoredApiKey();
-    router.push("/signin");
+  const handleSignOut = async () => {
+    try {
+      const { signOut } = await import("@/lib/auth-client");
+      await signOut();
+      router.push("/signin");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
-  const handleViewModeChange = (mode: ViewMode) => {
+  const handleViewModeChange = (mode: "card" | "list") => {
     setViewModeState(mode);
-    setViewMode(mode);
   };
 
   return (
@@ -238,7 +256,21 @@ export default function Home() {
           />
         </header>
 
-        {filteredPapers.length > 0 ? (
+        {isLoading ? (
+          viewMode === "card" ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {[...Array(4)].map((_, index) => (
+                <PaperCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, index) => (
+                <PaperListSkeleton key={index} />
+              ))}
+            </div>
+          )
+        ) : filteredPapers.length > 0 ? (
           viewMode === "card" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {filteredPapers.map((paper) => (

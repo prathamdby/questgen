@@ -5,16 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { isAuthenticated } from "@/lib/openrouter-auth";
-import {
-  getGenerateFormDraft,
-  setGenerateFormDraft,
-  clearGenerateFormDraft,
-  createPaper,
-  completePaper,
-  type FileDescriptor,
-} from "@/lib/storage";
-import { generateQuestionPaper } from "@/lib/openrouter-client";
+import { useSession } from "@/lib/auth-client";
 import { patternPresets } from "@/lib/pattern-presets";
 import { FormField } from "@/components/generate/FormField";
 import {
@@ -35,6 +26,7 @@ const normalizePattern = (value: string): string =>
 
 export default function Generate() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [paperName, setPaperName] = useState("");
   const [paperPattern, setPaperPattern] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
@@ -52,47 +44,11 @@ export default function Generate() {
       ? "paper-pattern-presets-heading paper-pattern-description"
       : "paper-pattern-description";
 
-  // Redirect to sign in if not authenticated
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isPending && !session) {
       router.push("/signin");
     }
-  }, [router]);
-
-  // Load form draft on mount
-  useEffect(() => {
-    const draft = getGenerateFormDraft();
-    if (draft) {
-      setPaperName(draft.paperName ?? "");
-      const draftPattern = draft.paperPattern ?? "";
-      setPaperPattern(draftPattern);
-      setDuration(draft.duration ?? "");
-      setTotalMarks(
-        draft.totalMarks !== undefined && draft.totalMarks !== null
-          ? String(draft.totalMarks)
-          : "",
-      );
-      const matchedPreset = patternPresets.find(
-        (preset) =>
-          normalizePattern(preset.pattern) === normalizePattern(draftPattern),
-      );
-      setSelectedPresetId(matchedPreset ? matchedPreset.id : null);
-      setArePresetsExpanded(Boolean(matchedPreset));
-    }
-  }, []);
-
-  // Persist form values whenever they change
-  useEffect(() => {
-    // Only persist if at least one field has a value
-    if (paperName || paperPattern || duration || totalMarks) {
-      setGenerateFormDraft({
-        paperName,
-        paperPattern,
-        duration,
-        totalMarks,
-      });
-    }
-  }, [paperName, paperPattern, duration, totalMarks]);
+  }, [session, isPending, router]);
 
   const acceptedFileTypes = [".pdf", "image/*"];
 
@@ -142,56 +98,49 @@ export default function Generate() {
   const handleGeneratePaper = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prevent multiple submissions
     if (isGenerating) return;
 
     setIsGenerating(true);
 
     try {
-      // Create file descriptors for storage
-      const fileDescriptors: FileDescriptor[] = uploadedFiles.map((uf) => ({
-        name: uf.file.name,
-        size: uf.file.size,
-        type: uf.file.type,
-      }));
-
-      // Create paper with "in_progress" status
-      const paper = createPaper(
-        paperName,
-        paperPattern,
-        duration,
-        parseInt(totalMarks),
-        fileDescriptors,
+      const filesData = await Promise.all(
+        uploadedFiles.map(async (uf) => ({
+          name: uf.file.name,
+          type: uf.file.type,
+          size: uf.file.size,
+          data: await fileToBase64(uf.file),
+        })),
       );
 
-      // Call OpenRouter API to generate the paper
-      const result = await generateQuestionPaper({
-        paperName,
-        paperPattern,
-        duration,
-        totalMarks,
-        files: uploadedFiles.map((uf) => uf.file),
+      const response = await fetch("/api/papers/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paperName,
+          paperPattern,
+          duration,
+          totalMarks,
+          files: filesData,
+        }),
       });
 
-      if (!result.success) {
-        toast.error("Unable to generate your paper", {
-          description: result.error.includes("Primary model")
-            ? "Both AI models are currently overloaded. Please try again in a few moments."
-            : result.error,
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("X-Retry-After");
+        toast.error("Rate limit exceeded", {
+          description: `You can generate 2 papers per minute. Please wait ${retryAfter || "60"} seconds.`,
         });
         return;
       }
 
-      // Update paper status to completed and store content
-      completePaper(paper.id, result.content);
+      const result = await response.json();
 
-      // Clear the form draft after successful generation
-      clearGenerateFormDraft();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
-      // Navigate to the paper page
-      router.push(`/paper/${paper.id}`);
+      router.push(`/paper/${result.paperId}`);
     } catch (error) {
-      console.error("Error generating paper:", error);
+      console.error("Generation error:", error);
       toast.error("Unable to generate your paper", {
         description:
           error instanceof Error
@@ -202,6 +151,22 @@ export default function Generate() {
       setIsGenerating(false);
     }
   };
+
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          resolve(result.split(",")[1]);
+        } else {
+          reject(new Error("Failed to read file"));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">

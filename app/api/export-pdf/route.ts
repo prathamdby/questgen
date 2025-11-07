@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as ExportRequest;
     const { title, pattern, duration, totalMarks, content, createdAt } = body;
 
-    // Validate required fields
     if (!title || !content) {
       return NextResponse.json(
         { error: "Missing required fields: title and content are required" },
@@ -24,20 +23,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert markdown to HTML
     const htmlContent = await marked.parse(content, {
       gfm: true,
       breaks: true,
     });
 
-    // Format date
     const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     });
 
-    // Create beautifully styled HTML template
     const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -397,7 +393,6 @@ export async function POST(request: NextRequest) {
 </html>
     `.trim();
 
-    // Launch Puppeteer and generate PDF
     const browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -413,7 +408,6 @@ export async function POST(request: NextRequest) {
       waitUntil: "networkidle0",
     });
 
-    // Generate PDF with professional settings
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -428,7 +422,6 @@ export async function POST(request: NextRequest) {
 
     await browser.close();
 
-    // Return PDF with proper headers
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",

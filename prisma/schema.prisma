@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// Better Auth core tables
+
+model User {
+  id            String   @id @default(cuid())
+  name          String // Better Auth expects NOT NULL
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  papers      Paper[]
+  preferences UserPreference?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String    // OAuth provider's user ID
+  providerId            String    // OAuth provider name (google, github, etc.)
+  userId                String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+// Rate limiting table
+
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int      @default(0)
+  resetAt     DateTime @default(now())
+  lastRequest Int // Better Auth expects Int timestamp
+
+  @@index([key, resetAt])
+}
+
+// Application tables - Papers
+
+model Paper {
+  id         String      @id @default(cuid())
+  userId     String
+  title      String
+  pattern    String      @db.Text
+  duration   String
+  totalMarks Int
+  content    String      @db.Text
+  status     PaperStatus @default(IN_PROGRESS)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files PaperFile[]
+  tags  PaperTag[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+enum PaperStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Source files used for paper generation
+
+model PaperFile {
+  id        String   @id @default(cuid())
+  paperId   String
+  name      String
+  size      Int
+  mimeType  String
+  createdAt DateTime @default(now())
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@index([paperId])
+}
+
+// Tags for paper categorization (future feature)
+
+model PaperTag {
+  id      String @id @default(cuid())
+  paperId String
+  tag     String
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, tag])
+  @@index([tag])
+}
+
+// User preferences (theme, view mode)
+
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  theme     Theme    @default(DARK)
+  viewMode  ViewMode @default(CARD)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum ViewMode {
+  CARD
+  LIST
+}
+
+// Form draft for generate page (auto-save)
+
+model GenerateFormDraft {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  paperName    String?
+  paperPattern String?  @db.Text
+  duration     String?
+  totalMarks   String?
+  updatedAt    DateTime @updatedAt
+
+  // Note: No relation to User model to simplify cleanup
+}
