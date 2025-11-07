@@ -1,7 +1,8 @@
 "use client";
 
 import { LayoutGrid, List } from "lucide-react";
-import type { ViewMode } from "@/lib/storage";
+
+type ViewMode = "card" | "list";
 
 interface ViewToggleProps {
   viewMode: ViewMode;

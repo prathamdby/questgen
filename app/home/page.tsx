@@ -87,7 +87,7 @@ export default function Home() {
   const filteredPapers = papers.filter(
     (paper) =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase())
+      paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleQuickExport = async (paperId: string) => {
@@ -141,7 +141,7 @@ export default function Home() {
       alert(
         `Failed to export PDF: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setExportingPaperId(null);
@@ -183,7 +183,7 @@ export default function Home() {
   const handleDelete = async (paperId: string) => {
     if (
       confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone."
+        "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
       try {

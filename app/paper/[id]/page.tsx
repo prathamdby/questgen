@@ -21,6 +21,12 @@ interface UploadedFile {
   size: number;
 }
 
+interface PaperFile {
+  name: string;
+  mimeType: string;
+  size: number;
+}
+
 interface QuestionPaper {
   id: string;
   title: string;
@@ -75,7 +81,7 @@ function PaperContent({ id }: { id: string }) {
         createdAt: data.paper.createdAt,
         updatedAt: data.paper.updatedAt,
         status: data.paper.status,
-        files: data.paper.files?.map((f) => ({
+        files: data.paper.files?.map((f: PaperFile) => ({
           name: f.name,
           type: f.mimeType,
           size: f.size,

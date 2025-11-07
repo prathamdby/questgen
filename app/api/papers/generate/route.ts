@@ -305,11 +305,13 @@ export async function POST(request: NextRequest) {
         content: "",
         status: "IN_PROGRESS",
         files: {
-          create: files.map((f: { name: string; size: number; type: string }) => ({
-            name: f.name,
-            size: f.size,
-            mimeType: f.type,
-          })),
+          create: files.map(
+            (f: { name: string; size: number; type: string }) => ({
+              name: f.name,
+              size: f.size,
+              mimeType: f.type,
+            }),
+          ),
         },
       },
       include: { files: true },
@@ -357,7 +359,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const contents: Array<{ text?: string; inlineData?: { data: string; mimeType: string }; fileData?: { fileUri: string; mimeType: string } }> = [
+    const contents: Array<{
+      text?: string;
+      inlineData?: { data: string; mimeType: string };
+      fileData?: { fileUri: string; mimeType: string };
+    }> = [
       {
         text: buildSystemPrompt(paperName, paperPattern, duration, totalMarks),
       },
