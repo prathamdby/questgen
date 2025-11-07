@@ -19,6 +19,7 @@ export function ActionButtons({
   isExporting,
   disabled,
 }: ActionButtonsProps) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   return (
     <div className="flex gap-2 sm:gap-3">
       <button
@@ -53,9 +54,9 @@ export function ActionButtons({
 
       <button
         onClick={onExport}
-        disabled={isRegenerating || isExporting || disabled}
+        disabled={isRegenerating || isExporting || disabled || isMobile}
         className={`flex h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[6px] border px-3 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 sm:h-[44px] sm:flex-initial sm:gap-2 sm:px-6 sm:text-[15px] ${
-          isRegenerating || isExporting || disabled
+          isRegenerating || isExporting || disabled || isMobile
             ? "cursor-not-allowed border-[#e5e5e5] bg-[#fafafa] text-[#a3a3a3] dark:border-[#333333] dark:bg-[#171717] dark:text-[#666666]"
             : "border-[#e5e5e5] bg-white text-[#171717] hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:ring-[#171717] active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
         }`}
