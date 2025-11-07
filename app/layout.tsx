@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Question Paper Generator",
-  description: "Generate custom question papers with AI assistance",
+  title: "QuestGen",
+  description: "Generate custom question papers with AI - QuestGen",
 };
 
 export default function RootLayout({

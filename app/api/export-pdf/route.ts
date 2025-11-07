@@ -361,7 +361,7 @@ export async function POST(request: NextRequest) {
 <body>
   <div class="header">
     <div class="header-meta">
-      <span class="header-meta-item">Question Paper</span>
+      <span class="header-meta-item">QuestGen Quest</span>
       <span class="header-meta-divider"></span>
       <span class="header-meta-item">Generated on ${formattedDate}</span>
     </div>

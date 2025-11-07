@@ -186,7 +186,7 @@ export default function Generate() {
         {/* Header */}
         <header className="mb-16">
           <h1 className="font-sans text-[40px] font-[550] leading-[1.1] tracking-[-0.03em] text-[#171717] dark:text-white sm:text-[56px]">
-            Question Paper Generator
+            QuestGen
           </h1>
           <p className="mt-5 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
             Configure your question paper settings and upload source materials

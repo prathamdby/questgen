@@ -39,7 +39,7 @@ export default function SignIn() {
             Sign in
           </h1>
           <p className="mt-5 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-            Continue to Question Paper Generator
+            Continue to QuestGen
           </p>
         </div>
 

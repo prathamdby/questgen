@@ -42,7 +42,7 @@ export function PaperNotFound() {
             href="/generate"
             className="flex h-[44px] w-full items-center justify-center rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white sm:w-auto"
           >
-            Create New Paper
+            Create New Quest
           </Link>
         </div>
 
@@ -59,7 +59,7 @@ export function PaperNotFound() {
             href="/generate"
             className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
           >
-            Generate Paper
+            Generate Quest
           </Link>
         </div>
       </div>

@@ -227,10 +227,10 @@ export default function Home() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="font-sans text-[40px] font-[550] leading-[1.1] tracking-[-0.03em] text-[#171717] dark:text-white sm:text-[56px]">
-                Question Papers
+                Your Quests
               </h1>
               <p className="mt-5 text-[17px] leading-[1.6] text-[#666666] dark:text-[#888888]">
-                Manage and organize your generated question papers
+                Manage and organize your generated quests
               </p>
             </div>
             <Link
@@ -238,7 +238,7 @@ export default function Home() {
               className="group flex h-[44px] w-full items-center justify-center gap-2 rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white sm:w-auto"
               style={{ touchAction: "manipulation" }}
             >
-              <span>Create New Paper</span>
+              <span>Create New Quest</span>
               <Plus
                 className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
                 aria-hidden="true"

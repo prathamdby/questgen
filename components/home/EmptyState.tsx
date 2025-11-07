@@ -10,10 +10,10 @@ export function EmptyState() {
         <FileText className="h-10 w-10 text-[#737373]" aria-hidden="true" />
       </div>
       <h3 className="text-[20px] font-[500] text-[#171717] dark:text-white">
-        No question papers yet
+        No quests yet
       </h3>
       <p className="mt-2 text-[15px] text-[#737373]">
-        Create your first question paper to get started
+        Create your first quest to get started
       </p>
       <Link
         href="/generate"
