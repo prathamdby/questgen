@@ -399,6 +399,7 @@ export async function POST(request: NextRequest) {
 
     if (isVercel) {
       const chromium = (await import("@sparticuz/chromium")).default;
+      chromium.setGraphicsMode = false;
       puppeteer = await import("puppeteer-core");
       launchOptions = {
         headless: true,
