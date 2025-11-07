@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { marked } from "marked";
-import puppeteer from "puppeteer";
 
 interface ExportRequest {
   title: string;
@@ -393,15 +392,33 @@ export async function POST(request: NextRequest) {
 </html>
     `.trim();
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-    });
+    // Environment-specific Puppeteer configuration
+    const isVercel = !!process.env.VERCEL_ENV;
+    let puppeteer;
+    let launchOptions;
+
+    if (isVercel) {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      puppeteer = await import("puppeteer-core");
+      launchOptions = {
+        headless: true,
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+      };
+    } else {
+      puppeteer = await import("puppeteer");
+      launchOptions = {
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+      };
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.setContent(html, {
