@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenAI, createPartFromUri } from "@google/genai";
+import { GoogleGenAI, createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
@@ -347,10 +347,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const contents: Array<{
-      text?: string;
-      fileData?: { fileUri: string; mimeType: string };
-    }> = [
+    const contents: Part[] = [
       {
         text: buildSystemPrompt(paperName, paperPattern, duration, totalMarks),
       },
@@ -360,9 +357,7 @@ export async function POST(request: NextRequest) {
     ];
 
     for (const file of uploadedFileUris) {
-      contents.push(
-        createPartFromUri(file.uri, file.mimeType) as never
-      );
+      contents.push(createPartFromUri(file.uri, file.mimeType));
     }
 
     const response = await ai.models.generateContent({

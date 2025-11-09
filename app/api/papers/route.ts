@@ -26,12 +26,10 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const transformedPapers = papers.map(
-      (paper: typeof papers[number]) => ({
-        ...paper,
-        status: transformStatus(paper.status),
-      }),
-    );
+    const transformedPapers = papers.map((paper) => ({
+      ...paper,
+      status: transformStatus(paper.status),
+    }));
 
     return NextResponse.json({ papers: transformedPapers });
   } catch (error) {

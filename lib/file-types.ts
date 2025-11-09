@@ -64,7 +64,9 @@ export function getFileCategory(
 /**
  * Get MIME type from file extension
  */
-export function getMimeTypeFromExtension(extension: string): string | undefined {
+export function getMimeTypeFromExtension(
+  extension: string,
+): string | undefined {
   const normalized = extension.toLowerCase().replace(/^\./, "");
   return EXTENSION_TO_MIME_TYPE[normalized];
 }
@@ -91,13 +93,5 @@ export function getCategoryDisplayName(
  * Get accepted file types array for HTML input accept attribute
  */
 export function getAcceptedFileTypesArray(): string[] {
-  return [
-    ".pdf",
-    "image/*",
-    ".txt",
-    ".doc",
-    ".docx",
-    ".xls",
-    ".xlsx",
-  ];
+  return [".pdf", "image/*", ".txt", ".doc", ".docx", ".xls", ".xlsx"];
 }
