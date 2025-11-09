@@ -25,6 +25,7 @@ model User {
   sessions    Session[]
   accounts    Account[]
   papers      Paper[]
+  solutions   Solution[]
   preferences UserPreference?
 
   @@map("user")
@@ -106,9 +107,10 @@ model Paper {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files PaperFile[]
-  tags  PaperTag[]
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files    PaperFile[]
+  tags     PaperTag[]
+  solution Solution?
 
   @@index([userId])
   @@index([createdAt])
@@ -183,4 +185,28 @@ model GenerateFormDraft {
   updatedAt    DateTime @updatedAt
 
   // Note: No relation to User model to simplify cleanup
+}
+
+// Solutions for papers
+
+model Solution {
+  id        String         @id @default(cuid())
+  paperId   String         @unique
+  userId    String
+  content   String         @db.Text
+  status    SolutionStatus @default(IN_PROGRESS)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([paperId])
+  @@index([createdAt])
+}
+
+enum SolutionStatus {
+  IN_PROGRESS
+  COMPLETED
 }

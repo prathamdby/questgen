@@ -41,19 +41,19 @@ AI-powered question paper generator for everyone. Upload source materials and ge
    ```
 
 2. **Environment variables**
-    Copy `.env.example` to `.env.local` and fill in your values:
+   Copy `.env.example` to `.env.local` and fill in your values:
 
-    ```bash
-    cp .env.example .env.local
-    ```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-    Then update `.env.local` with your actual credentials:
-    - `DATABASE_URL` and `DIRECT_DATABASE_URL`: PostgreSQL connection strings
-    - `GEMINI_API_KEY`: From [Google AI Studio](https://aistudio.google.com/app/apikey)
-    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: From [Google Cloud Console](https://console.cloud.google.com/)
-    - `BETTER_AUTH_SECRET`: Generate with `openssl rand -base64 32`
-    - `BETTER_AUTH_URL`: Auth API endpoint (default: `http://localhost:3000/api/auth`)
-    - `NEXT_PUBLIC_APP_URL`: Your application URL
+   Then update `.env.local` with your actual credentials:
+   - `DATABASE_URL` and `DIRECT_DATABASE_URL`: PostgreSQL connection strings
+   - `GEMINI_API_KEY`: From [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: From [Google Cloud Console](https://console.cloud.google.com/)
+   - `BETTER_AUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `BETTER_AUTH_URL`: Auth API endpoint (default: `http://localhost:3000/api/auth`)
+   - `NEXT_PUBLIC_APP_URL`: Your application URL
 
 3. **Database setup**
 

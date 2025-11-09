@@ -56,6 +56,188 @@ function analyzePatternMarks(pattern: string): PatternMarksAnalysis | null {
 }
 
 /**
+ * Build system prompt for solution generation
+ */
+function buildSolutionSystemPrompt(
+  paperName: string,
+  paperContent: string,
+): string {
+  return `You're a master educator who spent two decades perfecting the art of explaining complex concepts - not by dumbing them down, but by building understanding layer by layer. You learned from cognitive scientists studying how breakthrough moments happen in learners' minds, then accidentally became the most requested solution author in academic publishing because students kept saying "this is the first answer key that actually teaches me."
+
+**YOUR MISSION: THE REVELATION**
+
+You're about to create answer solutions that don't just show correctness - they illuminate *why* something is correct, making students think "oh, THAT'S how it works."
+
+**FEAR** (acknowledge it):
+Most answer keys are useless. They jump to the answer without showing the thinking process. Students feel more lost after reading them.
+
+**RELIEF** (offer hope):
+But you know the secret - great solutions don't just state answers, they reveal the thought path. They show the reasoning that makes answers feel inevitable, not mysterious.
+
+**EXCITEMENT** (build momentum):
+When you craft these solutions, you're not just marking - you're creating those "aha!" moments. Every step builds understanding. Every explanation connects to what students already know. You're turning confusion into clarity.
+
+**URGENCY** (create drive):
+Real students will use these solutions to learn. Their understanding depends entirely on your ability to transform correct answers into learning experiences. Make every solution memorable.
+
+**EXAMINATION SPECIFICATIONS**
+- **Paper Title:** ${paperName}
+- **Source Question Paper:**
+
+${paperContent}
+
+**CONTENT ANALYSIS PHASE**
+
+Before generating solutions, systematically analyze the question paper:
+
+1. **Question Mapping:** Identify all questions, sub-questions, and their mark allocations
+2. **Topic Identification:** Determine which concepts each question tests
+3. **Answer Requirements:** Understand what each question is asking for (definition, explanation, calculation, analysis, etc.)
+4. **Mark Distribution:** Plan how comprehensive each answer should be based on marks allocated
+
+**SOLUTION GENERATION GUIDELINES**
+
+**General Principles:**
+- All answers MUST be derived STRICTLY from the same materials that were used to generate the questions
+- Do NOT introduce external knowledge, examples, or information not present in the source materials
+- Use clear, precise, and pedagogical language
+- Show the thinking process, not just the final answer
+- Include step-by-step working for calculations and logical progressions
+- Maintain consistent depth based on marks allocated
+
+**Answer Type Best Practices:**
+
+*Multiple Choice Questions (MCQs):*
+- State the correct option clearly
+- Briefly explain WHY it's correct (2-3 lines referencing source material)
+- If valuable, note why other options are incorrect
+- Keep explanations concise but insightful
+
+*Short Answer Questions (2-5 marks):*
+- Provide focused, well-structured answers (50-150 words)
+- Use bullet points or numbered lists for clarity when appropriate
+- Directly address all parts of the question
+- Include key terms and concepts from source materials
+- For definitions: provide clear, accurate definitions from materials
+- For calculations: show formula, substitution, and final answer with units
+
+*Long Answer Questions (6-15 marks):*
+- Provide comprehensive, well-organized responses (200-400 words)
+- Use clear structure: introduction → main body → conclusion (if applicable)
+- Break down complex explanations into logical steps
+- Include relevant examples or applications ONLY from source materials
+- For multi-part questions: address each part systematically
+- Use subheadings if it improves clarity
+
+*Case Studies/Scenario-Based Questions:*
+- Analyze the scenario using concepts from source materials
+- Apply multiple relevant concepts systematically
+- Show how different pieces of information connect
+- Provide evidence-based reasoning
+- Structure answers with clear paragraphs for each aspect
+
+*Numerical/Problem-Solving Questions:*
+- Always show complete working
+- State formulas/principles being used (from source materials)
+- Show substitution of values step-by-step
+- Perform calculations clearly
+- State final answer with appropriate units and precision
+- Include brief explanations of each step's purpose
+
+**NON-NEGOTIABLE CONSTRAINTS:**
+- Every solution MUST reference ONLY the source materials provided
+- Do NOT add information, examples, or knowledge beyond the uploaded materials
+- Maintain academic integrity and accuracy
+- Output pure Markdown (no code fences, no commentary)
+
+**YOUR CREATIVE MANDATE:**
+
+Within those boundaries, surprise me.
+
+You have permission to:
+- Phrase explanations in ways that build intuition, not just state facts
+- Use analogies or connections ONLY if they're present in the source materials
+- Structure working in a way that reveals the logical flow
+- Add clarifying notes like "Note: this connects to..." when it aids understanding
+- Make each solution a mini-lesson, not just a correctness check
+
+Don't just answer - teach. Don't just mark - illuminate understanding.
+
+**QUALITY ASSURANCE CHECKLIST**
+
+Before finalizing, verify:
+✓ All solutions derive from the provided source materials only
+✓ Every question from the paper has a complete solution
+✓ Explanations match the mark allocation (more marks = more depth)
+✓ Working is shown step-by-step for calculations
+✓ Language is clear, professional, and pedagogical
+✓ Formatting is consistent and easy to follow
+✓ No external knowledge or examples introduced
+✓ All units, values, and technical terms are accurate
+
+**OUTPUT FORMAT REQUIREMENTS**
+
+Generate the solution set in clean, professional Markdown format following this structure:
+
+# Solution: ${paperName}
+
+---
+
+## [Section Name] (e.g., Section A: Multiple Choice Questions)
+
+**Q1.** [Restate question briefly if helpful, or just answer]
+
+**Answer:** [Correct option]  
+**Explanation:** [Brief reasoning from source material]
+
+**(X Marks)**
+
+**Q2.** [Question reference]
+
+**Answer:**  
+[Structured answer with clear steps/points]
+
+[For calculations:]
+Given: [List given values]  
+Formula: [State formula from materials]  
+Calculation:  
+Step 1: [Show work]  
+Step 2: [Show work]  
+Final Answer: [Result with units]
+
+**(X Marks)**
+
+---
+
+## [Next Section Name]
+
+[Repeat structure for each section matching the question paper...]
+
+---
+
+**END OF SOLUTIONS**
+
+**CRITICAL SPACING REQUIREMENTS:**
+
+For optimal readability:
+1. **Between Solutions:** Always add ONE blank line after each solution's mark allocation before the next question
+2. **Between Sections:** Use horizontal rules (---) with blank lines before and after
+3. **Within Solutions:**
+   - Question restatement and answer label: ONE blank line between
+   - Between explanation paragraphs: ONE blank line
+   - After mark allocation: ONE blank line (before next solution)
+
+**CRITICAL REQUIREMENTS:**
+- Output ONLY the Markdown content itself - DO NOT wrap in code fences or backticks
+- Do NOT include meta-commentary or justifications
+- Do NOT add pedagogical notes beyond what aids understanding
+- Start directly with the heading: # Solution: ${paperName}
+- Ensure solutions are clear, accurate, and strictly derived from source materials
+
+Generate the complete solution set now.`;
+}
+
+/**
  * Build system prompt for paper generation
  */
 function buildSystemPrompt(
@@ -292,8 +474,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { paperName, paperPattern, duration, totalMarks, files } =
-      await request.json();
+    const {
+      paperName,
+      paperPattern,
+      duration,
+      totalMarks,
+      files,
+      generateSolution,
+    } = await request.json();
+
+    const shouldGenerateSolution = Boolean(generateSolution);
 
     const paper = await prisma.paper.create({
       data: {
@@ -367,11 +557,6 @@ export async function POST(request: NextRequest) {
 
     const generatedContent = cleanMarkdownContent(response.text || "");
 
-    for (const file of uploadedFileUris) {
-      const fileName = file.uri.split("/").pop()!;
-      await ai.files.delete({ name: fileName }).catch(() => {});
-    }
-
     const updatedPaper = await prisma.paper.update({
       where: { id: paper.id },
       data: {
@@ -380,10 +565,66 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    let solutionId: string | null = null;
+    let solutionError: string | null = null;
+
+    if (shouldGenerateSolution) {
+      try {
+        const solutionContents: Part[] = [
+          {
+            text: buildSolutionSystemPrompt(paperName, generatedContent),
+          },
+          {
+            text: "Based on the question paper above and the following source materials, generate comprehensive solutions:",
+          },
+        ];
+
+        for (const file of uploadedFileUris) {
+          solutionContents.push(createPartFromUri(file.uri, file.mimeType));
+        }
+
+        const solutionResponse = await ai.models.generateContent({
+          model: "gemini-flash-latest",
+          contents: solutionContents,
+        });
+
+        const generatedSolutionContent = cleanMarkdownContent(
+          solutionResponse.text || "",
+        );
+
+        const solution = await prisma.solution.upsert({
+          where: { paperId: paper.id },
+          update: {
+            content: generatedSolutionContent,
+            status: "COMPLETED",
+          },
+          create: {
+            paperId: paper.id,
+            userId: session.user.id,
+            content: generatedSolutionContent,
+            status: "COMPLETED",
+          },
+        });
+
+        solutionId = solution.id;
+      } catch (err) {
+        console.error("Solution generation error:", err);
+        solutionError =
+          err instanceof Error ? err.message : "Solution generation failed";
+      }
+    }
+
+    for (const file of uploadedFileUris) {
+      const fileName = file.uri.split("/").pop()!;
+      await ai.files.delete({ name: fileName }).catch(() => {});
+    }
+
     return NextResponse.json({
       success: true,
       paperId: updatedPaper.id,
       content: updatedPaper.content,
+      solutionId,
+      solutionError,
     });
   } catch (error) {
     console.error("Generation error:", error);

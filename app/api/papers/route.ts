@@ -22,6 +22,23 @@ export async function GET(request: NextRequest) {
       include: {
         files: true,
         tags: true,
+        solution: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const solutions = await prisma.solution.findMany({
+      where: { userId: session.user.id },
+      include: {
+        paper: {
+          select: {
+            id: true,
+            title: true,
+            pattern: true,
+            duration: true,
+            totalMarks: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -31,7 +48,15 @@ export async function GET(request: NextRequest) {
       status: transformStatus(paper.status),
     }));
 
-    return NextResponse.json({ papers: transformedPapers });
+    const transformedSolutions = solutions.map((solution) => ({
+      ...solution,
+      status: transformStatus(solution.status),
+    }));
+
+    return NextResponse.json({
+      papers: transformedPapers,
+      solutions: transformedSolutions,
+    });
   } catch (error) {
     console.error("Failed to fetch papers:", error);
     return NextResponse.json(

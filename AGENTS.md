@@ -1,6 +1,7 @@
 ## Critical Rules for AI Agents Working on This Codebase
 
 ### Design Requirements
+
 - **CRITICAL DESIGN REQUIREMENT:** All visual elements, components, and UI implementations in this project MUST strictly adhere to:
   1. **Apple-esque Design Principles:** Clean, minimalist aesthetics with careful attention to spacing, typography, and subtle animations
   2. **Vercel Design System:** Follow Vercel's official design guidelines at https://vercel.com/design/guidelines
@@ -8,6 +9,7 @@
   This is a non-negotiable requirement. Every UI change must be evaluated against these design standards before implementation.
 
 ### Technology Stack & Conventions
+
 - **Framework**: Next.js 16 with App Router, React 19, TypeScript (strict mode enabled)
 - **Styling**: Tailwind CSS 4 with custom theme configuration (`globals.css`)
 - **Component Library**: shadcn/ui components (always import from `@/components/ui/`)
@@ -17,6 +19,7 @@
 - **Notifications**: Use `sonner` for toasts (component at `@/components/ui/sonner`)
 
 ### Project Structure
+
 - **Pages**: `/app` directory (App Router)
   - `/signin` - OAuth initiation (OpenRouter/Google)
   - `/auth/[provider]/callback` - OAuth callback handler
@@ -35,6 +38,7 @@
   - All utilities should be typed and exported consistently
 
 ### Database & Backend
+
 - **ORM**: Prisma with PostgreSQL
 - **Auth**: Better Auth with Google OAuth (PKCE flow for `/signin`)
 - **API Routes**: Strict rate limiting
@@ -44,6 +48,7 @@
 - **AI Integration**: Google Gemini API via `@google/genai`
 
 ### Code Style & Naming
+
 - Use `camelCase` for variables, functions, and component props
 - Use `PascalCase` for components and classes
 - Use `UPPER_SNAKE_CASE` for constants
@@ -53,6 +58,7 @@
 - Use arrow functions as default
 
 ### File Handling
+
 - Supported file types defined in `lib/file-types.ts`
   - Images: JPEG, PNG, GIF, WebP
   - Documents: PDF, TXT, DOC, DOCX, XLS, XLSX
@@ -60,6 +66,7 @@
   - Always validate MIME types using `isSupportedMimeType()`
 
 ### Component Styling Patterns
+
 - Use Tailwind classes for all styling (no CSS modules or inline styles unless necessary)
 - For dynamic color states (like status badges), use color mappings with explicit Tailwind classes:
   ```
@@ -71,17 +78,20 @@
 - Keep border-radius consistent: use `rounded-[6px]` or Tailwind defaults
 
 ### Error Handling & UX
+
 - Always provide meaningful error messages to users via toast notifications
 - Use empty states with proper messaging and iconography for no-data scenarios
 - Loading states should use skeleton components (`components/ui/skeleton.tsx`)
 - Never leave users without feedback during async operations
 
 ### Import Organization
+
 - Imports grouped: React/Next.js → External libraries → Internal components → Internal utilities
 - Use absolute imports with `@/` alias (configured in `tsconfig.json`)
 - Import types explicitly: `import type { SomeType } from "..."`
 
 ### Performance & Best Practices
+
 - Use React 19 features: Server Components by default, minimal client state
 - Leverage Next.js image optimization for all images
 - Implement pagination/virtualization for large lists

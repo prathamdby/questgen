@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -12,6 +13,8 @@ import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
 import { PaperCard } from "@/components/home/PaperCard";
 import { PaperListItem } from "@/components/home/PaperListItem";
+import { SolutionCard } from "@/components/home/SolutionCard";
+import { SolutionListItem } from "@/components/home/SolutionListItem";
 import { PaperCardSkeleton } from "@/components/home/PaperCardSkeleton";
 import { PaperListSkeleton } from "@/components/home/PaperListSkeleton";
 import { EmptyState } from "@/components/home/EmptyState";
@@ -26,6 +29,23 @@ interface QuestionPaper {
   createdAt: string;
   status: "completed" | "in_progress";
   files: Array<{ name: string; size: number; mimeType: string }>;
+  solution?: {
+    id: string;
+  } | null;
+}
+
+interface SolutionSummary {
+  id: string;
+  paperId: string;
+  createdAt: string;
+  status: "completed" | "in_progress";
+  paper: {
+    id: string;
+    title: string;
+    pattern: string;
+    duration: string;
+    totalMarks: number;
+  };
 }
 
 export default function Home() {
@@ -33,9 +53,13 @@ export default function Home() {
   const { data: session, isPending } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
+  const [solutions, setSolutions] = useState<SolutionSummary[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<"card" | "list">("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
+  const [deletingSolutionId, setDeletingSolutionId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const menuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -56,6 +80,7 @@ export default function Home() {
       const response = await fetch("/api/papers");
       const data = await response.json();
       setPapers(data.papers || []);
+      setSolutions(data.solutions || []);
     } catch (error) {
       // Silent fail - user will see empty state
     } finally {
@@ -86,6 +111,12 @@ export default function Home() {
     (paper) =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const filteredSolutions = solutions.filter(
+    (solution) =>
+      solution.paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      solution.paper.pattern.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleQuickExport = async (paperId: string) => {
@@ -175,6 +206,33 @@ export default function Home() {
     setOpenMenuId(null);
   };
 
+  const handleDeleteSolution = async (solutionId: string) => {
+    setDeletingSolutionId(solutionId);
+    try {
+      const response = await fetch(`/api/solutions/${solutionId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete solution");
+      }
+
+      setSolutions((prev) =>
+        prev.filter((solution) => solution.id !== solutionId),
+      );
+      setOpenMenuId(null);
+    } catch (error) {
+      toast.error("Failed to delete solution");
+    } finally {
+      setDeletingSolutionId(null);
+    }
+  };
+
+  const handleOpenLinkedPaper = (paperId: string) => {
+    router.push(`/paper/${paperId}`);
+    setOpenMenuId(null);
+  };
+
   const handleSignOut = async () => {
     try {
       const { signOut } = await import("@/lib/auth-client");
@@ -188,6 +246,167 @@ export default function Home() {
   const handleViewModeChange = (mode: "card" | "list") => {
     setViewModeState(mode);
   };
+
+  const hasSolutions = filteredSolutions.length > 0;
+  const hasPapers = filteredPapers.length > 0;
+
+  const renderSolutionsSection = () => (
+    <section className="space-y-6">
+      <div>
+        <h2 className="text-[20px] font-[550] tracking-[-0.02em] text-[#0f172a] dark:text-white">
+          Companion Solutions
+        </h2>
+        <p className="mt-2 text-[15px] leading-[1.6] text-[#3b82f6] dark:text-[#93c5fd]">
+          Fully referenced answers crafted from your source materials.
+        </p>
+      </div>
+      {viewMode === "card" ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {filteredSolutions.map((solution) => (
+            <SolutionCard
+              key={`solution-${solution.id}`}
+              solution={solution}
+              isMenuOpen={openMenuId === `solution-${solution.id}`}
+              isDeleting={deletingSolutionId === solution.id}
+              onMenuToggle={() =>
+                setOpenMenuId(
+                  openMenuId === `solution-${solution.id}`
+                    ? null
+                    : `solution-${solution.id}`,
+                )
+              }
+              onViewPaper={() => handleOpenLinkedPaper(solution.paperId)}
+              onDelete={() => handleDeleteSolution(solution.id)}
+              menuRef={(el) => {
+                if (el) {
+                  menuRefs.current.set(`solution-${solution.id}`, el);
+                } else {
+                  menuRefs.current.delete(`solution-${solution.id}`);
+                }
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredSolutions.map((solution) => (
+            <SolutionListItem
+              key={`solution-${solution.id}`}
+              solution={solution}
+              isMenuOpen={openMenuId === `solution-${solution.id}`}
+              isDeleting={deletingSolutionId === solution.id}
+              onMenuToggle={() =>
+                setOpenMenuId(
+                  openMenuId === `solution-${solution.id}`
+                    ? null
+                    : `solution-${solution.id}`,
+                )
+              }
+              onViewPaper={() => handleOpenLinkedPaper(solution.paperId)}
+              onDelete={() => handleDeleteSolution(solution.id)}
+              menuRef={(el) => {
+                if (el) {
+                  menuRefs.current.set(`solution-${solution.id}`, el);
+                } else {
+                  menuRefs.current.delete(`solution-${solution.id}`);
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  const renderPapersSection = () => (
+    <section className="space-y-6">
+      {viewMode === "card" ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {filteredPapers.map((paper) => (
+            <PaperCard
+              key={`paper-${paper.id}`}
+              paper={paper}
+              isMenuOpen={openMenuId === `paper-${paper.id}`}
+              isExporting={exportingPaperId === paper.id}
+              onMenuToggle={() =>
+                setOpenMenuId(
+                  openMenuId === `paper-${paper.id}`
+                    ? null
+                    : `paper-${paper.id}`,
+                )
+              }
+              onExport={() => handleQuickExport(paper.id)}
+              onDuplicate={() => handleDuplicate(paper.id)}
+              onDelete={() => handleDelete(paper.id)}
+              menuRef={(el) => {
+                if (el) {
+                  menuRefs.current.set(`paper-${paper.id}`, el);
+                } else {
+                  menuRefs.current.delete(`paper-${paper.id}`);
+                }
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredPapers.map((paper) => (
+            <PaperListItem
+              key={`paper-${paper.id}`}
+              paper={paper}
+              isMenuOpen={openMenuId === `paper-${paper.id}`}
+              isExporting={exportingPaperId === paper.id}
+              onMenuToggle={() =>
+                setOpenMenuId(
+                  openMenuId === `paper-${paper.id}`
+                    ? null
+                    : `paper-${paper.id}`,
+                )
+              }
+              onExport={() => handleQuickExport(paper.id)}
+              onDuplicate={() => handleDuplicate(paper.id)}
+              onDelete={() => handleDelete(paper.id)}
+              menuRef={(el) => {
+                if (el) {
+                  menuRefs.current.set(`paper-${paper.id}`, el);
+                } else {
+                  menuRefs.current.delete(`paper-${paper.id}`);
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  let content: React.ReactNode;
+
+  if (isLoading) {
+    content =
+      viewMode === "card" ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {[...Array(4)].map((_, index) => (
+            <PaperCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {[...Array(4)].map((_, index) => (
+            <PaperListSkeleton key={index} />
+          ))}
+        </div>
+      );
+  } else if (!hasSolutions && !hasPapers) {
+    content = searchQuery ? <NoResultsState /> : <EmptyState />;
+  } else {
+    content = (
+      <div className="space-y-16">
+        {hasSolutions && renderSolutionsSection()}
+        {hasPapers && renderPapersSection()}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -227,75 +446,7 @@ export default function Home() {
           />
         </header>
 
-        {isLoading ? (
-          viewMode === "card" ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[...Array(4)].map((_, index) => (
-                <PaperCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {[...Array(4)].map((_, index) => (
-                <PaperListSkeleton key={index} />
-              ))}
-            </div>
-          )
-        ) : filteredPapers.length > 0 ? (
-          viewMode === "card" ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {filteredPapers.map((paper) => (
-                <PaperCard
-                  key={paper.id}
-                  paper={paper}
-                  isMenuOpen={openMenuId === paper.id}
-                  isExporting={exportingPaperId === paper.id}
-                  onMenuToggle={() =>
-                    setOpenMenuId(openMenuId === paper.id ? null : paper.id)
-                  }
-                  onExport={() => handleQuickExport(paper.id)}
-                  onDuplicate={() => handleDuplicate(paper.id)}
-                  onDelete={() => handleDelete(paper.id)}
-                  menuRef={(el) => {
-                    if (el) {
-                      menuRefs.current.set(paper.id, el);
-                    } else {
-                      menuRefs.current.delete(paper.id);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredPapers.map((paper) => (
-                <PaperListItem
-                  key={paper.id}
-                  paper={paper}
-                  isMenuOpen={openMenuId === paper.id}
-                  isExporting={exportingPaperId === paper.id}
-                  onMenuToggle={() =>
-                    setOpenMenuId(openMenuId === paper.id ? null : paper.id)
-                  }
-                  onExport={() => handleQuickExport(paper.id)}
-                  onDuplicate={() => handleDuplicate(paper.id)}
-                  onDelete={() => handleDelete(paper.id)}
-                  menuRef={(el) => {
-                    if (el) {
-                      menuRefs.current.set(paper.id, el);
-                    } else {
-                      menuRefs.current.delete(paper.id);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : searchQuery ? (
-          <NoResultsState />
-        ) : (
-          <EmptyState />
-        )}
+        {content}
       </div>
     </div>
   );

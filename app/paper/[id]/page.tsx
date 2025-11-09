@@ -4,7 +4,7 @@ import { useState, useEffect, use, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileCheck } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
@@ -39,6 +39,9 @@ interface QuestionPaper {
   status: "completed" | "in_progress";
   files?: UploadedFile[];
   content: string;
+  solution?: {
+    id: string;
+  } | null;
 }
 
 function PaperContent({ id }: { id: string }) {
@@ -88,6 +91,7 @@ function PaperContent({ id }: { id: string }) {
           size: f.size,
         })),
         content: data.paper.content,
+        solution: data.paper.solution ?? null,
       });
     } catch (error) {
       // Silent fail - component will show not found state
@@ -248,6 +252,21 @@ function PaperContent({ id }: { id: string }) {
               isExpanded={notesExpanded}
               onToggle={() => setNotesExpanded(!notesExpanded)}
             />
+          )}
+
+          {paper.solution && (
+            <Link
+              href={`/solution/${paper.solution.id}`}
+              className="group mb-6 flex h-[48px] items-center justify-center gap-2 rounded-[6px] border-2 border-[#3b82f6] bg-gradient-to-r from-[#eff6ff] to-[#f0f9ff] px-6 text-[15px] font-[500] text-[#1d4ed8] transition-all duration-150 hover:border-[#2563eb] hover:from-[#dbeafe] hover:to-[#dbeafe] focus:outline-none focus:ring-2 focus:ring-[#1d4ed8] focus:ring-offset-2 active:scale-[0.98] dark:border-[#1e3a8a] dark:from-[#0a1628] dark:to-[#0c1a2e] dark:text-[#93c5fd] dark:hover:border-[#1e40af] dark:hover:from-[#10203b] dark:hover:to-[#10203b] dark:focus:ring-[#93c5fd]"
+              style={{ touchAction: "manipulation" }}
+            >
+              <FileCheck className="h-4 w-4" aria-hidden="true" />
+              <span>View companion solution</span>
+              <ExternalLink
+                className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                aria-hidden="true"
+              />
+            </Link>
           )}
 
           <ActionButtons
