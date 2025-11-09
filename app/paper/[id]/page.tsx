@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
+import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
 import { SourceFilesSection } from "@/components/paper/SourceFilesSection";
@@ -89,7 +90,7 @@ function PaperContent({ id }: { id: string }) {
         content: data.paper.content,
       });
     } catch (error) {
-      console.error("Failed to fetch paper:", error);
+      // Silent fail - component will show not found state
     } finally {
       setIsLoading(false);
     }
@@ -145,9 +146,8 @@ function PaperContent({ id }: { id: string }) {
       setRegenNotes("");
       setIsRegenPanelOpen(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
       toast.error("Regeneration failed", {
-        description: message,
+        description: error instanceof Error ? error.message : "Unknown error",
       });
       setPaper((prev) => (prev ? { ...prev, status: "completed" } : prev));
     } finally {
@@ -161,37 +161,17 @@ function PaperContent({ id }: { id: string }) {
     setIsExporting(true);
 
     try {
-      const response = await fetch("/api/export-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: paper.title,
-          pattern: paper.pattern,
-          duration: paper.duration,
-          totalMarks: paper.totalMarks,
-          content: paper.content,
-          createdAt: paper.createdAt,
-        }),
-      });
+      const paperData: PaperData = {
+        title: paper.title,
+        pattern: paper.pattern,
+        duration: paper.duration,
+        totalMarks: paper.totalMarks,
+        content: paper.content,
+        createdAt: paper.createdAt,
+      };
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to export PDF");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${paper.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await exportToPDF(paperData);
     } catch (error) {
-      console.error("Export error:", error);
       toast.error("Unable to export your paper", {
         description:
           error instanceof Error

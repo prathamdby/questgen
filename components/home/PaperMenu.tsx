@@ -23,7 +23,6 @@ export function PaperMenu({
   onDelete,
   menuRef,
 }: PaperMenuProps) {
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const refCallback = typeof menuRef === "function" ? menuRef : undefined;
   const refObject = typeof menuRef === "function" ? undefined : menuRef;
 
@@ -60,9 +59,9 @@ export function PaperMenu({
               e.stopPropagation();
               onExport();
             }}
-            disabled={isExporting || isMobile}
+            disabled={isExporting}
             className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
-              isExporting || isMobile
+              isExporting
                 ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
                 : "text-[#171717] hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
             }`}

@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
+import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 import { SignedInHeader } from "@/components/home/SignedInHeader";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
@@ -55,7 +57,7 @@ export default function Home() {
       const data = await response.json();
       setPapers(data.papers || []);
     } catch (error) {
-      console.error("Failed to fetch papers:", error);
+      // Silent fail - user will see empty state
     } finally {
       setIsLoading(false);
     }
@@ -65,11 +67,7 @@ export default function Home() {
     const handleClickOutside = (event: MouseEvent) => {
       if (openMenuId) {
         const menuElement = menuRefs.current.get(openMenuId);
-        if (
-          menuElement &&
-          event.target instanceof Node &&
-          !menuElement.contains(event.target)
-        ) {
+        if (menuElement && !menuElement.contains(event.target as Node)) {
           setOpenMenuId(null);
         }
       }
@@ -101,48 +99,23 @@ export default function Home() {
         throw new Error("Paper not found");
       }
 
-      const content = data.paper.content.trim();
-      const cleanedContent = content
-        .replace(/^```(?:markdown|md)?\s*\n/i, "")
-        .replace(/\n```\s*$/i, "")
-        .trim();
+      const paperData: PaperData = {
+        title: data.paper.title,
+        pattern: data.paper.pattern,
+        duration: data.paper.duration,
+        totalMarks: data.paper.totalMarks,
+        content: data.paper.content,
+        createdAt: data.paper.createdAt,
+      };
 
-      const pdfResponse = await fetch("/api/export-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: data.paper.title,
-          pattern: data.paper.pattern,
-          duration: data.paper.duration,
-          totalMarks: data.paper.totalMarks,
-          content: cleanedContent,
-          createdAt: data.paper.createdAt,
-        }),
-      });
-
-      if (!pdfResponse.ok) {
-        const error = await pdfResponse.json();
-        throw new Error(error.message || "Failed to export PDF");
-      }
-
-      const blob = await pdfResponse.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${data.paper.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await exportToPDF(paperData);
     } catch (error) {
-      console.error("Export error:", error);
-      alert(
-        `Failed to export PDF: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      );
+      toast.error("Unable to export your paper", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setExportingPaperId(null);
       setOpenMenuId(null);
@@ -174,8 +147,7 @@ export default function Home() {
         fetchPapers();
       }
     } catch (error) {
-      console.error("Duplicate error:", error);
-      alert("Failed to duplicate paper");
+      toast.error("Failed to duplicate paper");
     }
     setOpenMenuId(null);
   };
@@ -197,8 +169,7 @@ export default function Home() {
           throw new Error("Failed to delete paper");
         }
       } catch (error) {
-        console.error("Delete error:", error);
-        alert("Failed to delete paper");
+        toast.error("Failed to delete paper");
       }
     }
     setOpenMenuId(null);
@@ -210,7 +181,7 @@ export default function Home() {
       await signOut();
       router.push("/signin");
     } catch (error) {
-      console.error("Sign out error:", error);
+      // Silent fail on sign out
     }
   };
 

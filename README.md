@@ -17,7 +17,7 @@ AI-powered question paper generator for everyone. Upload source materials and ge
 - **Database**: PostgreSQL with Prisma ORM
 - **AI**: Google Gemini API (`@google/genai`)
 - **Auth**: Better Auth (Google OAuth)
-- **PDF Export**: Puppeteer with custom styling
+- **PDF Export**: Client-side browser print with custom styling
 - **UI**: Tailwind CSS 4, shadcn/ui components
 - **Deployment**: Vercel
 
@@ -106,7 +106,7 @@ Section C: 3 Long Answers (50 marks)
 ### Key Files
 
 - `app/api/papers/generate/route.ts` - AI generation logic
-- `app/api/export-pdf/route.ts` - PDF export with styling
+- `lib/pdf-export-client.ts` - Client-side PDF export with styling
 - `lib/auth.ts` - Authentication configuration
 - `prisma/schema.prisma` - Database models
 

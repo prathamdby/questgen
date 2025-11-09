@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+"use client";
+
 import { marked } from "marked";
 
-interface ExportRequest {
+export interface PaperData {
   title: string;
   pattern: string;
   duration: string;
@@ -10,36 +11,45 @@ interface ExportRequest {
   createdAt: string;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = (await request.json()) as ExportRequest;
-    const { title, pattern, duration, totalMarks, content, createdAt } = body;
+export function cleanMarkdownContent(content: string): string {
+  return content
+    .replace(/^```(?:markdown|md)?\s*\n/i, "")
+    .replace(/\n```\s*$/i, "")
+    .trim();
+}
 
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: "Missing required fields: title and content are required" },
-        { status: 400 },
-      );
-    }
+function generateHTMLTemplate(
+  title: string,
+  pattern: string,
+  duration: string,
+  totalMarks: number,
+  htmlContent: string,
+  createdAt: string,
+): string {
+  const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
-    const htmlContent = await marked.parse(content, {
-      gfm: true,
-      breaks: true,
-    });
+  const escapeHtml = (text: string) => {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  };
 
-    const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  const escapedTitle = escapeHtml(title);
+  const escapedPattern = escapeHtml(pattern);
+  const escapedDuration = escapeHtml(duration);
+  const escapedTotalMarks = escapeHtml(String(totalMarks));
 
-    const html = `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${escapedTitle}</title>
   <style>
     /* Apple/Vercel-inspired design system */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -365,22 +375,22 @@ export async function POST(request: NextRequest) {
       <span class="header-meta-item">Generated on ${formattedDate}</span>
     </div>
 
-    <h1 class="title">${title}</h1>
+    <h1 class="title">${escapedTitle}</h1>
 
     <div class="metadata-grid">
       <div class="metadata-item">
         <div class="metadata-label">Pattern</div>
-        <div class="metadata-value">${pattern}</div>
+        <div class="metadata-value">${escapedPattern}</div>
       </div>
 
       <div class="metadata-item">
         <div class="metadata-label">Duration</div>
-        <div class="metadata-value">${duration}</div>
+        <div class="metadata-value">${escapedDuration}</div>
       </div>
 
       <div class="metadata-item">
         <div class="metadata-label">Total Marks</div>
-        <div class="metadata-value">${totalMarks}</div>
+        <div class="metadata-value">${escapedTotalMarks}</div>
       </div>
     </div>
   </div>
@@ -390,71 +400,75 @@ export async function POST(request: NextRequest) {
   </div>
 </body>
 </html>
-    `.trim();
+  `.trim();
+}
 
-    // Environment-specific Puppeteer configuration
-    const isVercel = !!process.env.VERCEL_ENV;
-    let puppeteer;
-    let launchOptions;
-
-    if (isVercel) {
-      const chromium = (await import("@sparticuz/chromium")).default;
-      chromium.setGraphicsMode = false;
-      puppeteer = await import("puppeteer-core");
-      launchOptions = {
-        headless: true,
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
-      };
+function waitForFonts(window: Window): Promise<void> {
+  return new Promise((resolve) => {
+    // Wait for window to fully load first
+    if (window.document.readyState === "complete") {
+      checkFonts();
     } else {
-      puppeteer = await import("puppeteer");
-      launchOptions = {
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
-      };
+      window.addEventListener("load", checkFonts);
     }
 
-    const browser = await puppeteer.launch(launchOptions);
+    function checkFonts() {
+      if (window.document.fonts && window.document.fonts.ready) {
+        window.document.fonts.ready.then(() => {
+          setTimeout(resolve, 100);
+        });
+      } else {
+        setTimeout(resolve, 500);
+      }
+    }
+  });
+}
 
-    const page = await browser.newPage();
-    await page.setContent(html, {
-      waitUntil: "networkidle0",
-    });
+export async function exportToPDF(paperData: PaperData): Promise<void> {
+  if (!paperData.title || !paperData.content) {
+    throw new Error("Missing required fields: title and content are required");
+  }
 
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "2cm",
-        right: "2.5cm",
-        bottom: "2cm",
-        left: "2.5cm",
-      },
-      preferCSSPageSize: true,
-    });
+  // Clean markdown content
+  const cleanedContent = cleanMarkdownContent(paperData.content.trim());
 
-    await browser.close();
+  // Convert markdown to HTML
+  const htmlContent = await marked.parse(cleanedContent, {
+    gfm: true,
+    breaks: true,
+  });
 
-    return new NextResponse(Buffer.from(pdf), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${title.replace(/[^a-z0-9]/gi, "_")}.pdf"`,
-        "Cache-Control": "no-cache",
-      },
-    });
-  } catch (error) {
-    console.error("PDF export error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to generate PDF",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+  // Generate HTML template
+  const html = generateHTMLTemplate(
+    paperData.title,
+    paperData.pattern,
+    paperData.duration,
+    paperData.totalMarks,
+    htmlContent,
+    paperData.createdAt,
+  );
+
+  // Open new window for printing
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    throw new Error(
+      "Popup blocked. Please allow popups for this site to export PDFs.",
     );
   }
+
+  // Write HTML to window
+  printWindow.document.write(html);
+  printWindow.document.close();
+
+  // Wait for fonts to load before printing
+  await waitForFonts(printWindow);
+
+  printWindow.focus();
+  printWindow.print();
+
+  setTimeout(() => {
+    if (printWindow && !printWindow.closed) {
+      printWindow.close();
+    }
+  }, 1000);
 }
