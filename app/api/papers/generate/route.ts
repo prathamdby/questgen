@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
@@ -317,69 +317,47 @@ export async function POST(request: NextRequest) {
       include: { files: true },
     });
 
-    const uploadedPdfUris: Array<{ uri: string; mimeType: string }> = [];
-    const imageParts: Array<{
-      inlineData: { data: string; mimeType: string };
-    }> = [];
+    const uploadedFileUris: Array<{ uri: string; mimeType: string }> = [];
 
     for (const fileData of files) {
-      if (fileData.type === "application/pdf") {
-        const blob = new Blob([Buffer.from(fileData.data, "base64")], {
-          type: fileData.type,
-        });
-        const uploaded = await ai.files.upload({
-          file: blob,
-          config: {
-            mimeType: fileData.type,
-            displayName: fileData.name,
-          },
-        });
+      const blob = new Blob([Buffer.from(fileData.data, "base64")], {
+        type: fileData.type,
+      });
+      const uploaded = await ai.files.upload({
+        file: blob,
+        config: {
+          mimeType: fileData.type,
+          displayName: fileData.name,
+        },
+      });
 
-        let fileStatus = await ai.files.get({ name: uploaded.name! });
-        while (fileStatus.state === "PROCESSING") {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          fileStatus = await ai.files.get({ name: uploaded.name! });
-        }
-
-        if (fileStatus.state === "FAILED") {
-          throw new Error(`File processing failed: ${fileData.name}`);
-        }
-
-        uploadedPdfUris.push({
-          uri: uploaded.uri!,
-          mimeType: uploaded.mimeType!,
-        });
-      } else if (fileData.type.startsWith("image/")) {
-        imageParts.push({
-          inlineData: {
-            data: fileData.data,
-            mimeType: fileData.type,
-          },
-        });
+      let fileStatus = await ai.files.get({ name: uploaded.name! });
+      while (fileStatus.state === "PROCESSING") {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        fileStatus = await ai.files.get({ name: uploaded.name! });
       }
+
+      if (fileStatus.state === "FAILED") {
+        throw new Error(`File processing failed: ${fileData.name}`);
+      }
+
+      uploadedFileUris.push({
+        uri: uploaded.uri!,
+        mimeType: uploaded.mimeType!,
+      });
     }
 
-    const contents: Array<{
-      text?: string;
-      inlineData?: { data: string; mimeType: string };
-      fileData?: { fileUri: string; mimeType: string };
-    }> = [
+    const contents: Part[] = [
       {
         text: buildSystemPrompt(paperName, paperPattern, duration, totalMarks),
       },
       {
         text: "Based on the following materials, generate the question paper:",
       },
-      ...imageParts,
     ];
 
-    for (const pdf of uploadedPdfUris) {
-      contents.push({
-        fileData: {
-          fileUri: pdf.uri,
-          mimeType: pdf.mimeType,
-        },
-      });
+    for (const file of uploadedFileUris) {
+      contents.push(createPartFromUri(file.uri, file.mimeType));
     }
 
     const response = await ai.models.generateContent({
@@ -389,8 +367,8 @@ export async function POST(request: NextRequest) {
 
     const generatedContent = cleanMarkdownContent(response.text || "");
 
-    for (const pdf of uploadedPdfUris) {
-      const fileName = pdf.uri.split("/").pop()!;
+    for (const file of uploadedFileUris) {
+      const fileName = file.uri.split("/").pop()!;
       await ai.files.delete({ name: fileName }).catch(() => {});
     }
 

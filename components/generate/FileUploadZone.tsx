@@ -65,7 +65,9 @@ export function FileUploadZone({
         <p className="mb-2 text-[15px] font-[500] text-[#171717] dark:text-white">
           Click to upload or drag and drop
         </p>
-        <p className="text-[13px] text-[#737373]">PDF or Images only</p>
+        <p className="text-[13px] text-[#737373]">
+          PDF, Images, or Documents (DOCX, XLSX, TXT)
+        </p>
       </div>
       <input
         ref={fileInputRef}
