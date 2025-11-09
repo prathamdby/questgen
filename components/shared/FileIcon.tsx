@@ -48,6 +48,14 @@ export function FileIcon({ filename, className = "h-4 w-4" }: FileIconProps) {
           aria-hidden="true"
         />
       );
+    case "xls":
+    case "xlsx":
+      return (
+        <FileText
+          className={`${className} text-[#217346]`}
+          aria-hidden="true"
+        />
+      );
     default:
       return (
         <File className={`${className} text-[#737373]`} aria-hidden="true" />

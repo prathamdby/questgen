@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { patternPresets } from "@/lib/pattern-presets";
+import {
+  getAcceptedFileTypesArray,
+  isSupportedMimeType,
+  getMimeTypeFromExtension,
+} from "@/lib/file-types";
 import { FormField } from "@/components/generate/FormField";
 import {
   PatternPresetsButton,
@@ -50,7 +55,7 @@ export default function Generate() {
     }
   }, [session, isPending, router]);
 
-  const acceptedFileTypes = [".pdf", "image/*"];
+  const acceptedFileTypes = getAcceptedFileTypesArray();
 
   const applyPaperPattern = (nextPattern: string, presetId?: string | null) => {
     setPaperPattern(nextPattern);
@@ -71,8 +76,15 @@ export default function Generate() {
   };
 
   const isFileTypeAccepted = (file: File): boolean => {
-    const extension = "." + file.name.split(".").pop()?.toLowerCase();
-    return extension === ".pdf" || file.type.startsWith("image/");
+    if (isSupportedMimeType(file.type)) {
+      return true;
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (extension) {
+      const mimeType = getMimeTypeFromExtension(extension);
+      return mimeType ? isSupportedMimeType(mimeType) : false;
+    }
+    return false;
   };
 
   const handleFiles = (files: FileList | null) => {
