@@ -1,12 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenAI, createPartFromUri, type Part } from "@google/genai";
+import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
+import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
 
 /**
  * Analyze pattern marks to detect explicit mark allocations
@@ -601,7 +598,8 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
+      model: DEFAULT_MODEL,
+      config: DEFAULT_GENERATION_CONFIG,
       contents,
     });
 
@@ -634,7 +632,8 @@ export async function POST(request: NextRequest) {
         }
 
         const solutionResponse = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: DEFAULT_MODEL,
+          config: DEFAULT_GENERATION_CONFIG,
           contents: solutionContents,
         });
 

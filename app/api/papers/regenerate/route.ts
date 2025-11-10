@@ -1,12 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { GoogleGenAI } from "@google/genai";
+import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
 
 /**
  * Analyze pattern marks to detect explicit mark allocations
@@ -321,7 +317,8 @@ export async function POST(request: NextRequest) {
       : `Regenerate the question paper using the specifications above.\nMaintain the same section structure, formatting, and metadata.\nNo additional user instructions were provided. Refresh the paper while preserving the structure, tone, and difficulty implied by the metadata.\nPrevious paper content:\n${paper.content}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
+      model: DEFAULT_MODEL,
+      config: DEFAULT_GENERATION_CONFIG,
       contents: [{ text: systemPrompt }, { text: userMessage }],
     });
 
