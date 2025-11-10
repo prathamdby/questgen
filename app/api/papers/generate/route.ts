@@ -473,6 +473,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let paperId: string | null = null;
+  const uploadedFileUris: Array<{ uri: string; mimeType: string }> = [];
+
   try {
     const {
       paperName,
@@ -485,6 +488,7 @@ export async function POST(request: NextRequest) {
 
     const shouldGenerateSolution = Boolean(generateSolution);
 
+    // Create paper record first
     const paper = await prisma.paper.create({
       data: {
         userId: session.user.id,
@@ -507,35 +511,81 @@ export async function POST(request: NextRequest) {
       include: { files: true },
     });
 
-    const uploadedFileUris: Array<{ uri: string; mimeType: string }> = [];
+    paperId = paper.id;
 
-    for (const fileData of files) {
-      const blob = new Blob([Buffer.from(fileData.data, "base64")], {
-        type: fileData.type,
-      });
-      const uploaded = await ai.files.upload({
-        file: blob,
-        config: {
-          mimeType: fileData.type,
-          displayName: fileData.name,
+    // Upload files in parallel with error recovery
+    const uploadResults = await Promise.allSettled(
+      files.map(
+        async (fileData: {
+          name: string;
+          size: number;
+          type: string;
+          data: string;
+        }) => {
+          const blob = new Blob([Buffer.from(fileData.data, "base64")], {
+            type: fileData.type,
+          });
+          const uploaded = await ai.files.upload({
+            file: blob,
+            config: {
+              mimeType: fileData.type,
+              displayName: fileData.name,
+            },
+          });
+
+          let fileStatus = await ai.files.get({ name: uploaded.name! });
+          while (fileStatus.state === "PROCESSING") {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            fileStatus = await ai.files.get({ name: uploaded.name! });
+          }
+
+          if (fileStatus.state === "FAILED") {
+            throw new Error(`File processing failed: ${fileData.name}`);
+          }
+
+          return {
+            uri: uploaded.uri!,
+            mimeType: uploaded.mimeType!,
+          };
         },
-      });
+      ),
+    );
 
-      let fileStatus = await ai.files.get({ name: uploaded.name! });
-      while (fileStatus.state === "PROCESSING") {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        fileStatus = await ai.files.get({ name: uploaded.name! });
-      }
+    // Check for failures
+    const failures = uploadResults.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      const failureMessages = failures
+        .map((r) => (r.status === "rejected" ? r.reason?.message : null))
+        .filter(Boolean)
+        .join(", ");
 
-      if (fileStatus.state === "FAILED") {
-        throw new Error(`File processing failed: ${fileData.name}`);
-      }
+      // Clean up successful uploads
+      const successfulUploads = uploadResults
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => (r.status === "fulfilled" ? r.value : null))
+        .filter(Boolean) as Array<{ uri: string; mimeType: string }>;
 
-      uploadedFileUris.push({
-        uri: uploaded.uri!,
-        mimeType: uploaded.mimeType!,
-      });
+      await Promise.all(
+        successfulUploads.map((file) => {
+          const fileName = file.uri.split("/").pop()!;
+          return ai.files.delete({ name: fileName }).catch(() => {});
+        }),
+      );
+
+      // Delete paper record
+      await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
+
+      throw new Error(
+        `${failures.length} file(s) failed to upload: ${failureMessages}`,
+      );
     }
+
+    // Extract successful uploads
+    uploadedFileUris.push(
+      ...(uploadResults
+        .map((r) => (r.status === "fulfilled" ? r.value : null))
+        .filter(Boolean) as Array<{ uri: string; mimeType: string }>),
+    );
 
     const contents: Part[] = [
       {
@@ -614,10 +664,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    for (const file of uploadedFileUris) {
-      const fileName = file.uri.split("/").pop()!;
-      await ai.files.delete({ name: fileName }).catch(() => {});
-    }
+    // Clean up uploaded files after successful generation
+    await Promise.all(
+      uploadedFileUris.map((file) => {
+        const fileName = file.uri.split("/").pop()!;
+        return ai.files.delete({ name: fileName }).catch(() => {});
+      }),
+    );
 
     return NextResponse.json({
       success: true,
@@ -627,6 +680,19 @@ export async function POST(request: NextRequest) {
       solutionError,
     });
   } catch (error) {
+    // Comprehensive cleanup on any error
+    if (paperId) {
+      await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
+    }
+
+    // Clean up any uploaded files
+    await Promise.all(
+      uploadedFileUris.map((file) => {
+        const fileName = file.uri.split("/").pop()!;
+        return ai.files.delete({ name: fileName }).catch(() => {});
+      }),
+    );
+
     console.error("Generation error:", error);
     return NextResponse.json(
       {

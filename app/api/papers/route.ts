@@ -19,10 +19,35 @@ export async function GET(request: NextRequest) {
   try {
     const papers = await prisma.paper.findMany({
       where: { userId: session.user.id },
-      include: {
-        files: true,
-        tags: true,
-        solution: true,
+      select: {
+        id: true,
+        title: true,
+        pattern: true,
+        duration: true,
+        totalMarks: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        files: {
+          select: {
+            id: true,
+            name: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+        },
+        tags: {
+          select: {
+            id: true,
+            tag: true,
+          },
+        },
+        solution: {
+          select: {
+            id: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
