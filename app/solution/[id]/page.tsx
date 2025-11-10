@@ -101,6 +101,7 @@ function SolutionContent({ id }: { id: string }) {
       };
 
       await exportSolutionToPDF(solutionData);
+      toast.success("Solution exported successfully");
     } catch (error) {
       toast.error("Unable to export solution", {
         description:
@@ -122,19 +123,20 @@ function SolutionContent({ id }: { id: string }) {
       )
     ) {
       setIsDeleting(true);
+      router.push("/home");
+
       try {
         const response = await fetch(`/api/solutions/${solution.id}`, {
           method: "DELETE",
         });
 
-        if (response.ok) {
-          router.push("/home");
-        } else {
+        if (!response.ok) {
           throw new Error("Failed to delete solution");
         }
       } catch (error) {
         toast.error("Failed to delete solution");
         setIsDeleting(false);
+        router.push(`/solution/${solution.id}`);
       }
     }
   };

@@ -175,6 +175,7 @@ function PaperContent({ id }: { id: string }) {
       };
 
       await exportToPDF(paperData);
+      toast.success("Paper exported successfully");
     } catch (error) {
       toast.error("Unable to export your paper", {
         description:
@@ -195,18 +196,19 @@ function PaperContent({ id }: { id: string }) {
         "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
+      router.push("/home");
+
       try {
         const response = await fetch(`/api/papers/${paper.id}`, {
           method: "DELETE",
         });
 
-        if (response.ok) {
-          router.push("/home");
-        } else {
+        if (!response.ok) {
           throw new Error("Failed to delete paper");
         }
       } catch (error) {
         toast.error("Failed to delete paper");
+        router.push(`/paper/${paper.id}`);
       }
     }
   };
