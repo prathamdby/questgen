@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock, FileText } from "lucide-react";
+import { ArrowRight, Clock, FileCheck, FileText } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateShort } from "@/lib/format-utils";
 import { PaperMenu } from "./PaperMenu";
@@ -14,6 +14,9 @@ interface QuestionPaper {
   totalMarks: number;
   createdAt: string;
   status: "completed" | "in_progress";
+  solution?: {
+    id: string;
+  } | null;
 }
 
 interface PaperCardProps {
@@ -24,6 +27,7 @@ interface PaperCardProps {
   onExport: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onOpenSolution?: () => void;
   menuRef:
     | React.RefObject<HTMLDivElement | null>
     | ((el: HTMLDivElement | null) => void);
@@ -37,6 +41,7 @@ export function PaperCard({
   onExport,
   onDuplicate,
   onDelete,
+  onOpenSolution,
   menuRef,
 }: PaperCardProps) {
   return (
@@ -70,6 +75,9 @@ export function PaperCard({
             onExport={onExport}
             onDuplicate={onDuplicate}
             onDelete={onDelete}
+            hasSolution={!!paper.solution}
+            solutionId={paper.solution?.id}
+            onOpenSolution={paper.solution ? onOpenSolution : undefined}
             menuRef={menuRef}
           />
         </div>
@@ -85,6 +93,22 @@ export function PaperCard({
           <FileText className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
           <span>{paper.totalMarks}&nbsp;marks</span>
         </span>
+        {paper.solution && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenSolution?.();
+            }}
+            className="flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#171717] focus:outline-none focus:underline dark:hover:text-white"
+          >
+            <FileCheck
+              className="h-3.5 w-3.5 flex-shrink-0"
+              aria-hidden="true"
+            />
+            <span>Solution</span>
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-[#f5f5f5] pt-4 dark:border-[#262626]">

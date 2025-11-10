@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock, FileText } from "lucide-react";
+import { ArrowRight, Clock, FileCheck, FileText } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateShort } from "@/lib/format-utils";
 import { PaperMenu } from "./PaperMenu";
@@ -14,6 +14,9 @@ interface QuestionPaper {
   totalMarks: number;
   createdAt: string;
   status: "completed" | "in_progress";
+  solution?: {
+    id: string;
+  } | null;
 }
 
 interface PaperListItemProps {
@@ -24,6 +27,7 @@ interface PaperListItemProps {
   onExport: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onOpenSolution?: () => void;
   menuRef:
     | React.RefObject<HTMLDivElement | null>
     | ((el: HTMLDivElement | null) => void);
@@ -37,6 +41,7 @@ export function PaperListItem({
   onExport,
   onDuplicate,
   onDelete,
+  onOpenSolution,
   menuRef,
 }: PaperListItemProps) {
   return (
@@ -74,6 +79,19 @@ export function PaperListItem({
             <FileText className="h-3.5 w-3.5" aria-hidden="true" />
             {paper.totalMarks} marks
           </span>
+          {paper.solution && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenSolution?.();
+              }}
+              className="hidden items-center gap-1.5 text-[#737373] transition-colors hover:text-[#171717] focus:outline-none focus:underline dark:hover:text-white sm:flex"
+            >
+              <FileCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              Solution
+            </button>
+          )}
           <span className="tabular-nums text-[12px] text-[#a3a3a3]">
             {formatDateShort(paper.createdAt)}
           </span>
@@ -90,6 +108,9 @@ export function PaperListItem({
           onExport={onExport}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
+          hasSolution={!!paper.solution}
+          solutionId={paper.solution?.id}
+          onOpenSolution={paper.solution ? onOpenSolution : undefined}
           menuRef={menuRef}
         />
       </div>

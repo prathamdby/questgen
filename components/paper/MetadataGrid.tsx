@@ -21,9 +21,8 @@ export function MetadataGrid({
           Pattern
         </div>
         <p
-          className="min-w-0 break-words text-[14px] text-[#171717] dark:text-white"
+          className="min-w-0 text-[14px] text-[#171717] dark:text-white line-clamp-2"
           title={pattern}
-          style={{ maxHeight: "200px", overflowY: "auto" }}
         >
           {pattern}
         </p>

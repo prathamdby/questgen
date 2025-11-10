@@ -230,7 +230,7 @@ function PaperContent({ id }: { id: string }) {
             className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
             aria-hidden="true"
           />
-          <span>Back to papers</span>
+          <span>Back to home</span>
         </Link>
 
         <header className="mb-12">

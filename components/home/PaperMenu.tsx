@@ -1,6 +1,13 @@
 "use client";
 
-import { MoreVertical, Loader2, Download, Copy, Trash2 } from "lucide-react";
+import {
+  MoreVertical,
+  Loader2,
+  Download,
+  Copy,
+  Trash2,
+  FileCheck,
+} from "lucide-react";
 
 interface PaperMenuProps {
   isOpen: boolean;
@@ -9,6 +16,9 @@ interface PaperMenuProps {
   onExport: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  hasSolution?: boolean;
+  solutionId?: string;
+  onOpenSolution?: () => void;
   menuRef:
     | React.RefObject<HTMLDivElement | null>
     | ((el: HTMLDivElement | null) => void);
@@ -21,6 +31,9 @@ export function PaperMenu({
   onExport,
   onDuplicate,
   onDelete,
+  hasSolution,
+  solutionId,
+  onOpenSolution,
   menuRef,
 }: PaperMenuProps) {
   const refCallback = typeof menuRef === "function" ? menuRef : undefined;
@@ -53,6 +66,25 @@ export function PaperMenu({
           }}
           className="absolute right-0 top-8 z-10 w-[180px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
         >
+          {hasSolution && solutionId && onOpenSolution && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenSolution();
+                }}
+                className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
+              >
+                <FileCheck
+                  className="h-4 w-4 text-[#737373]"
+                  aria-hidden="true"
+                />
+                <span className="font-[500]">Open Solution</span>
+              </button>
+              <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
+            </>
+          )}
           <button
             onClick={(e) => {
               e.preventDefault();
