@@ -79,7 +79,7 @@ function SolutionContent({ id }: { id: string }) {
 
       setSolution(data.solution);
     } catch (error) {
-      // Silent fail - component will show not found state
+      setSolution(null);
     } finally {
       setIsLoading(false);
     }

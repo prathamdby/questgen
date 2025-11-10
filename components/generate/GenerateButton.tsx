@@ -40,7 +40,6 @@ export function GenerateButton({
         )}
       </button>
 
-      {/* Loading Feedback */}
       {isGenerating && (
         <p className="mt-3 text-center text-[13px] leading-[1.5] text-[#737373] dark:text-[#737373]">
           This may take a few moments. Please don't close this page.

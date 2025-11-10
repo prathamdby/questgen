@@ -10,12 +10,12 @@ export const auth = betterAuth({
   rateLimiting: {
     enabled: true,
     storage: "database",
-    window: 60, // 60 seconds
-    max: 100, // Default for all routes
+    window: 60,
+    max: 100,
     customRules: {
       "/api/papers/generate": {
         window: 60,
-        max: 2, // 2 generations per minute
+        max: 2,
       },
       "/api/papers/regenerate": {
         window: 60,
@@ -32,7 +32,7 @@ export const auth = betterAuth({
   },
 
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // Refresh daily
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
   },
 });

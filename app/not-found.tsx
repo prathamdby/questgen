@@ -1,41 +1,54 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+
+const floatingPaperLayers = [
+  {
+    className:
+      "absolute left-0 top-0 h-20 w-16 animate-[float_6s_ease-in-out_infinite] rounded-[4px] bg-[#fafafa] opacity-40 dark:bg-[#171717]",
+    style: { transform: "rotate(-12deg)" },
+  },
+  {
+    className:
+      "absolute right-0 top-4 h-20 w-16 animate-[float_6s_ease-in-out_infinite_2s] rounded-[4px] bg-[#f5f5f5] opacity-40 dark:bg-[#262626]",
+    style: { transform: "rotate(8deg)" },
+  },
+  {
+    className:
+      "absolute bottom-0 left-8 h-20 w-16 animate-[float_6s_ease-in-out_infinite_4s] rounded-[4px] bg-[#f0f0f0] opacity-40 dark:bg-[#1a1a1a]",
+    style: { transform: "rotate(-5deg)" },
+  },
+] as const;
+
+const helperLinks = [
+  { href: "/home", label: "Browse Papers" },
+  { href: "/signin", label: "Sign In" },
+] as const;
 
 export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
       <div className="mx-auto max-w-2xl px-6 text-center">
-        {/* Floating Papers Background Effect */}
         <div className="relative mb-12">
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="relative h-32 w-32">
-              {/* Floating Paper 1 */}
-              <div
-                className="absolute left-0 top-0 h-20 w-16 animate-[float_6s_ease-in-out_infinite] rounded-[4px] bg-[#fafafa] opacity-40 dark:bg-[#171717]"
-                style={{ transform: "rotate(-12deg)" }}
-              />
-              {/* Floating Paper 2 */}
-              <div
-                className="absolute right-0 top-4 h-20 w-16 animate-[float_6s_ease-in-out_infinite_2s] rounded-[4px] bg-[#f5f5f5] opacity-40 dark:bg-[#262626]"
-                style={{ transform: "rotate(8deg)" }}
-              />
-              {/* Floating Paper 3 */}
-              <div
-                className="absolute bottom-0 left-8 h-20 w-16 animate-[float_6s_ease-in-out_infinite_4s] rounded-[4px] bg-[#f0f0f0] opacity-40 dark:bg-[#1a1a1a]"
-                style={{ transform: "rotate(-5deg)" }}
-              />
+              {floatingPaperLayers.map((layer, index) => (
+                <div
+                  key={`layer-${index}`}
+                  className={layer.className}
+                  style={layer.style}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Large 404 */}
           <h1 className="relative font-sans text-[120px] font-[600] leading-[1] tracking-[-0.05em] text-[#171717] dark:text-white sm:text-[160px]">
             404
           </h1>
         </div>
 
-        {/* Main Message */}
         <div className="mb-10">
           <h2 className="font-sans text-[32px] font-[550] leading-[1.1] tracking-[-0.03em] text-[#171717] dark:text-white sm:text-[40px]">
             This page took a study break
@@ -46,7 +59,6 @@ export default function NotFound() {
           </p>
         </div>
 
-        {/* CTAs */}
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/home"
@@ -67,21 +79,25 @@ export default function NotFound() {
           </Link>
         </div>
 
-        {/* Helper Links */}
         <div className="mt-12 flex items-center justify-center gap-6 text-[14px]">
-          <Link
-            href="/home"
-            className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
-          >
-            Browse Papers
-          </Link>
-          <span className="text-[#e5e5e5] dark:text-[#333333]">·</span>
-          <Link
-            href="/signin"
-            className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
-          >
-            Sign In
-          </Link>
+          {helperLinks.map((link, index) => (
+            <Fragment key={link.href}>
+              <Link
+                href={link.href}
+                className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
+              >
+                {link.label}
+              </Link>
+              {index === 0 ? (
+                <span
+                  className="text-[#e5e5e5] dark:text-[#333333]"
+                  aria-hidden="true"
+                >
+                  ·
+                </span>
+              ) : null}
+            </Fragment>
+          ))}
         </div>
       </div>
 

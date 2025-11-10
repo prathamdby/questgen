@@ -20,8 +20,8 @@ interface PaperMenuProps {
   solutionId?: string;
   onOpenSolution?: () => void;
   menuRef:
-    | React.RefObject<HTMLDivElement | null>
-    | ((el: HTMLDivElement | null) => void);
+    | ((el: HTMLDivElement | null) => void)
+    | React.RefObject<HTMLDivElement>;
 }
 
 export function PaperMenu({
@@ -36,15 +36,8 @@ export function PaperMenu({
   onOpenSolution,
   menuRef,
 }: PaperMenuProps) {
-  const refCallback = typeof menuRef === "function" ? menuRef : undefined;
-  const refObject = typeof menuRef === "function" ? undefined : menuRef;
-
   return (
-    <div
-      className="relative"
-      data-menu-container
-      ref={refCallback || refObject}
-    >
+    <div className="relative" data-menu-container ref={menuRef}>
       <button
         onClick={(e) => {
           e.preventDefault();
