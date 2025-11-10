@@ -7,11 +7,14 @@ function transformStatus(dbStatus: string): "completed" | "in_progress" {
   return dbStatus === "COMPLETED" ? "completed" : "in_progress";
 }
 
+/**
+ * GET /api/solutions/[id]
+ * Fetch a single solution by ID
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -21,45 +24,53 @@ export async function GET(
   }
 
   try {
-    const paper = await prisma.paper.findUnique({
-      where: { id },
+    const { id } = await params;
+
+    const solution = await prisma.solution.findUnique({
+      where: {
+        id,
+      },
       include: {
-        files: true,
-        tags: true,
-        solution: {
-          select: {
-            id: true,
+        paper: {
+          include: {
+            files: true,
           },
         },
       },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
-      return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+    if (!solution || solution.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Solution not found" },
+        { status: 404 },
+      );
     }
 
-    const transformedPaper = {
-      ...paper,
-      status: transformStatus(paper.status),
+    const transformedSolution = {
+      ...solution,
+      status: transformStatus(solution.status),
     };
 
-    return NextResponse.json({ paper: transformedPaper });
+    return NextResponse.json({ solution: transformedSolution });
   } catch (error) {
-    console.error("Failed to fetch paper:", error);
+    console.error("Failed to fetch solution:", error);
     return NextResponse.json(
       {
-        error: "Failed to fetch paper",
+        error: "Failed to fetch solution",
       },
       { status: 500 },
     );
   }
 }
 
+/**
+ * DELETE /api/solutions/[id]
+ * Delete a solution by ID
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -69,24 +80,31 @@ export async function DELETE(
   }
 
   try {
-    const paper = await prisma.paper.findUnique({
+    const { id } = await params;
+
+    const solution = await prisma.solution.findUnique({
       where: { id },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
-      return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+    if (!solution || solution.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Solution not found" },
+        { status: 404 },
+      );
     }
 
-    await prisma.paper.delete({
-      where: { id },
+    await prisma.solution.delete({
+      where: {
+        id,
+      },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete paper:", error);
+    console.error("Failed to delete solution:", error);
     return NextResponse.json(
       {
-        error: "Failed to delete paper",
+        error: "Failed to delete solution",
       },
       { status: 500 },
     );

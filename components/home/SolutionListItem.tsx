@@ -1,58 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock, FileCheck, FileText } from "lucide-react";
+import { ArrowRight, Clock, FileText } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateShort } from "@/lib/format-utils";
-import { PaperMenu } from "./PaperMenu";
+import { SolutionMenu } from "./SolutionMenu";
 
-interface QuestionPaper {
-  id: string;
-  title: string;
-  pattern: string;
-  duration: string;
-  totalMarks: number;
-  createdAt: string;
-  status: "completed" | "in_progress";
-  solution?: {
+interface SolutionListItemProps {
+  solution: {
     id: string;
-  } | null;
-}
-
-interface PaperListItemProps {
-  paper: QuestionPaper;
+    paperId: string;
+    createdAt: string;
+    status: "completed" | "in_progress";
+    paper: {
+      id: string;
+      title: string;
+      pattern: string;
+      duration: string;
+      totalMarks: number;
+    };
+  };
   isMenuOpen: boolean;
-  isExporting: boolean;
+  isDeleting: boolean;
   onMenuToggle: () => void;
-  onExport: () => void;
-  onDuplicate: () => void;
+  onViewPaper: () => void;
   onDelete: () => void;
-  onOpenSolution?: () => void;
   menuRef:
     | React.RefObject<HTMLDivElement | null>
     | ((el: HTMLDivElement | null) => void);
 }
 
-export function PaperListItem({
-  paper,
+export function SolutionListItem({
+  solution,
   isMenuOpen,
-  isExporting,
+  isDeleting,
   onMenuToggle,
-  onExport,
-  onDuplicate,
+  onViewPaper,
   onDelete,
-  onOpenSolution,
   menuRef,
-}: PaperListItemProps) {
+}: SolutionListItemProps) {
   return (
     <Link
-      href={`/paper/${paper.id}`}
+      href={`/solution/${solution.id}`}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (
           target.closest("[data-menu-container]") ||
-          target.closest('button[aria-label="Paper options"]') ||
-          target.closest("button[data-solution-button]")
+          target.closest('button[aria-label="Solution options"]')
         ) {
           e.preventDefault();
         }
@@ -63,40 +57,25 @@ export function PaperListItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="truncate text-[15px] font-[500] text-[#171717] dark:text-white">
-              {paper.title}
+              {solution.paper.title}
             </h3>
-            <StatusBadge status={paper.status} size="sm" />
+            <StatusBadge status={solution.status} size="sm" />
           </div>
           <p className="mt-0.5 truncate text-[13px] text-[#737373]">
-            {paper.pattern}
+            {solution.paper.pattern}
           </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-4 text-[13px] text-[#737373]">
           <span className="hidden items-center gap-1.5 sm:flex">
             <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-            {paper.duration}
+            {solution.paper.duration}
           </span>
           <span className="hidden items-center gap-1.5 tabular-nums sm:flex">
             <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-            {paper.totalMarks} marks
+            {solution.paper.totalMarks} marks
           </span>
-          {paper.solution && (
-            <button
-              type="button"
-              data-solution-button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onOpenSolution?.();
-              }}
-              className="hidden items-center gap-1.5 text-[#737373] transition-colors hover:text-[#171717] focus:outline-none focus:underline dark:hover:text-white sm:flex"
-            >
-              <FileCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              Solution
-            </button>
-          )}
           <span className="tabular-nums text-[12px] text-[#a3a3a3]">
-            {formatDateShort(paper.createdAt)}
+            {formatDateShort(solution.createdAt)}
           </span>
         </div>
       </div>
@@ -104,16 +83,12 @@ export function PaperListItem({
         <span className="hidden items-center gap-1 text-[13px] font-[500] text-[#737373] transition-colors group-hover:text-[#171717] dark:group-hover:text-white sm:flex">
           View <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
-        <PaperMenu
+        <SolutionMenu
           isOpen={isMenuOpen}
-          isExporting={isExporting}
+          isDeleting={isDeleting}
           onToggle={onMenuToggle}
-          onExport={onExport}
-          onDuplicate={onDuplicate}
+          onViewPaper={onViewPaper}
           onDelete={onDelete}
-          hasSolution={!!paper.solution}
-          solutionId={paper.solution?.id}
-          onOpenSolution={paper.solution ? onOpenSolution : undefined}
           menuRef={menuRef}
         />
       </div>

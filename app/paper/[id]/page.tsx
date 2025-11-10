@@ -4,7 +4,7 @@ import { useState, useEffect, use, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileCheck } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
@@ -39,6 +39,9 @@ interface QuestionPaper {
   status: "completed" | "in_progress";
   files?: UploadedFile[];
   content: string;
+  solution?: {
+    id: string;
+  } | null;
 }
 
 function PaperContent({ id }: { id: string }) {
@@ -88,6 +91,7 @@ function PaperContent({ id }: { id: string }) {
           size: f.size,
         })),
         content: data.paper.content,
+        solution: data.paper.solution ?? null,
       });
     } catch (error) {
       // Silent fail - component will show not found state
@@ -226,7 +230,7 @@ function PaperContent({ id }: { id: string }) {
             className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
             aria-hidden="true"
           />
-          <span>Back to papers</span>
+          <span>Back to home</span>
         </Link>
 
         <header className="mb-12">
@@ -248,6 +252,21 @@ function PaperContent({ id }: { id: string }) {
               isExpanded={notesExpanded}
               onToggle={() => setNotesExpanded(!notesExpanded)}
             />
+          )}
+
+          {paper.solution && (
+            <Link
+              href={`/solution/${paper.solution.id}`}
+              className="group mb-6 flex h-[44px] items-center justify-center gap-2 rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
+              style={{ touchAction: "manipulation" }}
+            >
+              <FileCheck className="h-4 w-4" aria-hidden="true" />
+              <span>View companion solution</span>
+              <ExternalLink
+                className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                aria-hidden="true"
+              />
+            </Link>
           )}
 
           <ActionButtons

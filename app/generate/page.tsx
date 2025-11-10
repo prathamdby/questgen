@@ -20,6 +20,7 @@ import {
 import { FileUploadZone } from "@/components/generate/FileUploadZone";
 import { UploadedFilesList } from "@/components/generate/UploadedFilesList";
 import { GenerateButton } from "@/components/generate/GenerateButton";
+import { Switch } from "@/components/ui/switch";
 
 interface UploadedFile {
   file: File;
@@ -39,6 +40,7 @@ export default function Generate() {
   const [duration, setDuration] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [shouldGenerateSolution, setShouldGenerateSolution] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const paperPatternRef = useRef<HTMLTextAreaElement>(null);
@@ -133,6 +135,7 @@ export default function Generate() {
           duration,
           totalMarks,
           files: filesData,
+          generateSolution: shouldGenerateSolution,
         }),
       });
 
@@ -148,6 +151,13 @@ export default function Generate() {
 
       if (!result.success) {
         throw new Error(result.error);
+      }
+
+      if (result.solutionError) {
+        toast.warning("Solution unavailable", {
+          description:
+            "Your paper is ready, but the companion solution could not be generated. Please try regenerating the solution from the paper view.",
+        });
       }
 
       router.push(`/paper/${result.paperId}`);
@@ -317,6 +327,31 @@ export default function Generate() {
               aria-describedby="total-marks-description"
             />
           </FormField>
+
+          {/* Generate Solution Toggle */}
+          <div className="flex flex-wrap items-start justify-between gap-4 rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-5 dark:border-[#262626] dark:bg-[#0f0f0f]">
+            <div className="flex-1 min-w-[220px]">
+              <p
+                id="generate-solution-label"
+                className="text-[14px] font-[500] text-[#171717] tracking-[-0.01em] dark:text-white"
+              >
+                Generate companion solution
+              </p>
+              <p
+                id="generate-solution-description"
+                className="mt-2 text-[13px] leading-[1.5] text-[#595959] dark:text-[#8c8c8c]"
+              >
+                When enabled, QuestGen will craft a step-by-step answer set
+                strictly from your uploaded materials and the generated paper.
+              </p>
+            </div>
+            <Switch
+              checked={shouldGenerateSolution}
+              onCheckedChange={setShouldGenerateSolution}
+              ariaLabelledBy="generate-solution-label"
+              ariaDescribedBy="generate-solution-description"
+            />
+          </div>
 
           {/* File Upload Zone */}
           <div>
