@@ -8,4 +8,7 @@ export const DEFAULT_MODEL = "gemini-flash-latest";
 
 export const DEFAULT_GENERATION_CONFIG = {
   temperature: 0.7,
+  thinkingConfig: {
+    thinkingBudget: 0,
+  },
 };
