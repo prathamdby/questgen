@@ -11,6 +11,30 @@ export interface TransformedPaperFile {
   createdAt: string; // ISO string
 }
 
+/**
+ * Paper list item type (excludes content for performance)
+ * Used in home page list views where content is not needed
+ */
+export interface PaperListItem {
+  id: string;
+  userId: string;
+  title: string;
+  pattern: string;
+  duration: string;
+  totalMarks: number;
+  status: "completed" | "in_progress";
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  files: TransformedPaperFile[];
+  solution?: {
+    id: string;
+  } | null;
+}
+
+/**
+ * Full paper type (includes content)
+ * Used in detail views where full content is needed
+ */
 export interface TransformedPaper {
   id: string;
   userId: string;

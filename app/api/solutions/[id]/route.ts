@@ -1,5 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  invalidatePaperCache,
+  invalidateSolutionCache,
+} from "@/lib/cached-queries";
 import { transformStatus } from "@/lib/transform-status";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
@@ -95,6 +99,9 @@ export async function DELETE(
         id,
       },
     });
+
+    await invalidateSolutionCache(id, session.user.id);
+    await invalidatePaperCache(solution.paperId, session.user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

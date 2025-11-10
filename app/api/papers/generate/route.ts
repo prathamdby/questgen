@@ -1,5 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  invalidatePaperCache,
+  invalidateSolutionCache,
+} from "@/lib/cached-queries";
 import { GoogleGenAI, createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
@@ -607,12 +611,15 @@ export async function POST(request: NextRequest) {
         });
 
         solutionId = solution.id;
+        await invalidateSolutionCache(solution.id, session.user.id);
       } catch (err) {
         console.error("Solution generation error:", err);
         solutionError =
           err instanceof Error ? err.message : "Solution generation failed";
       }
     }
+
+    await invalidatePaperCache(updatedPaper.id, session.user.id);
 
     for (const file of uploadedFileUris) {
       const fileName = file.uri.split("/").pop()!;

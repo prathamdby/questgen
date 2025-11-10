@@ -6,27 +6,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import type { SessionData, TransformedPaper } from "@/lib/types";
+import type { PaperListItem, SessionData } from "@/lib/types";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 import { SignedInHeader } from "@/components/home/SignedInHeader";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
 import { PaperCard } from "@/components/home/PaperCard";
-import { PaperListItem } from "@/components/home/PaperListItem";
+import { PaperListItem as PaperListItemComponent } from "@/components/home/PaperListItem";
 import { PaperCardSkeleton } from "@/components/home/PaperCardSkeleton";
 import { PaperListSkeleton } from "@/components/home/PaperListSkeleton";
 import { EmptyState } from "@/components/home/EmptyState";
 import { NoResultsState } from "@/components/home/NoResultsState";
 
 interface HomeClientProps {
-  initialPapers: TransformedPaper[];
+  initialPapers: PaperListItem[];
   session: SessionData;
 }
 
 export function HomeClient({ initialPapers, session }: HomeClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [papers, setPapers] = useState<TransformedPaper[]>(initialPapers);
+  const [papers, setPapers] = useState<PaperListItem[]>(initialPapers);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<"card" | "list">("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export function HomeClient({ initialPapers, session }: HomeClientProps) {
       );
 
       const papersWithSolutions = (data.papers || []).map(
-        (paper: TransformedPaper) => ({
+        (paper: PaperListItem) => ({
           ...paper,
           solution: solutionMap.has(paper.id)
             ? { id: solutionMap.get(paper.id)! }
@@ -280,7 +280,7 @@ export function HomeClient({ initialPapers, session }: HomeClientProps) {
           {filteredPapers.map((paper) => {
             const solutionId = paper.solution?.id;
             return (
-              <PaperListItem
+              <PaperListItemComponent
                 key={`paper-${paper.id}`}
                 paper={paper}
                 isMenuOpen={openMenuId === `paper-${paper.id}`}

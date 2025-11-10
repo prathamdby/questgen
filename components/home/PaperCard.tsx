@@ -2,25 +2,13 @@
 
 import Link from "next/link";
 import { ArrowRight, Clock, FileCheck, FileText } from "lucide-react";
+import type { PaperListItem } from "@/lib/types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateShort } from "@/lib/format-utils";
 import { PaperMenu } from "./PaperMenu";
 
-interface QuestionPaper {
-  id: string;
-  title: string;
-  pattern: string;
-  duration: string;
-  totalMarks: number;
-  createdAt: string;
-  status: "completed" | "in_progress";
-  solution?: {
-    id: string;
-  } | null;
-}
-
 interface PaperCardProps {
-  paper: QuestionPaper;
+  paper: PaperListItem;
   isMenuOpen: boolean;
   isExporting: boolean;
   onMenuToggle: () => void;

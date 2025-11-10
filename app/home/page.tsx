@@ -2,9 +2,8 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { serializePaper } from "@/lib/serialize-paper";
-import type { SessionData, TransformedPaper } from "@/lib/types";
+import { getCachedPapers } from "@/lib/cached-queries";
+import type { PaperListItem, SessionData } from "@/lib/types";
 import { HomeClient } from "@/components/home/HomeClient";
 import { PaperCardSkeleton } from "@/components/home/PaperCardSkeleton";
 
@@ -18,20 +17,7 @@ async function HomeContent() {
   }
 
   try {
-    const papers = await prisma.paper.findMany({
-      where: { userId: session.user.id },
-      include: {
-        files: true,
-        solution: {
-          select: {
-            id: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const transformedPapers: TransformedPaper[] = papers.map(serializePaper);
+    const papers: PaperListItem[] = await getCachedPapers(session.user.id);
 
     const sessionData: SessionData = {
       user: {
@@ -42,9 +28,7 @@ async function HomeContent() {
       },
     };
 
-    return (
-      <HomeClient initialPapers={transformedPapers} session={sessionData} />
-    );
+    return <HomeClient initialPapers={papers} session={sessionData} />;
   } catch (error) {
     console.error("Failed to load home data:", error);
     throw error;

@@ -115,6 +115,7 @@ model Paper {
   @@index([userId])
   @@index([createdAt])
   @@index([status])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 enum PaperStatus {
@@ -204,6 +205,7 @@ model Solution {
   @@index([userId])
   @@index([paperId])
   @@index([createdAt])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 enum SolutionStatus {

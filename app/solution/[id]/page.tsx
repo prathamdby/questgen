@@ -2,8 +2,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { serializeSolution } from "@/lib/serialize-paper";
+import { getCachedSolution } from "@/lib/cached-queries";
 import { SolutionClient } from "@/components/solution/SolutionClient";
 import { PaperDetailSkeleton } from "@/components/paper/PaperDetailSkeleton";
 
@@ -27,24 +26,13 @@ async function SolutionContent({
   }
 
   try {
-    const solution = await prisma.solution.findUnique({
-      where: { id },
-      include: {
-        paper: {
-          include: {
-            files: true,
-          },
-        },
-      },
-    });
+    const solution = await getCachedSolution(id, session.user.id);
 
-    if (!solution || solution.userId !== session.user.id) {
+    if (!solution) {
       notFound();
     }
 
-    const transformedSolution = serializeSolution(solution);
-
-    return <SolutionClient initialSolution={transformedSolution} />;
+    return <SolutionClient initialSolution={solution} />;
   } catch (error) {
     console.error("Failed to fetch solution:", error);
     throw error;

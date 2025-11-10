@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidatePaperCache } from "@/lib/cached-queries";
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
@@ -334,6 +335,8 @@ export async function POST(request: NextRequest) {
         status: "COMPLETED",
       },
     });
+
+    await invalidatePaperCache(paperId, session.user.id);
 
     return NextResponse.json({
       success: true,

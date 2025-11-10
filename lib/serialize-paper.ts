@@ -1,15 +1,34 @@
 import type { Paper, PaperFile, Solution } from "@prisma/client";
 import { transformStatus } from "@/lib/transform-status";
 import type {
+  PaperListItem,
   TransformedPaper,
   TransformedPaperFile,
   TransformedSolution,
 } from "@/lib/types";
 
 interface PaperRelations {
-  files?: PaperFile[];
+  files?: Array<
+    Pick<PaperFile, "id" | "name" | "size" | "mimeType" | "createdAt">
+  >;
   solution?: { id: string } | null;
 }
+
+type PaperListSource = Pick<
+  Paper,
+  | "id"
+  | "userId"
+  | "title"
+  | "pattern"
+  | "duration"
+  | "totalMarks"
+  | "status"
+  | "createdAt"
+  | "updatedAt"
+> &
+  PaperRelations;
+
+type PaperDetailSource = Paper & PaperRelations;
 
 interface SolutionRelations {
   paper: Paper & {
@@ -17,7 +36,9 @@ interface SolutionRelations {
   };
 }
 
-const serializePaperFile = (file: PaperFile): TransformedPaperFile => ({
+const serializePaperFile = (
+  file: Pick<PaperFile, "id" | "name" | "size" | "mimeType" | "createdAt">,
+): TransformedPaperFile => ({
   id: file.id,
   name: file.name,
   size: file.size,
@@ -25,9 +46,23 @@ const serializePaperFile = (file: PaperFile): TransformedPaperFile => ({
   createdAt: file.createdAt.toISOString(),
 });
 
-export const serializePaper = (
-  paper: Paper & PaperRelations,
-): TransformedPaper => ({
+export const serializePaperListItem = (
+  paper: PaperListSource,
+): PaperListItem => ({
+  id: paper.id,
+  userId: paper.userId,
+  title: paper.title,
+  pattern: paper.pattern,
+  duration: paper.duration,
+  totalMarks: paper.totalMarks,
+  status: transformStatus(paper.status),
+  createdAt: paper.createdAt.toISOString(),
+  updatedAt: paper.updatedAt.toISOString(),
+  files: (paper.files ?? []).map(serializePaperFile),
+  solution: paper.solution ? { id: paper.solution.id } : null,
+});
+
+export const serializePaper = (paper: PaperDetailSource): TransformedPaper => ({
   id: paper.id,
   userId: paper.userId,
   title: paper.title,
