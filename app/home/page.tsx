@@ -60,7 +60,6 @@ export default function Home() {
       const response = await fetch("/api/papers");
       const data = await response.json();
 
-      // Create solution map
       const solutionMap = new Map(
         (data.solutions || []).map((s: { paperId: string; id: string }) => [
           s.paperId,
@@ -68,7 +67,6 @@ export default function Home() {
         ]),
       );
 
-      // Merge solution data into papers
       const papersWithSolutions = (data.papers || []).map(
         (paper: QuestionPaper) => ({
           ...paper,
@@ -80,7 +78,7 @@ export default function Home() {
 
       setPapers(papersWithSolutions);
     } catch (error) {
-      // Silent fail - user will see empty state
+      toast.error("Unable to load your papers");
     } finally {
       setIsLoading(false);
     }
@@ -209,7 +207,7 @@ export default function Home() {
       await signOut();
       router.push("/signin");
     } catch (error) {
-      // Silent fail on sign out
+      toast.error("Failed to sign out");
     }
   };
 

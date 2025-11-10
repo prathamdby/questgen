@@ -29,8 +29,8 @@ interface PaperListItemProps {
   onDelete: () => void;
   onOpenSolution?: () => void;
   menuRef:
-    | React.RefObject<HTMLDivElement | null>
-    | ((el: HTMLDivElement | null) => void);
+    | ((el: HTMLDivElement | null) => void)
+    | React.RefObject<HTMLDivElement>;
 }
 
 export function PaperListItem({

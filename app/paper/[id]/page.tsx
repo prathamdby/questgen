@@ -94,7 +94,7 @@ function PaperContent({ id }: { id: string }) {
         solution: data.paper.solution ?? null,
       });
     } catch (error) {
-      // Silent fail - component will show not found state
+      setPaper(null);
     } finally {
       setIsLoading(false);
     }

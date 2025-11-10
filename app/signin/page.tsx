@@ -33,7 +33,6 @@ export default function SignIn() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
       <div className="w-full max-w-[380px] px-6">
-        {/* Header */}
         <div className="mb-10 text-center">
           <h1 className="font-sans text-[40px] font-[550] leading-[1.1] tracking-[-0.03em] text-[#171717] dark:text-white sm:text-[56px]">
             Sign in
@@ -43,16 +42,13 @@ export default function SignIn() {
           </p>
         </div>
 
-        {/* Sign In Card */}
         <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-6 dark:border-[#333333] dark:bg-black">
-          {/* Google Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
             className="group relative flex h-[44px] w-full items-center justify-center gap-3 rounded-[6px] border border-[#e5e5e5] bg-white px-4 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] disabled:opacity-50 disabled:cursor-not-allowed dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
             aria-label="Sign in with Google"
           >
-            {/* Google Logo */}
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="currentColor"
@@ -78,7 +74,6 @@ export default function SignIn() {
             <span>{isLoading ? "Signing in..." : "Continue with Google"}</span>
           </button>
 
-          {/* Divider with subtle text */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#e5e5e5] dark:border-[#333333]"></div>
@@ -90,13 +85,11 @@ export default function SignIn() {
             </div>
           </div>
 
-          {/* Privacy Notice */}
           <p className="text-center text-[12px] leading-[1.5] text-[#a3a3a3] dark:text-[#666666]">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
 
-        {/* Footer Link */}
         <div className="mt-8 text-center">
           <p className="text-[14px] text-[#737373]">
             Need help?{" "}

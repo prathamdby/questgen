@@ -26,12 +26,10 @@ export function UploadedFilesList({ files, onRemove }: UploadedFilesListProps) {
           role="listitem"
         >
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            {/* File Icon */}
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] bg-[#fafafa] dark:bg-[#171717]">
               <FileIcon filename={uploadedFile.file.name} />
             </div>
 
-            {/* File Info */}
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-[500] text-[#171717] dark:text-white">
                 {uploadedFile.file.name}
@@ -42,7 +40,6 @@ export function UploadedFilesList({ files, onRemove }: UploadedFilesListProps) {
             </div>
           </div>
 
-          {/* Remove Button */}
           <button
             type="button"
             onClick={(e) => {

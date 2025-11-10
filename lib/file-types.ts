@@ -2,7 +2,6 @@
  * Centralized file type definitions and utilities for Gemini API file handling
  */
 
-// Supported MIME types by category
 export const SUPPORTED_IMAGE_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -20,14 +19,12 @@ export const SUPPORTED_DOCUMENT_MIME_TYPES = [
 
 export const SUPPORTED_PDF_MIME_TYPES = ["application/pdf"];
 
-// All supported MIME types
 export const ALL_SUPPORTED_MIME_TYPES = [
   ...SUPPORTED_PDF_MIME_TYPES,
   ...SUPPORTED_IMAGE_MIME_TYPES,
   ...SUPPORTED_DOCUMENT_MIME_TYPES,
 ];
 
-// File extension to MIME type mapping
 export const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   pdf: "application/pdf",
   jpg: "image/jpeg",
