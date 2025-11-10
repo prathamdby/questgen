@@ -51,7 +51,8 @@ export function PaperListItem({
         const target = e.target as HTMLElement;
         if (
           target.closest("[data-menu-container]") ||
-          target.closest('button[aria-label="Paper options"]')
+          target.closest('button[aria-label="Paper options"]') ||
+          target.closest("button[data-solution-button]")
         ) {
           e.preventDefault();
         }
@@ -82,7 +83,9 @@ export function PaperListItem({
           {paper.solution && (
             <button
               type="button"
+              data-solution-button
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onOpenSolution?.();
               }}
