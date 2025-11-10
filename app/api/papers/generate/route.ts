@@ -485,7 +485,6 @@ export async function POST(request: NextRequest) {
 
     const shouldGenerateSolution = Boolean(generateSolution);
 
-    // Create paper record first
     const paper = await prisma.paper.create({
       data: {
         userId: session.user.id,
@@ -510,7 +509,6 @@ export async function POST(request: NextRequest) {
 
     paperId = paper.id;
 
-    // Upload files in parallel with error recovery
     const uploadResults = await Promise.allSettled(
       files.map(
         async (fileData: {
@@ -548,7 +546,6 @@ export async function POST(request: NextRequest) {
       ),
     );
 
-    // Check for failures
     const failures = uploadResults.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
       const failureMessages = failures
@@ -556,7 +553,6 @@ export async function POST(request: NextRequest) {
         .filter(Boolean)
         .join(", ");
 
-      // Clean up successful uploads
       const successfulUploads = uploadResults
         .filter((r) => r.status === "fulfilled")
         .map((r) => (r.status === "fulfilled" ? r.value : null))
@@ -569,7 +565,6 @@ export async function POST(request: NextRequest) {
         }),
       );
 
-      // Delete paper record
       await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
 
       throw new Error(
@@ -577,7 +572,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract successful uploads
     uploadedFileUris.push(
       ...(uploadResults
         .map((r) => (r.status === "fulfilled" ? r.value : null))
@@ -663,7 +657,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Clean up uploaded files after successful generation
     await Promise.all(
       uploadedFileUris.map((file) => {
         const fileName = file.uri.split("/").pop()!;
@@ -679,12 +672,10 @@ export async function POST(request: NextRequest) {
       solutionError,
     });
   } catch (error) {
-    // Comprehensive cleanup on any error
     if (paperId) {
       await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
     }
 
-    // Clean up any uploaded files
     await Promise.all(
       uploadedFileUris.map((file) => {
         const fileName = file.uri.split("/").pop()!;

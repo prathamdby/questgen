@@ -135,7 +135,6 @@ export const PaperCard = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Custom comparison - ignore menuRef function
     return (
       prevProps.paper.id === nextProps.paper.id &&
       prevProps.paper.title === nextProps.paper.title &&

@@ -436,7 +436,6 @@ export async function exportToPDF(paperData: PaperData): Promise<void> {
     throw new Error("Missing required fields: title and content are required");
   }
 
-  // Dynamic import with error handling
   let markedParser: (typeof import("marked"))["marked"];
   try {
     markedParser = (await import("marked")).marked;
@@ -444,7 +443,6 @@ export async function exportToPDF(paperData: PaperData): Promise<void> {
     throw new Error("Failed to load PDF export library. Please try again.");
   }
 
-  // Clean markdown content
   const cleanedContent = cleanMarkdownContent(paperData.content.trim());
 
   // Convert markdown to HTML
@@ -501,7 +499,6 @@ export async function exportSolutionToPDF(
     );
   }
 
-  // Dynamic import with error handling
   let markedParser: (typeof import("marked"))["marked"];
   try {
     markedParser = (await import("marked")).marked;
@@ -509,7 +506,6 @@ export async function exportSolutionToPDF(
     throw new Error("Failed to load PDF export library. Please try again.");
   }
 
-  // Clean markdown content
   const cleanedContent = cleanMarkdownContent(solutionData.content.trim());
 
   // Convert markdown to HTML
