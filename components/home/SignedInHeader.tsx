@@ -1,17 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useSession } from "@/lib/auth-client";
+import type { SessionData } from "@/lib/types";
 
 interface SignedInHeaderProps {
+  session: SessionData;
   onSignOut: () => void;
 }
 
-export function SignedInHeader({ onSignOut }: SignedInHeaderProps) {
-  const { data: session } = useSession();
-
-  if (!session) return null;
-
+export function SignedInHeader({ session, onSignOut }: SignedInHeaderProps) {
   return (
     <div className="mb-8 flex items-center justify-between">
       <div className="inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373]">

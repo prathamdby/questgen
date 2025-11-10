@@ -1,11 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { transformStatus } from "@/lib/transform-status";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-
-function transformStatus(dbStatus: string): "completed" | "in_progress" {
-  return dbStatus === "COMPLETED" ? "completed" : "in_progress";
-}
 
 /**
  * GET /api/solutions/[id]
