@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
 
@@ -31,7 +32,7 @@ export function PaperNotFound() {
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/home"
-            className="group flex h-[44px] w-full items-center justify-center gap-2 rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white"
+            className="group flex h-[44px] w-full items-center justify-center gap-2 rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white sm:w-auto"
             style={{ touchAction: "manipulation" }}
           >
             <span>Browse Papers</span>
@@ -50,9 +51,8 @@ export function PaperNotFound() {
 
         <div className="mt-12 flex items-center justify-center gap-6 text-[14px]">
           {helperLinks.map((link, index) => (
-            <>
+            <Fragment key={link.href}>
               <Link
-                key={link.href}
                 href={link.href}
                 className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
               >
@@ -66,7 +66,7 @@ export function PaperNotFound() {
                   ·
                 </span>
               ) : null}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>

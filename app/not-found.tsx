@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -80,9 +81,8 @@ export default function NotFound() {
 
         <div className="mt-12 flex items-center justify-center gap-6 text-[14px]">
           {helperLinks.map((link, index) => (
-            <>
+            <Fragment key={link.href}>
               <Link
-                key={link.href}
                 href={link.href}
                 className="text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
               >
@@ -96,7 +96,7 @@ export default function NotFound() {
                   ·
                 </span>
               ) : null}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>

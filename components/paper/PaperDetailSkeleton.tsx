@@ -6,7 +6,11 @@ const metadataSkeletons = [
   { labelWidth: "w-28", valueWidth: "w-[60%]" },
 ] as const;
 
-const actionWidths = ["w-24", "w-20", "w-20"] as const;
+const actionWidths = [
+  { width: "w-24", id: "download" },
+  { width: "w-20", id: "edit" },
+  { width: "w-20", id: "delete" },
+] as const;
 
 const contentSkeletonSections = [
   {
@@ -42,7 +46,7 @@ export function PaperDetailSkeleton() {
 
           <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {metadataSkeletons.map((skeleton) => (
-              <div key={skeleton.labelWidth}>
+              <div key={`${skeleton.labelWidth}-${skeleton.valueWidth}`}>
                 <Skeleton className={`mb-2 h-4 ${skeleton.labelWidth}`} />
                 <Skeleton className={`h-5 ${skeleton.valueWidth}`} />
               </div>
@@ -50,10 +54,10 @@ export function PaperDetailSkeleton() {
           </div>
 
           <div className="mb-8 flex gap-2 sm:gap-3">
-            {actionWidths.map((width) => (
+            {actionWidths.map((action) => (
               <Skeleton
-                key={width}
-                className={`h-[40px] ${width} sm:h-[44px]`}
+                key={action.id}
+                className={`h-[40px] ${action.width} sm:h-[44px]`}
               />
             ))}
           </div>
