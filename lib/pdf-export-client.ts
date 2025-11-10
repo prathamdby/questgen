@@ -1,7 +1,5 @@
 "use client";
 
-import { marked } from "marked";
-
 export interface PaperData {
   title: string;
   pattern: string;
@@ -438,11 +436,17 @@ export async function exportToPDF(paperData: PaperData): Promise<void> {
     throw new Error("Missing required fields: title and content are required");
   }
 
-  // Clean markdown content
+  let markedParser: (typeof import("marked"))["marked"];
+  try {
+    markedParser = (await import("marked")).marked;
+  } catch (error) {
+    throw new Error("Failed to load PDF export library. Please try again.");
+  }
+
   const cleanedContent = cleanMarkdownContent(paperData.content.trim());
 
   // Convert markdown to HTML
-  const htmlContent = await marked.parse(cleanedContent, {
+  const htmlContent = await markedParser.parse(cleanedContent, {
     gfm: true,
     breaks: true,
   });
@@ -495,11 +499,17 @@ export async function exportSolutionToPDF(
     );
   }
 
-  // Clean markdown content
+  let markedParser: (typeof import("marked"))["marked"];
+  try {
+    markedParser = (await import("marked")).marked;
+  } catch (error) {
+    throw new Error("Failed to load PDF export library. Please try again.");
+  }
+
   const cleanedContent = cleanMarkdownContent(solutionData.content.trim());
 
   // Convert markdown to HTML
-  const htmlContent = await marked.parse(cleanedContent, {
+  const htmlContent = await markedParser.parse(cleanedContent, {
     gfm: true,
     breaks: true,
   });

@@ -114,6 +114,29 @@ export default function Generate() {
 
     if (isGenerating) return;
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB total
+
+    // Validate individual files
+    const oversizedFiles = uploadedFiles.filter(
+      (f) => f.file.size > MAX_FILE_SIZE,
+    );
+    if (oversizedFiles.length > 0) {
+      toast.error("File size exceeded", {
+        description: `${oversizedFiles[0].file.name} exceeds 10MB limit.`,
+      });
+      return;
+    }
+
+    // Validate total size
+    const totalSize = uploadedFiles.reduce((sum, f) => sum + f.file.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE) {
+      toast.error("Total size exceeded", {
+        description: `Total file size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds 50MB limit.`,
+      });
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
