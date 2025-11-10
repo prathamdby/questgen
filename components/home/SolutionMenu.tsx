@@ -36,7 +36,7 @@ export function SolutionMenu({
           e.stopPropagation();
           onToggle();
         }}
-        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#2563eb] transition-all duration-150 hover:bg-[#dbeafe] hover:text-[#1d4ed8] focus:outline-none focus:ring-2 focus:ring-[#1d4ed8] dark:text-[#93c5fd] dark:hover:bg-[#1e3a8a] dark:focus:ring-[#93c5fd]"
+        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus:ring-white"
         aria-label="Solution options"
         aria-expanded={isOpen}
       >
@@ -49,7 +49,7 @@ export function SolutionMenu({
             e.preventDefault();
             e.stopPropagation();
           }}
-          className="absolute right-0 top-8 z-10 w-[192px] rounded-[6px] border border-[#dbeafe] bg-white p-1 shadow-[0_4px_16px_rgba(59,130,246,0.16)] dark:border-[#1e3a8a] dark:bg-[#0a1628] dark:shadow-[0_4px_16px_rgba(30,64,175,0.45)]"
+          className="absolute right-0 top-8 z-10 w-[192px] rounded-[6px] border border-[#e5e5e5] bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
         >
           <button
             onClick={(e) => {
@@ -57,12 +57,12 @@ export function SolutionMenu({
               e.stopPropagation();
               onViewPaper();
             }}
-            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#1d4ed8] transition-all duration-150 hover:bg-[#eff6ff] dark:text-[#93c5fd] dark:hover:bg-[#1e3a8a]"
+            className="flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] text-[#171717] transition-all duration-150 hover:bg-[#fafafa] dark:text-white dark:hover:bg-[#171717]"
           >
-            <FileText className="h-4 w-4" aria-hidden="true" />
+            <FileText className="h-4 w-4 text-[#737373]" aria-hidden="true" />
             <span className="font-[500]">Open linked paper</span>
           </button>
-          <div className="my-1 h-px bg-[#dbeafe] dark:bg-[#1e3a8a]" />
+          <div className="my-1 h-px bg-[#e5e5e5] dark:bg-[#333333]" />
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -72,8 +72,8 @@ export function SolutionMenu({
             disabled={isDeleting}
             className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-[14px] transition-all duration-150 ${
               isDeleting
-                ? "cursor-not-allowed bg-[#eff6ff] text-[#93c5fd] dark:bg-[#1e3a8a] dark:text-[#93c5fd]"
-                : "text-[#ef4444] hover:bg-[#fee2e2] dark:text-[#fca5a5] dark:hover:bg-[#450a0a]"
+                ? "cursor-not-allowed bg-[#f5f5f5] text-[#a3a3a3] dark:bg-[#171717] dark:text-[#666666]"
+                : "text-[#ef4444] hover:bg-[#fef2f2] dark:text-[#f87171] dark:hover:bg-[#450a0a]"
             }`}
           >
             {isDeleting ? (

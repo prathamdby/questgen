@@ -32,13 +32,8 @@ export async function GET(
       },
       include: {
         paper: {
-          select: {
-            id: true,
-            title: true,
-            pattern: true,
-            duration: true,
-            totalMarks: true,
-            createdAt: true,
+          include: {
+            files: true,
           },
         },
       },

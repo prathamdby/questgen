@@ -257,7 +257,7 @@ function PaperContent({ id }: { id: string }) {
           {paper.solution && (
             <Link
               href={`/solution/${paper.solution.id}`}
-              className="group mb-6 flex h-[48px] items-center justify-center gap-2 rounded-[6px] border-2 border-[#3b82f6] bg-gradient-to-r from-[#eff6ff] to-[#f0f9ff] px-6 text-[15px] font-[500] text-[#1d4ed8] transition-all duration-150 hover:border-[#2563eb] hover:from-[#dbeafe] hover:to-[#dbeafe] focus:outline-none focus:ring-2 focus:ring-[#1d4ed8] focus:ring-offset-2 active:scale-[0.98] dark:border-[#1e3a8a] dark:from-[#0a1628] dark:to-[#0c1a2e] dark:text-[#93c5fd] dark:hover:border-[#1e40af] dark:hover:from-[#10203b] dark:hover:to-[#10203b] dark:focus:ring-[#93c5fd]"
+              className="group mb-6 flex h-[44px] items-center justify-center gap-2 rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
               style={{ touchAction: "manipulation" }}
             >
               <FileCheck className="h-4 w-4" aria-hidden="true" />

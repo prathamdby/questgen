@@ -253,10 +253,10 @@ export default function Home() {
   const renderSolutionsSection = () => (
     <section className="space-y-6">
       <div>
-        <h2 className="text-[20px] font-[550] tracking-[-0.02em] text-[#0f172a] dark:text-white">
+        <h2 className="text-[20px] font-[550] tracking-[-0.02em] text-[#171717] dark:text-white">
           Companion Solutions
         </h2>
-        <p className="mt-2 text-[15px] leading-[1.6] text-[#3b82f6] dark:text-[#93c5fd]">
+        <p className="mt-2 text-[15px] leading-[1.6] text-[#737373] dark:text-[#8c8c8c]">
           Fully referenced answers crafted from your source materials.
         </p>
       </div>

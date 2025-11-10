@@ -11,6 +11,15 @@ export interface PaperData {
   createdAt: string;
 }
 
+export interface SolutionData {
+  paperTitle: string;
+  pattern: string;
+  duration: string;
+  totalMarks: number;
+  content: string;
+  createdAt: string;
+}
+
 export function cleanMarkdownContent(content: string): string {
   return content
     .replace(/^```(?:markdown|md)?\s*\n/i, "")
@@ -446,6 +455,63 @@ export async function exportToPDF(paperData: PaperData): Promise<void> {
     paperData.totalMarks,
     htmlContent,
     paperData.createdAt,
+  );
+
+  // Open new window for printing
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    throw new Error(
+      "Popup blocked. Please allow popups for this site to export PDFs.",
+    );
+  }
+
+  // Write HTML to window
+  printWindow.document.write(html);
+  printWindow.document.close();
+
+  // Wait for fonts to load before printing
+  await waitForFonts(printWindow);
+
+  printWindow.focus();
+  printWindow.print();
+
+  setTimeout(() => {
+    if (printWindow && !printWindow.closed) {
+      printWindow.close();
+    }
+  }, 1000);
+}
+
+/**
+ * Export solution to PDF
+ * Similar to paper export but with "Solution:" prefix in title
+ */
+export async function exportSolutionToPDF(
+  solutionData: SolutionData,
+): Promise<void> {
+  if (!solutionData.paperTitle || !solutionData.content) {
+    throw new Error(
+      "Missing required fields: paperTitle and content are required",
+    );
+  }
+
+  // Clean markdown content
+  const cleanedContent = cleanMarkdownContent(solutionData.content.trim());
+
+  // Convert markdown to HTML
+  const htmlContent = await marked.parse(cleanedContent, {
+    gfm: true,
+    breaks: true,
+  });
+
+  // Generate HTML template with "Solution:" prefix
+  const html = generateHTMLTemplate(
+    `Solution: ${solutionData.paperTitle}`,
+    solutionData.pattern,
+    solutionData.duration,
+    solutionData.totalMarks,
+    htmlContent,
+    solutionData.createdAt,
   );
 
   // Open new window for printing
