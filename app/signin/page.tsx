@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 
 export default function SignIn() {
@@ -86,7 +87,20 @@ export default function SignIn() {
           </div>
 
           <p className="text-center text-[12px] leading-[1.5] text-[#a3a3a3] dark:text-[#666666]">
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            By continuing, you agree to our{" "}
+            <Link
+              href="/legal"
+              className="font-[500] text-[#171717] transition-colors hover:text-[#525252] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-1 dark:text-white dark:hover:text-[#a3a3a3] dark:focus:ring-white"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/legal"
+              className="font-[500] text-[#171717] transition-colors hover:text-[#525252] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-1 dark:text-white dark:hover:text-[#a3a3a3] dark:focus:ring-white"
+            >
+              Privacy Policy
+            </Link>
           </p>
         </div>
 
@@ -94,8 +108,10 @@ export default function SignIn() {
           <p className="text-[14px] text-[#737373]">
             Need help?{" "}
             <a
-              href="#"
-              className="font-[500] text-[#171717] transition-colors hover:text-[#525252] dark:text-white dark:hover:text-[#a3a3a3]"
+              href="https://www.linkedin.com/in/prathamdby"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-[500] text-[#171717] transition-colors hover:text-[#525252] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 dark:text-white dark:hover:text-[#a3a3a3] dark:focus:ring-white"
             >
               Contact support
             </a>

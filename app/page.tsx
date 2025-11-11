@@ -56,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = await auth.api.getSession({
     headers: new Headers({
       cookie: cookieStore.toString(),

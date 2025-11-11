@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 export function LandingFooter() {
@@ -15,9 +16,17 @@ export function LandingFooter() {
               QuestGen
             </span>
           </div>
-          <p className="text-[13px] text-[#666666] dark:text-[#888888]">
-            © {new Date().getFullYear()} QuestGen. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
+            <Link
+              href="/legal"
+              className="text-[13px] font-[500] text-[#666666] transition-colors hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 dark:text-[#888888] dark:hover:text-white dark:focus:ring-white"
+            >
+              Terms & Privacy
+            </Link>
+            <p className="text-[13px] text-[#666666] dark:text-[#888888]">
+              © {new Date().getFullYear()} QuestGen. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
