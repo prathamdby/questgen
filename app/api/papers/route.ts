@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // FIXED: Use allSettled to handle partial failures gracefully
     const [papersResult, solutionsResult] = await Promise.allSettled([
       prisma.paper.findMany({
         where: { userId: session.user.id },
@@ -70,18 +69,10 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // FIXED: Handle partial failures
     const papers =
       papersResult.status === "fulfilled" ? papersResult.value : [];
     const solutions =
       solutionsResult.status === "fulfilled" ? solutionsResult.value : [];
-
-    if (papersResult.status === "rejected") {
-      console.error("Failed to fetch papers:", papersResult.reason);
-    }
-    if (solutionsResult.status === "rejected") {
-      console.error("Failed to fetch solutions:", solutionsResult.reason);
-    }
 
     const transformedPapers = papers.map((paper) => ({
       ...paper,

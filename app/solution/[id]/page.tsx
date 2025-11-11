@@ -136,18 +136,11 @@ function SolutionContent({ id }: { id: string }) {
   }
 
   const sourceFiles: UploadedFile[] =
-    solution.paper.files?.map((file) => {
-      const normalizedFile = file as {
-        name: string;
-        size: number;
-        mimeType?: string;
-      };
-      return {
-        name: normalizedFile.name,
-        type: normalizedFile.mimeType ?? "",
-        size: normalizedFile.size,
-      };
-    }) ?? [];
+    solution.paper.files?.map((file) => ({
+      name: file.name,
+      type: file.mimeType ?? "",
+      size: file.size,
+    })) ?? [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">

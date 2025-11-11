@@ -78,7 +78,7 @@ function PaperContent({ id }: { id: string }) {
     setIsExporting(true);
 
     try {
-      if (paper.content == null) {
+      if (!paper.content) {
         throw new Error("Paper content is unavailable");
       }
 
@@ -167,7 +167,7 @@ function PaperContent({ id }: { id: string }) {
   const files: UploadedFile[] =
     paper.files?.map((file) => ({
       name: file.name,
-      type: (file as { mimeType?: string }).mimeType ?? "",
+      type: file.mimeType ?? "",
       size: file.size,
     })) ?? [];
 

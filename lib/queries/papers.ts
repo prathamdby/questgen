@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import type { QuestionPaper, PapersData, SolutionDetail } from "./types";
 
-// Fetch all papers - SESSION GUARDED
 export function usePapers(): UseQueryResult<PapersData, Error> {
   const { data: session } = useSession();
 
@@ -19,13 +18,12 @@ export function usePapers(): UseQueryResult<PapersData, Error> {
       if (!res.ok) throw new Error("Failed to fetch papers");
       return res.json();
     },
-    enabled: !!session, // CRITICAL: Only run when session exists
-    staleTime: 30000, // 30s - data fresh for 30s
-    gcTime: 5 * 60 * 1000, // 5min - keep in cache for 5min
+    enabled: !!session,
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
-// Fetch single paper - SESSION GUARDED
 export function usePaper(
   id: string,
 ): UseQueryResult<{ paper: QuestionPaper }, Error> {
@@ -38,13 +36,12 @@ export function usePaper(
       if (!res.ok) throw new Error("Failed to fetch paper");
       return res.json();
     },
-    enabled: !!session && !!id, // CRITICAL: Session + ID required
+    enabled: !!session && !!id,
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
   });
 }
 
-// Fetch single solution - SESSION GUARDED
 export function useSolution(
   id: string,
 ): UseQueryResult<{ solution: SolutionDetail }, Error> {
@@ -57,19 +54,17 @@ export function useSolution(
       if (!res.ok) throw new Error("Failed to fetch solution");
       return res.json();
     },
-    enabled: !!session && !!id, // CRITICAL: Session + ID required
+    enabled: !!session && !!id,
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
   });
 }
 
-// Duplicate paper - FIXED: Uses cached data, handles race conditions
 export function useDuplicatePaper() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ paperId }: { paperId: string }) => {
-      // FIXED: Try cached data first, fallback to fetch
       let paperData: { paper: QuestionPaper };
       const cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
         "paper",
@@ -83,8 +78,6 @@ export function useDuplicatePaper() {
         if (!paperRes.ok) throw new Error("Paper not found");
         paperData = await paperRes.json();
       }
-
-      // Fetch solution if exists
       let solutionContent: string | null = null;
       let solutionStatus: "completed" | "in_progress" = "completed";
 
@@ -108,7 +101,6 @@ export function useDuplicatePaper() {
         }
       }
 
-      // Create duplicate
       const duplicateRes = await fetch("/api/papers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,22 +126,19 @@ export function useDuplicatePaper() {
       const previousData = queryClient.getQueryData<PapersData>(["papers"]);
 
       if (previousData) {
-        // FIXED: Fetch paper if not cached to ensure optimistic update always happens
         let cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
           "paper",
           paperId,
         ]);
 
         if (!cached) {
-          // Fetch paper for optimistic update if not in cache
           try {
             const paperRes = await fetch(`/api/papers/${paperId}`);
             if (paperRes.ok) {
               cached = await paperRes.json();
             }
           } catch {
-            // If fetch fails, skip optimistic update but continue mutation
-            // Loading toast will be dismissed in onSuccess/onError
+            // Skip optimistic update if fetch fails
           }
         }
 
@@ -187,7 +176,6 @@ export function useDuplicatePaper() {
       if (context?.loadingToastId) {
         toast.dismiss(context.loadingToastId);
       }
-      // FIXED: Invalidate to get real IDs, but keep optimistic until refetch
       queryClient.invalidateQueries({ queryKey: ["papers"] });
       toast.success("Paper duplicated");
     },
@@ -206,7 +194,6 @@ export function useDuplicatePaper() {
   });
 }
 
-// Delete paper - with optimistic update
 export function useDeletePaper() {
   const queryClient = useQueryClient();
 
@@ -246,7 +233,6 @@ export function useDeletePaper() {
       if (context?.loadingToastId) {
         toast.dismiss(context.loadingToastId);
       }
-      // Cache already updated optimistically
       queryClient.invalidateQueries({ queryKey: ["papers"] });
       toast.success("Paper deleted");
     },
@@ -266,7 +252,6 @@ export function useDeletePaper() {
   });
 }
 
-// Delete solution - with optimistic update
 export function useDeleteSolution() {
   const queryClient = useQueryClient();
 
@@ -289,7 +274,6 @@ export function useDeleteSolution() {
       }>(["solution", solutionId]);
       const previousPapers = queryClient.getQueryData<PapersData>(["papers"]);
 
-      // Remove from papers list
       if (previousPapers && previousSolution) {
         queryClient.setQueryData<PapersData>(["papers"], (old) => {
           if (!old) return old;
@@ -331,7 +315,6 @@ export function useDeleteSolution() {
   });
 }
 
-// Regenerate paper - with optimistic status update
 export function useRegeneratePaper() {
   const queryClient = useQueryClient();
 
@@ -368,7 +351,6 @@ export function useRegeneratePaper() {
       ]);
       const previousPapers = queryClient.getQueryData<PapersData>(["papers"]);
 
-      // FIXED: Update both individual paper and list cache
       if (previousPaper) {
         queryClient.setQueryData<{ paper: QuestionPaper }>(
           ["paper", paperId],
@@ -401,7 +383,6 @@ export function useRegeneratePaper() {
       if (context?.loadingToastId) {
         toast.dismiss(context.loadingToastId);
       }
-      // FIXED: Update both caches with real data
       queryClient.setQueryData<{ paper: QuestionPaper }>(
         ["paper", paperId],
         (old) => {
