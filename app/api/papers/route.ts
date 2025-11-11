@@ -17,56 +17,71 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const papers = await prisma.paper.findMany({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        title: true,
-        pattern: true,
-        duration: true,
-        totalMarks: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        files: {
-          select: {
-            id: true,
-            name: true,
-            size: true,
-            mimeType: true,
-            createdAt: true,
+    // FIXED: Use allSettled to handle partial failures gracefully
+    const [papersResult, solutionsResult] = await Promise.allSettled([
+      prisma.paper.findMany({
+        where: { userId: session.user.id },
+        select: {
+          id: true,
+          title: true,
+          pattern: true,
+          duration: true,
+          totalMarks: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          files: {
+            select: {
+              id: true,
+              name: true,
+              size: true,
+              mimeType: true,
+              createdAt: true,
+            },
+          },
+          tags: {
+            select: {
+              id: true,
+              tag: true,
+            },
+          },
+          solution: {
+            select: {
+              id: true,
+            },
           },
         },
-        tags: {
-          select: {
-            id: true,
-            tag: true,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.solution.findMany({
+        where: { userId: session.user.id },
+        include: {
+          paper: {
+            select: {
+              id: true,
+              title: true,
+              pattern: true,
+              duration: true,
+              totalMarks: true,
+            },
           },
         },
-        solution: {
-          select: {
-            id: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-    const solutions = await prisma.solution.findMany({
-      where: { userId: session.user.id },
-      include: {
-        paper: {
-          select: {
-            id: true,
-            title: true,
-            pattern: true,
-            duration: true,
-            totalMarks: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    // FIXED: Handle partial failures
+    const papers =
+      papersResult.status === "fulfilled" ? papersResult.value : [];
+    const solutions =
+      solutionsResult.status === "fulfilled" ? solutionsResult.value : [];
+
+    if (papersResult.status === "rejected") {
+      console.error("Failed to fetch papers:", papersResult.reason);
+    }
+    if (solutionsResult.status === "rejected") {
+      console.error("Failed to fetch solutions:", solutionsResult.reason);
+    }
 
     const transformedPapers = papers.map((paper) => ({
       ...paper,

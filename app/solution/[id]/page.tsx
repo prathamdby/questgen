@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
 import {
   exportSolutionToPDF,
   type SolutionData,
 } from "@/lib/pdf-export-client";
+import { useSolution, useDeleteSolution } from "@/lib/queries/papers";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
 import { SourceFilesSection } from "@/components/paper/SourceFilesSection";
@@ -18,72 +20,32 @@ import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { PaperDetailSkeleton } from "@/components/paper/PaperDetailSkeleton";
 import { PaperNotFound } from "@/components/paper/PaperNotFound";
 
-interface PaperFile {
-  name: string;
-  mimeType: string;
-  size: number;
-}
-
 interface UploadedFile {
   name: string;
   type: string;
   size: number;
 }
 
-interface SolutionDetail {
-  id: string;
-  paperId: string;
-  content: string;
-  status: "completed" | "in_progress";
-  createdAt: string;
-  updatedAt: string;
-  paper: {
-    id: string;
-    title: string;
-    pattern: string;
-    duration: string;
-    totalMarks: number;
-    createdAt: string;
-    files?: PaperFile[];
-  };
-}
-
 function SolutionContent({ id }: { id: string }) {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [solution, setSolution] = useState<SolutionDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { data: session, isPending: sessionPending } = useSession();
+  const { data, isPending, error } = useSolution(id);
+  const deleteSolution = useDeleteSolution();
+  const queryClient = useQueryClient();
+
   const [isExporting, setIsExporting] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
 
+  const solution = data?.solution || null;
+  const isLoading = isPending && !solution;
+  const isDeleting = deleteSolution.isPending;
+
   useEffect(() => {
-    if (!isPending && !session) {
+    if (!sessionPending && !session) {
       router.push("/signin");
       return;
     }
-
-    if (session) {
-      fetchSolution();
-    }
-  }, [session, isPending, id, router]);
-
-  const fetchSolution = async () => {
-    try {
-      const response = await fetch(`/api/solutions/${id}`);
-      const data = await response.json();
-
-      if (!data.solution) {
-        throw new Error("Solution not found");
-      }
-
-      setSolution(data.solution);
-    } catch (error) {
-      setSolution(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [session, sessionPending, router]);
 
   const handleExport = async () => {
     if (!solution) return;
@@ -114,7 +76,7 @@ function SolutionContent({ id }: { id: string }) {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!solution) return;
 
     if (
@@ -122,22 +84,12 @@ function SolutionContent({ id }: { id: string }) {
         "Are you sure you want to delete this solution? This action cannot be undone.",
       )
     ) {
-      setIsDeleting(true);
-      router.push("/home");
-
-      try {
-        const response = await fetch(`/api/solutions/${solution.id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to delete solution");
-        }
-      } catch (error) {
-        toast.error("Failed to delete solution");
-        setIsDeleting(false);
-        router.push(`/solution/${solution.id}`);
-      }
+      deleteSolution.mutate(solution.id, {
+        onSuccess: () => {
+          router.push("/home");
+          toast.success("Solution deleted");
+        },
+      });
     }
   };
 
@@ -145,17 +97,58 @@ function SolutionContent({ id }: { id: string }) {
     return <PaperDetailSkeleton />;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-[#eff6ff] dark:from-black dark:to-[#0a1628]">
+        <div className="mx-auto max-w-4xl px-6 py-16 sm:px-8">
+          <Link
+            href="/home"
+            className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
+          >
+            <ArrowLeft
+              className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
+              aria-hidden="true"
+            />
+            <span>Back to home</span>
+          </Link>
+          <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-8 text-center shadow-sm dark:border-[#262626] dark:bg-[#0a0a0a]">
+            <h2 className="text-[20px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
+              Failed to load this solution
+            </h2>
+            <p className="mt-3 text-[15px] text-[#737373] dark:text-[#a3a3a3]">
+              Please refresh or try again in a moment.
+            </p>
+            <button
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["solution", id] })
+              }
+              className="mt-6 inline-flex h-[44px] items-center justify-center rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all hover:bg-[#404040] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!solution) {
     return <PaperNotFound />;
   }
 
-  const sourceFiles: UploadedFile[] = (solution.paper.files ?? []).map(
-    (file: PaperFile) => ({
-      name: file.name,
-      type: file.mimeType,
-      size: file.size,
-    }),
-  );
+  const sourceFiles: UploadedFile[] =
+    solution.paper.files?.map((file) => {
+      const normalizedFile = file as {
+        name: string;
+        size: number;
+        mimeType?: string;
+      };
+      return {
+        name: normalizedFile.name,
+        type: normalizedFile.mimeType ?? "",
+        size: normalizedFile.size,
+      };
+    }) ?? [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">

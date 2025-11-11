@@ -8,6 +8,13 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
+import {
+  usePapers,
+  useDuplicatePaper,
+  useDeletePaper,
+} from "@/lib/queries/papers";
+import { useQueryClient } from "@tanstack/react-query";
+import type { QuestionPaper } from "@/lib/queries/types";
 import { SignedInHeader } from "@/components/home/SignedInHeader";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewToggle } from "@/components/home/ViewToggle";
@@ -18,63 +25,29 @@ import { PaperListSkeleton } from "@/components/home/PaperListSkeleton";
 import { EmptyState } from "@/components/home/EmptyState";
 import { NoResultsState } from "@/components/home/NoResultsState";
 
-interface QuestionPaper {
-  id: string;
-  title: string;
-  pattern: string;
-  duration: string;
-  totalMarks: number;
-  createdAt: string;
-  status: "completed" | "in_progress";
-  files: Array<{ name: string; size: number; mimeType: string }>;
-  solution?: {
-    id: string;
-  } | null;
-}
-
-interface PapersData {
-  papers: QuestionPaper[];
-  solutions: Array<{ paperId: string; id: string }>;
-}
-
 export default function Home() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending: sessionPending } = useSession();
+  const queryClient = useQueryClient();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [papersData, setPapersData] = useState<PapersData | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<"card" | "list">("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const menuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const fetchPapers = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/papers");
-      const data = await response.json();
+  const { data: papersData, isPending, error } = usePapers();
+  const duplicatePaper = useDuplicatePaper();
+  const deletePaper = useDeletePaper();
 
-      setPapersData({
-        papers: data.papers || [],
-        solutions: data.solutions || [],
-      });
-    } catch (error) {
-      toast.error("Unable to load your papers");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const isLoading = isPending && !papersData;
 
   useEffect(() => {
-    if (!isPending && !session) {
+    if (!sessionPending && !session) {
       router.push("/signin");
       return;
     }
-
-    if (session && !papersData) {
-      fetchPapers();
-    }
-  }, [session, isPending, papersData, router, fetchPapers]);
+  }, [session, sessionPending, router]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,20 +69,20 @@ export default function Home() {
   }, [openMenuId]);
 
   const papersWithSolutions = useMemo(() => {
-    if (!papersData) {
-      return [];
-    }
+    const papers = papersData?.papers ?? [];
+    const solutions = papersData?.solutions ?? [];
 
-    const solutionMap = new Map(
-      papersData.solutions.map((s) => [s.paperId, s.id]),
-    );
+    const solutionMap = new Map(solutions.map((s) => [s.paperId, s.id]));
 
-    return papersData.papers.map((paper) => ({
-      ...paper,
-      solution: solutionMap.has(paper.id)
-        ? { id: solutionMap.get(paper.id)! }
-        : null,
-    }));
+    return papers.map((paper) => {
+      const mappedSolutionId = solutionMap.get(paper.id);
+      const existingSolutionId = mappedSolutionId ?? paper.solution?.id ?? null;
+
+      return {
+        ...paper,
+        solution: existingSolutionId ? { id: existingSolutionId } : null,
+      };
+    });
   }, [papersData]);
 
   const filteredPapers = useMemo(() => {
@@ -120,218 +93,89 @@ export default function Home() {
     );
   }, [papersWithSolutions, searchQuery]);
 
-  const handleQuickExport = useCallback(async (paperId: string) => {
-    setExportingPaperId(paperId);
-    setOpenMenuId(null);
-
-    try {
-      const response = await fetch(`/api/papers/${paperId}`);
-      const data = await response.json();
-
-      if (!data.paper) {
-        throw new Error("Paper not found");
-      }
-
-      const paperData: PaperData = {
-        title: data.paper.title,
-        pattern: data.paper.pattern,
-        duration: data.paper.duration,
-        totalMarks: data.paper.totalMarks,
-        content: data.paper.content,
-        createdAt: data.paper.createdAt,
-      };
-
-      await exportToPDF(paperData);
-      toast.success("Paper exported successfully");
-    } catch (error) {
-      toast.error("Unable to export your paper", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setExportingPaperId(null);
-    }
-  }, []);
-
-  const handleDuplicate = useCallback(
+  const handleQuickExport = useCallback(
     async (paperId: string) => {
+      setExportingPaperId(paperId);
       setOpenMenuId(null);
-
-      let tempId: string | null = null;
-      let tempSolutionId: string | null = null;
 
       try {
-        const response = await fetch(`/api/papers/${paperId}`);
-        const data = await response.json();
+        let paperData: PaperData | null = null;
+        const cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
+          "paper",
+          paperId,
+        ]);
 
-        if (!data.paper) {
-          throw new Error("Paper not found");
-        }
+        if (cached?.paper && cached.paper.content) {
+          paperData = {
+            title: cached.paper.title,
+            pattern: cached.paper.pattern,
+            duration: cached.paper.duration,
+            totalMarks: cached.paper.totalMarks,
+            content: cached.paper.content,
+            createdAt: cached.paper.createdAt,
+          };
+        } else {
+          const response = await fetch(`/api/papers/${paperId}`);
+          const data = await response.json();
 
-        const hasSolution = !!data.paper.solution;
-        let solutionContent: string | null = null;
-        let solutionStatus: "completed" | "in_progress" = "completed";
-
-        if (hasSolution) {
-          const solutionResponse = await fetch(
-            `/api/solutions/${data.paper.solution.id}`,
-          );
-          const solutionData = await solutionResponse.json();
-
-          if (solutionData.solution) {
-            solutionContent = solutionData.solution.content;
-            solutionStatus = solutionData.solution.status;
-            tempSolutionId = `temp-sol-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+          if (!data.paper) {
+            throw new Error("Paper not found");
           }
-        }
 
-        tempId = `temp-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
-
-        if (!tempId) {
-          throw new Error("Failed to prepare duplicate");
-        }
-
-        const optimisticPaperId: string = tempId;
-
-        const optimisticPaper: QuestionPaper = {
-          id: optimisticPaperId,
-          title: `${data.paper.title} (Copy)`,
-          pattern: data.paper.pattern,
-          duration: data.paper.duration,
-          totalMarks: data.paper.totalMarks,
-          createdAt: new Date().toISOString(),
-          status: "completed",
-          files: (data.paper.files ?? []).map(
-            (file: { name: string; size: number; mimeType: string }) => ({
-              name: file.name,
-              size: file.size,
-              mimeType: file.mimeType,
-            }),
-          ),
-          solution: tempSolutionId ? { id: tempSolutionId } : null,
-        };
-
-        setPapersData((prev) => {
-          if (!prev) return prev;
-
-          const newSolutions = tempSolutionId
-            ? [
-                { paperId: optimisticPaperId, id: tempSolutionId },
-                ...prev.solutions,
-              ]
-            : prev.solutions;
-
-          return {
-            ...prev,
-            papers: [optimisticPaper, ...prev.papers],
-            solutions: newSolutions,
-          };
-        });
-
-        const requestBody: {
-          title: string;
-          pattern: string;
-          duration: string;
-          totalMarks: number;
-          content: string;
-          solution?: { content: string; status: string };
-        } = {
-          title: optimisticPaper.title,
-          pattern: optimisticPaper.pattern,
-          duration: optimisticPaper.duration,
-          totalMarks: optimisticPaper.totalMarks,
-          content: data.paper.content,
-        };
-
-        if (solutionContent) {
-          requestBody.solution = {
-            content: solutionContent,
-            status: solutionStatus,
+          paperData = {
+            title: data.paper.title,
+            pattern: data.paper.pattern,
+            duration: data.paper.duration,
+            totalMarks: data.paper.totalMarks,
+            content: data.paper.content,
+            createdAt: data.paper.createdAt,
           };
         }
 
-        const duplicateResponse = await fetch("/api/papers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!duplicateResponse.ok) {
-          throw new Error("Failed to duplicate paper");
+        if (!paperData) {
+          throw new Error("Paper data is unavailable");
         }
 
-        const result = await duplicateResponse.json();
-
-        if (!result.paperId) {
-          throw new Error("Failed to duplicate paper");
-        }
-
-        await fetchPapers();
-
-        const message = solutionContent
-          ? "Paper and solution duplicated"
-          : "Paper duplicated";
-        toast.success(message);
+        await exportToPDF(paperData);
+        toast.success("Paper exported successfully");
       } catch (error) {
-        if (tempId || tempSolutionId) {
-          setPapersData((prev) => {
-            if (!prev) return prev;
-            return {
-              papers: prev.papers.filter((paper) => paper.id !== tempId),
-              solutions: prev.solutions.filter((s) => s.id !== tempSolutionId),
-            };
-          });
-        }
-
-        toast.error(
-          error instanceof Error ? error.message : "Failed to duplicate paper",
-        );
+        toast.error("Unable to export your paper", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred. Please try again.",
+        });
+      } finally {
+        setExportingPaperId(null);
       }
     },
-    [fetchPapers],
+    [queryClient],
   );
 
-  const handleDelete = useCallback(async (paperId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone.",
-      )
-    ) {
+  const handleDuplicate = useCallback(
+    (paperId: string) => {
       setOpenMenuId(null);
-      return;
-    }
+      duplicatePaper.mutate({ paperId });
+    },
+    [duplicatePaper],
+  );
 
-    let snapshot: PapersData | null = null;
-
-    setPapersData((prev) => {
-      if (!prev) return prev;
-      snapshot = prev;
-      return {
-        ...prev,
-        papers: prev.papers.filter((p) => p.id !== paperId),
-        solutions: prev.solutions.filter((s) => s.paperId !== paperId),
-      };
-    });
-
-    setOpenMenuId(null);
-
-    try {
-      const response = await fetch(`/api/papers/${paperId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete paper");
+  const handleDelete = useCallback(
+    (paperId: string) => {
+      if (
+        !confirm(
+          "Are you sure you want to delete this paper? This action cannot be undone.",
+        )
+      ) {
+        setOpenMenuId(null);
+        return;
       }
-    } catch (error) {
-      toast.error("Failed to delete paper");
-      if (snapshot) {
-        setPapersData(snapshot);
-      }
-    }
-  }, []);
+
+      setOpenMenuId(null);
+      deletePaper.mutate(paperId);
+    },
+    [deletePaper],
+  );
 
   const handleOpenSolution = useCallback(
     (solutionId: string) => {
@@ -439,6 +283,29 @@ export default function Home() {
     handleOpenSolution,
     setMenuRef,
   ]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black">
+        <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
+          <SignedInHeader onSignOut={handleSignOut} />
+          <div className="mt-12 text-center">
+            <p className="text-[17px] text-red-500 dark:text-red-400">
+              Failed to load papers. Please try again.
+            </p>
+            <button
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["papers"] })
+              }
+              className="mt-4 rounded-[6px] bg-[#171717] px-6 py-2 text-[15px] font-[500] text-white transition-all hover:bg-[#404040] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   let content: ReactNode;
 

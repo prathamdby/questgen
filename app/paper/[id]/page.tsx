@@ -5,8 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, FileCheck } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
+import {
+  usePaper,
+  useRegeneratePaper,
+  useDeletePaper,
+} from "@/lib/queries/papers";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
 import { SourceFilesSection } from "@/components/paper/SourceFilesSection";
@@ -22,141 +28,48 @@ interface UploadedFile {
   size: number;
 }
 
-interface PaperFile {
-  name: string;
-  mimeType: string;
-  size: number;
-}
-
-interface QuestionPaper {
-  id: string;
-  title: string;
-  pattern: string;
-  duration: string;
-  totalMarks: number;
-  createdAt: string;
-  updatedAt: string;
-  status: "completed" | "in_progress";
-  files?: UploadedFile[];
-  content: string;
-  solution?: {
-    id: string;
-  } | null;
-}
-
 function PaperContent({ id }: { id: string }) {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending: sessionPending } = useSession();
+  const { data, isPending, error } = usePaper(id);
+  const regeneratePaper = useRegeneratePaper();
+  const deletePaper = useDeletePaper();
+  const queryClient = useQueryClient();
+
   const [notesExpanded, setNotesExpanded] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isRegenPanelOpen, setIsRegenPanelOpen] = useState(false);
   const [regenNotes, setRegenNotes] = useState("");
-  const [paper, setPaper] = useState<QuestionPaper | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const regenPanelId = "paper-regenerate-panel";
 
+  const paper = data?.paper || null;
+  const isLoading = isPending && !paper;
+  const isRegenerating = regeneratePaper.isPending;
+
   useEffect(() => {
-    if (!isPending && !session) {
+    if (!sessionPending && !session) {
       router.push("/signin");
       return;
     }
-
-    if (session) {
-      fetchPaper();
-    }
-  }, [session, isPending, id, router]);
-
-  const fetchPaper = async () => {
-    try {
-      const response = await fetch(`/api/papers/${id}`);
-      const data = await response.json();
-
-      if (!data.paper) {
-        throw new Error("Paper not found");
-      }
-
-      setPaper({
-        id: data.paper.id,
-        title: data.paper.title,
-        pattern: data.paper.pattern,
-        duration: data.paper.duration,
-        totalMarks: data.paper.totalMarks,
-        createdAt: data.paper.createdAt,
-        updatedAt: data.paper.updatedAt,
-        status: data.paper.status,
-        files: data.paper.files?.map((f: PaperFile) => ({
-          name: f.name,
-          type: f.mimeType,
-          size: f.size,
-        })),
-        content: data.paper.content,
-        solution: data.paper.solution ?? null,
-      });
-    } catch (error) {
-      setPaper(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [session, sessionPending, router]);
 
   const handleRegenButtonClick = () => {
     if (isRegenerating) return;
     setIsRegenPanelOpen((prev) => !prev);
   };
 
-  const triggerRegeneration = async (notes: string) => {
+  const triggerRegeneration = (notes: string) => {
     if (!paper || isRegenerating) return;
 
-    const trimmedNotes = notes.trim();
-
-    setIsRegenerating(true);
-    setPaper((prev) => (prev ? { ...prev, status: "in_progress" } : prev));
-
-    try {
-      const response = await fetch("/api/papers/regenerate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paperId: paper.id,
-          instructions: trimmedNotes,
-        }),
-      });
-
-      if (response.status === 429) {
-        toast.error("Rate limit exceeded", {
-          description:
-            "You can regenerate 2 papers per minute. Please wait before trying again.",
-        });
-        return;
-      }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      setPaper((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          content: result.content,
-          status: "completed",
-          updatedAt: result.updatedAt,
-        };
-      });
-
-      setRegenNotes("");
-      setIsRegenPanelOpen(false);
-    } catch (error) {
-      toast.error("Regeneration failed", {
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
-      setPaper((prev) => (prev ? { ...prev, status: "completed" } : prev));
-    } finally {
-      setIsRegenerating(false);
-    }
+    regeneratePaper.mutate(
+      { paperId: paper.id, instructions: notes },
+      {
+        onSuccess: () => {
+          setRegenNotes("");
+          setIsRegenPanelOpen(false);
+        },
+      },
+    );
   };
 
   const handleExport = async () => {
@@ -165,6 +78,10 @@ function PaperContent({ id }: { id: string }) {
     setIsExporting(true);
 
     try {
+      if (paper.content == null) {
+        throw new Error("Paper content is unavailable");
+      }
+
       const paperData: PaperData = {
         title: paper.title,
         pattern: paper.pattern,
@@ -188,7 +105,7 @@ function PaperContent({ id }: { id: string }) {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!paper) return;
 
     if (
@@ -196,20 +113,11 @@ function PaperContent({ id }: { id: string }) {
         "Are you sure you want to delete this paper? This action cannot be undone.",
       )
     ) {
-      router.push("/home");
-
-      try {
-        const response = await fetch(`/api/papers/${paper.id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to delete paper");
-        }
-      } catch (error) {
-        toast.error("Failed to delete paper");
-        router.push(`/paper/${paper.id}`);
-      }
+      deletePaper.mutate(paper.id, {
+        onSuccess: () => {
+          router.push("/home");
+        },
+      });
     }
   };
 
@@ -217,9 +125,51 @@ function PaperContent({ id }: { id: string }) {
     return <PaperDetailSkeleton />;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black">
+        <div className="mx-auto max-w-4xl px-6 py-16 sm:px-8">
+          <Link
+            href="/home"
+            className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
+          >
+            <ArrowLeft
+              className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
+              aria-hidden="true"
+            />
+            <span>Back to home</span>
+          </Link>
+          <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-8 text-center shadow-sm dark:border-[#262626] dark:bg-[#0a0a0a]">
+            <h2 className="text-[20px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
+              Failed to load this paper
+            </h2>
+            <p className="mt-3 text-[15px] text-[#737373] dark:text-[#a3a3a3]">
+              Please refresh or try again in a moment.
+            </p>
+            <button
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["paper", id] })
+              }
+              className="mt-6 inline-flex h-[44px] items-center justify-center rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all hover:bg-[#404040] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!paper) {
     return <PaperNotFound />;
   }
+
+  const files: UploadedFile[] =
+    paper.files?.map((file) => ({
+      name: file.name,
+      type: (file as { mimeType?: string }).mimeType ?? "",
+      size: file.size,
+    })) ?? [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -248,9 +198,9 @@ function PaperContent({ id }: { id: string }) {
             totalMarks={paper.totalMarks}
           />
 
-          {paper.files && paper.files.length > 0 && (
+          {files.length > 0 && (
             <SourceFilesSection
-              files={paper.files}
+              files={files}
               isExpanded={notesExpanded}
               onToggle={() => setNotesExpanded(!notesExpanded)}
             />
@@ -291,7 +241,7 @@ function PaperContent({ id }: { id: string }) {
           />
         </header>
 
-        <MarkdownPreview content={paper.content} />
+        <MarkdownPreview content={paper.content ?? ""} />
       </div>
     </div>
   );

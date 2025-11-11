@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "question-paper-generator",
@@ -8,6 +7,7 @@
         "@better-auth/cli": "^1.3.34",
         "@google/genai": "^1.29.0",
         "@prisma/client": "^6.19.0",
+        "@tanstack/react-query": "^5.0.0",
         "@vercel/analytics": "^1.5.0",
         "better-auth": "^1.3.34",
         "class-variance-authority": "^0.7.1",
@@ -27,6 +27,7 @@
       "devDependencies": {
         "@eslint/eslintrc": "^3",
         "@tailwindcss/postcss": "^4",
+        "@tanstack/react-query-devtools": "^5.0.0",
         "@types/marked": "^6.0.0",
         "@types/node": "^20",
         "@types/react": "^19.2.2",
@@ -371,6 +372,14 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.1.14", "https://registry.npmmirror.com/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.1.14.tgz", { "os": "win32", "cpu": "x64" }, "sha512-ttblVGHgf68kEE4om1n/n44I0yGPkCPbLsqzjvybhpwa6mKKtgFfAzy6btc3HRmuW7nHe0OOrSeNP9sQmmH9XA=="],
 
     "@tailwindcss/postcss": ["@tailwindcss/postcss@4.1.14", "https://registry.npmmirror.com/@tailwindcss/postcss/-/postcss-4.1.14.tgz", { "dependencies": { "@alloc/quick-lru": "^5.2.0", "@tailwindcss/node": "4.1.14", "@tailwindcss/oxide": "4.1.14", "postcss": "^8.4.41", "tailwindcss": "4.1.14" } }, "sha512-BdMjIxy7HUNThK87C7BC8I1rE8BVUsfNQSI5siQ4JK3iIa3w0XyVvVL9SXLWO//CtYTcp1v7zci0fYwJOjB+Zg=="],
+
+    "@tanstack/query-core": ["@tanstack/query-core@5.90.7", "", {}, "sha512-6PN65csiuTNfBMXqQUxQhCNdtm1rV+9kC9YwWAIKcaxAauq3Wu7p18j3gQY3YIBJU70jT/wzCCZ2uqto/vQgiQ=="],
+
+    "@tanstack/query-devtools": ["@tanstack/query-devtools@5.90.1", "", {}, "sha512-GtINOPjPUH0OegJExZ70UahT9ykmAhmtNVcmtdnOZbxLwT7R5OmRztR5Ahe3/Cu7LArEmR6/588tAycuaWb1xQ=="],
+
+    "@tanstack/react-query": ["@tanstack/react-query@5.90.7", "", { "dependencies": { "@tanstack/query-core": "5.90.7" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-wAHc/cgKzW7LZNFloThyHnV/AX9gTg3w5yAv0gvQHPZoCnepwqCMtzbuPbb2UvfvO32XZ46e8bPOYbfZhzVnnQ=="],
+
+    "@tanstack/react-query-devtools": ["@tanstack/react-query-devtools@5.90.2", "", { "dependencies": { "@tanstack/query-devtools": "5.90.1" }, "peerDependencies": { "@tanstack/react-query": "^5.90.2", "react": "^18 || ^19" } }, "sha512-vAXJzZuBXtCQtrY3F/yUNJCV4obT/A/n81kb3+YqLbro5Z2+phdAbceO+deU3ywPw8B42oyJlp4FhO0SoivDFQ=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "https://registry.npmmirror.com/@tybys/wasm-util/-/wasm-util-0.10.1.tgz", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
