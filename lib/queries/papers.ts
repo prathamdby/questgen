@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import type { QuestionPaper, PapersData, SolutionDetail } from "./types";
 
+class RateLimitError extends Error {
+  constructor(public retryAfter: string | null) {
+    super("Rate limit exceeded");
+    this.name = "RateLimitError";
+  }
+}
+
 export function usePapers(): UseQueryResult<PapersData, Error> {
   const { data: session } = useSession();
 
@@ -333,7 +340,8 @@ export function useRegeneratePaper() {
       });
 
       if (res.status === 429) {
-        throw new Error("Rate limit exceeded");
+        const retryAfter = res.headers.get("X-Retry-After");
+        throw new RateLimitError(retryAfter);
       }
 
       if (!res.ok) throw new Error("Regeneration failed");
@@ -428,7 +436,12 @@ export function useRegeneratePaper() {
         queryClient.setQueryData(["papers"], context.previousPapers);
       }
       toast.error("Regeneration failed", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description:
+          error instanceof RateLimitError
+            ? `You can regenerate 2 papers per minute. Please wait ${error.retryAfter || "60"} seconds.`
+            : error instanceof Error
+              ? error.message
+              : "Unknown error",
       });
     },
   });
