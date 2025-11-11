@@ -27,7 +27,7 @@ export function usePapers(): UseQueryResult<PapersData, Error> {
 
 // Fetch single paper - SESSION GUARDED
 export function usePaper(
-  id: string,
+  id: string
 ): UseQueryResult<{ paper: QuestionPaper }, Error> {
   const { data: session } = useSession();
 
@@ -46,7 +46,7 @@ export function usePaper(
 
 // Fetch single solution - SESSION GUARDED
 export function useSolution(
-  id: string,
+  id: string
 ): UseQueryResult<{ solution: SolutionDetail }, Error> {
   const { data: session } = useSession();
 
@@ -98,7 +98,7 @@ export function useDuplicatePaper() {
           solutionStatus = cachedSol.solution.status;
         } else {
           const solRes = await fetch(
-            `/api/solutions/${paperData.paper.solution.id}`,
+            `/api/solutions/${paperData.paper.solution.id}`
           );
           if (solRes.ok) {
             const solData = await solRes.json();
@@ -129,51 +129,73 @@ export function useDuplicatePaper() {
     },
 
     onMutate: async ({ paperId }) => {
+      const loadingToastId = toast.loading("Duplicating paper...");
       await queryClient.cancelQueries({ queryKey: ["papers"] });
       const previousData = queryClient.getQueryData<PapersData>(["papers"]);
 
       if (previousData) {
-        const cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
+        // FIXED: Fetch paper if not cached to ensure optimistic update always happens
+        let cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
           "paper",
           paperId,
         ]);
-        if (!cached) return { previousData };
 
-        const tempId = `temp-${Date.now()}`;
-        const tempSolutionId = cached.paper.solution
-          ? `temp-sol-${Date.now()}`
-          : null;
+        if (!cached) {
+          // Fetch paper for optimistic update if not in cache
+          try {
+            const paperRes = await fetch(`/api/papers/${paperId}`);
+            if (paperRes.ok) {
+              cached = await paperRes.json();
+            }
+          } catch {
+            // If fetch fails, skip optimistic update but continue mutation
+            // Loading toast will be dismissed in onSuccess/onError
+          }
+        }
 
-        const optimisticPaper: QuestionPaper = {
-          ...cached.paper,
-          id: tempId,
-          title: `${cached.paper.title} (Copy)`,
-          createdAt: new Date().toISOString(),
-          solution: tempSolutionId ? { id: tempSolutionId } : null,
-        };
+        if (cached) {
+          const tempId = `temp-${Date.now()}`;
+          const tempSolutionId = cached.paper.solution
+            ? `temp-sol-${Date.now()}`
+            : null;
 
-        queryClient.setQueryData<PapersData>(["papers"], (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            papers: [optimisticPaper, ...old.papers],
-            solutions: tempSolutionId
-              ? [{ paperId: tempId, id: tempSolutionId }, ...old.solutions]
-              : old.solutions,
+          const optimisticPaper: QuestionPaper = {
+            ...cached.paper,
+            id: tempId,
+            title: `${cached.paper.title} (Copy)`,
+            createdAt: new Date().toISOString(),
+            solution: tempSolutionId ? { id: tempSolutionId } : null,
           };
-        });
+
+          queryClient.setQueryData<PapersData>(["papers"], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              papers: [optimisticPaper, ...old.papers],
+              solutions: tempSolutionId
+                ? [{ paperId: tempId, id: tempSolutionId }, ...old.solutions]
+                : old.solutions,
+            };
+          });
+        }
       }
 
-      return { previousData };
+      return { previousData, loadingToastId };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, variables, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       // FIXED: Invalidate to get real IDs, but keep optimistic until refetch
       queryClient.invalidateQueries({ queryKey: ["papers"] });
       toast.success("Paper duplicated");
     },
 
     onError: (error, variables, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       if (context?.previousData) {
         queryClient.setQueryData(["papers"], context.previousData);
       }
@@ -196,6 +218,7 @@ export function useDeletePaper() {
     },
 
     onMutate: async (paperId) => {
+      const loadingToastId = toast.loading("Deleting paper...");
       await queryClient.cancelQueries({ queryKey: ["papers"] });
       await queryClient.cancelQueries({ queryKey: ["paper", paperId] });
 
@@ -216,15 +239,22 @@ export function useDeletePaper() {
 
       queryClient.removeQueries({ queryKey: ["paper", paperId] });
 
-      return { previousPapers, previousPaper };
+      return { previousPapers, previousPaper, loadingToastId };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, paperId, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       // Cache already updated optimistically
       queryClient.invalidateQueries({ queryKey: ["papers"] });
+      toast.success("Paper deleted");
     },
 
     onError: (error, paperId, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       if (context?.previousPapers) {
         queryClient.setQueryData(["papers"], context.previousPapers);
       }
@@ -250,6 +280,7 @@ export function useDeleteSolution() {
     },
 
     onMutate: async (solutionId) => {
+      const loadingToastId = toast.loading("Deleting solution...");
       await queryClient.cancelQueries({ queryKey: ["solution", solutionId] });
       await queryClient.cancelQueries({ queryKey: ["papers"] });
 
@@ -271,14 +302,25 @@ export function useDeleteSolution() {
 
       queryClient.removeQueries({ queryKey: ["solution", solutionId] });
 
-      return { previousSolution, previousPapers };
+      return { previousSolution, previousPapers, loadingToastId };
+    },
+
+    onSuccess: (data, solutionId, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["papers"] });
+      toast.success("Solution deleted");
     },
 
     onError: (error, solutionId, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       if (context?.previousSolution) {
         queryClient.setQueryData(
           ["solution", solutionId],
-          context.previousSolution,
+          context.previousSolution
         );
       }
       if (context?.previousPapers) {
@@ -316,6 +358,7 @@ export function useRegeneratePaper() {
     },
 
     onMutate: async ({ paperId }) => {
+      const loadingToastId = toast.loading("Regenerating paper...");
       await queryClient.cancelQueries({ queryKey: ["paper", paperId] });
       await queryClient.cancelQueries({ queryKey: ["papers"] });
 
@@ -335,7 +378,7 @@ export function useRegeneratePaper() {
               ...old,
               paper: { ...old.paper, status: "in_progress" },
             };
-          },
+          }
         );
       }
 
@@ -345,16 +388,19 @@ export function useRegeneratePaper() {
           return {
             ...old,
             papers: old.papers.map((p) =>
-              p.id === paperId ? { ...p, status: "in_progress" as const } : p,
+              p.id === paperId ? { ...p, status: "in_progress" as const } : p
             ),
           };
         });
       }
 
-      return { previousPaper, previousPapers };
+      return { previousPaper, previousPapers, loadingToastId };
     },
 
-    onSuccess: (data, { paperId }) => {
+    onSuccess: (data, { paperId }, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       // FIXED: Update both caches with real data
       queryClient.setQueryData<{ paper: QuestionPaper }>(
         ["paper", paperId],
@@ -369,7 +415,7 @@ export function useRegeneratePaper() {
               updatedAt: data.updatedAt,
             },
           };
-        },
+        }
       );
 
       queryClient.setQueryData<PapersData>(["papers"], (old) => {
@@ -383,13 +429,17 @@ export function useRegeneratePaper() {
                   status: "completed" as const,
                   updatedAt: data.updatedAt,
                 }
-              : p,
+              : p
           ),
         };
       });
+      toast.success("Paper regenerated successfully");
     },
 
     onError: (error, { paperId }, context) => {
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       if (context?.previousPaper) {
         queryClient.setQueryData(["paper", paperId], context.previousPaper);
       }

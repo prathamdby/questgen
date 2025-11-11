@@ -87,7 +87,6 @@ function SolutionContent({ id }: { id: string }) {
       deleteSolution.mutate(solution.id, {
         onSuccess: () => {
           router.push("/home");
-          toast.success("Solution deleted");
         },
       });
     }
