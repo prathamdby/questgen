@@ -8,20 +8,7 @@ export const auth = betterAuth({
   }),
 
   rateLimiting: {
-    enabled: true,
-    storage: "database",
-    window: 60,
-    max: 100,
-    customRules: {
-      "/api/papers/generate": {
-        window: 60,
-        max: 2,
-      },
-      "/api/papers/regenerate": {
-        window: 60,
-        max: 2,
-      },
-    },
+    enabled: false,
   },
 
   socialProviders: {

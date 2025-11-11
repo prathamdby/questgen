@@ -93,26 +93,26 @@ Software engineers joining the QuestGen codebase who need repeatable mental mode
 | `app/api/papers/route.ts`            | Fetch and create papers     | Transform Prisma enum status; include solution presence; duplicate paper via POST expects pre-rendered `content`.    |
 | `app/api/papers/[id]/route.ts`       | Get/delete individual paper | Enforce ownership; include files/tags/solution; cascade delete relies on Prisma relations.                           |
 | `app/api/papers/generate/route.ts`   | Full AI pipeline            | Upload files to Gemini, poll processing, clean up URIs, reconcile mark totals, optionally create companion solution. |
-| `app/api/papers/regenerate/route.ts` | Paper regeneration          | Reuse stored files, throttle via Better Auth custom rule, set `status` optimistic updates expected by UI.            |
+| `app/api/papers/regenerate/route.ts` | Paper regeneration          | Atomic rate limiting check, reuse stored files, set `status` optimistic updates expected by UI.                      |
 | `app/api/solutions/[id]/route.ts`    | Get/delete solution         | Mirror status translation, include associated paper and files for linking/export.                                    |
 | `app/api/preferences/route.ts`       | User view preferences       | Upsert without FK on `GenerateFormDraft`; defaults to dark/card view.                                                |
 | `app/api/auth/[...all]/route.ts`     | Better Auth handler         | No local edits—delegates to Better Auth router.                                                                      |
 
 ## Ghost contracts (invisible but enforced)
 
-| Contract                                | Location                                                                 | Enforcement rationale                                                                                                     |
-| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Status translation**                  | All API route handlers                                                   | UI discriminated unions expect lowercase snake case; breaking this crashes status badges and regeneration toggles.        |
-| **Paper ⇄ Solution one-to-one**         | `prisma/schema.prisma`, API upserts                                      | Companion solution buttons assume unique `paperId`; duplication flow omits solutions by design.                           |
-| **Gemini file lifecycle**               | `app/api/papers/generate/route.ts`, `app/api/papers/regenerate/route.ts` | Temporary URIs must be deleted after generation to avoid quota exhaustion.                                                |
-| **Mark reconciliation**                 | `analyzePatternMarks` + prompt in `app/api/papers/generate/route.ts`     | Prevents mismatch between user-entered total and pattern-implied marks; removing it breaks exam validity.                 |
-| **Toast-first error reporting**         | Client pages in `app/home`, `app/generate`, `app/paper`, `app/solution`  | Every async path must surface errors via `sonner`. Silence here leads to abandoned sessions.                              |
-| **Apple/Vercel typography**             | `components/*`, `lib/pdf-export-client.ts`                               | Typography, spacing, and radius selections are standardized; deviations fail design review.                               |
-| **`use` + Suspense for dynamic routes** | `app/paper/[id]/page.tsx`, `app/solution/[id]/page.tsx`                  | React 19 pattern keeps server data loading deterministic; bypassing Suspense reintroduces waterfalls.                     |
-| **File acceptance and size limits**     | `app/generate/page.tsx`, `lib/file-types.ts`                             | Gemini rejects unsupported MIME types; UI validates 10 MB/file, 50 MB total before API call.                              |
-| **Rate limiting via Better Auth**       | `lib/auth.ts`                                                            | Generation/regeneration capped at 2/min; additional endpoints inherit global 100/min limit.                               |
-| **Server-first components**             | All components                                                           | Default to Server Components; only add `"use client"` when hooks, browser APIs, or event handlers are required.           |
-| **TailwindCSS-first styling**           | All components, `globals.css`                                            | Use TailwindCSS utilities by default; only use custom CSS for animations, CSS custom properties, or library requirements. |
+| Contract                                    | Location                                                                 | Enforcement rationale                                                                                                          |
+| ------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Status translation**                      | All API route handlers                                                   | UI discriminated unions expect lowercase snake case; breaking this crashes status badges and regeneration toggles.             |
+| **Paper ⇄ Solution one-to-one**             | `prisma/schema.prisma`, API upserts                                      | Companion solution buttons assume unique `paperId`; duplication flow omits solutions by design.                                |
+| **Gemini file lifecycle**                   | `app/api/papers/generate/route.ts`, `app/api/papers/regenerate/route.ts` | Temporary URIs must be deleted after generation to avoid quota exhaustion.                                                     |
+| **Mark reconciliation**                     | `analyzePatternMarks` + prompt in `app/api/papers/generate/route.ts`     | Prevents mismatch between user-entered total and pattern-implied marks; removing it breaks exam validity.                      |
+| **Toast-first error reporting**             | Client pages in `app/home`, `app/generate`, `app/paper`, `app/solution`  | Every async path must surface errors via `sonner`. Silence here leads to abandoned sessions.                                   |
+| **Apple/Vercel typography**                 | `components/*`, `lib/pdf-export-client.ts`                               | Typography, spacing, and radius selections are standardized; deviations fail design review.                                    |
+| **`use` + Suspense for dynamic routes**     | `app/paper/[id]/page.tsx`, `app/solution/[id]/page.tsx`                  | React 19 pattern keeps server data loading deterministic; bypassing Suspense reintroduces waterfalls.                          |
+| **File acceptance and size limits**         | `app/generate/page.tsx`, `lib/file-types.ts`                             | Gemini rejects unsupported MIME types; UI validates 10 MB/file, 50 MB total before API call.                                   |
+| **Rate limiting via custom implementation** | `lib/rate-limit.ts`, all API routes                                      | Atomic database operations with in-memory cache; generation/regeneration capped at 2/min; other endpoints 100/min per user/IP. |
+| **Server-first components**                 | All components                                                           | Default to Server Components; only add `"use client"` when hooks, browser APIs, or event handlers are required.                |
+| **TailwindCSS-first styling**               | All components, `globals.css`                                            | Use TailwindCSS utilities by default; only use custom CSS for animations, CSS custom properties, or library requirements.      |
 
 ## Decision log (implicit historical context)
 
@@ -121,6 +121,7 @@ Software engineers joining the QuestGen codebase who need repeatable mental mode
 - **Solution optionality**: Solution generation is best-effort. API returns `solutionError` so UI can toast while still redirecting to the completed paper.
 - **Markdown cleaning**: Both generation and PDF export strip ``` fences before persistence to prevent Gemini variability from breaking previews.
 - **Singleton Prisma**: Development servers reuse the same Prisma client to avoid exhausting database connections during hot reloads.
+- **Custom rate limiting implementation**: Database-backed with in-memory cache layer to reduce latency. Uses atomic SQL operations to prevent race conditions under concurrent load. Fail-open strategy prioritizes availability over security. Circuit breaker via `DISABLE_RATE_LIMITING` env var for emergency rollback.
 
 ## Actionable mental models
 

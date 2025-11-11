@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
@@ -18,6 +19,25 @@ export async function GET(
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit check
+  const rateLimitResult = await checkRateLimit(
+    request,
+    session.user.id,
+    "/api/papers/[id]",
+  );
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      {
+        status: 429,
+        headers: {
+          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
+        },
+      },
+    );
   }
 
   try {
@@ -66,6 +86,25 @@ export async function DELETE(
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit check
+  const rateLimitResult = await checkRateLimit(
+    request,
+    session.user.id,
+    "/api/papers/[id]",
+  );
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      {
+        status: 429,
+        headers: {
+          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
+        },
+      },
+    );
   }
 
   try {
