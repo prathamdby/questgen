@@ -9,7 +9,7 @@ const helperLinks = [
   { href: "/generate", label: "Generate Quest" },
 ] as const;
 
-export function PaperNotFound() {
+export function PaperNotFound({ onRetry }: { onRetry?: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
       <div className="mx-auto max-w-2xl px-6 text-center">
@@ -41,9 +41,20 @@ export function PaperNotFound() {
               aria-hidden="true"
             />
           </Link>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="flex h-[44px] w-full items-center justify-center rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white sm:w-auto"
+              style={{ touchAction: "manipulation" }}
+            >
+              Try Again
+            </button>
+          )}
           <Link
             href="/generate"
-            className="flex h-[44px] w-full items-center justify-center rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
+            className="flex h-[44px] w-full items-center justify-center rounded-[6px] border border-[#e5e5e5] bg-white px-6 text-[15px] font-[500] text-[#171717] transition-all duration-150 hover:border-[#d4d4d4] hover:bg-[#fafafa] focus:outline-none focus:ring-2 focus:ring-[#171717] active:scale-[0.98] dark:border-[#333333] dark:bg-black dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white sm:w-auto"
+            style={{ touchAction: "manipulation" }}
           >
             Create New Quest
           </Link>

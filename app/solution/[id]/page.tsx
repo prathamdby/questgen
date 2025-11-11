@@ -97,37 +97,17 @@ function SolutionContent({ id }: { id: string }) {
   }
 
   if (error) {
+    const status = (error as any).status;
+    if (status === 401) {
+      router.push("/signin");
+      return null;
+    }
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-[#eff6ff] dark:from-black dark:to-[#0a1628]">
-        <div className="mx-auto max-w-4xl px-6 py-16 sm:px-8">
-          <Link
-            href="/home"
-            className="group mb-8 inline-flex items-center gap-2 text-[14px] font-[500] text-[#737373] transition-colors hover:text-[#171717] dark:hover:text-white"
-          >
-            <ArrowLeft
-              className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
-              aria-hidden="true"
-            />
-            <span>Back to home</span>
-          </Link>
-          <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-8 text-center shadow-sm dark:border-[#262626] dark:bg-[#0a0a0a]">
-            <h2 className="text-[20px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
-              Failed to load this solution
-            </h2>
-            <p className="mt-3 text-[15px] text-[#737373] dark:text-[#a3a3a3]">
-              Please refresh or try again in a moment.
-            </p>
-            <button
-              onClick={() =>
-                queryClient.invalidateQueries({ queryKey: ["solution", id] })
-              }
-              className="mt-6 inline-flex h-[44px] items-center justify-center rounded-[6px] bg-[#171717] px-6 text-[15px] font-[500] text-white transition-all hover:bg-[#404040] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5]"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
+      <PaperNotFound
+        onRetry={() =>
+          queryClient.invalidateQueries({ queryKey: ["solution", id] })
+        }
+      />
     );
   }
 
