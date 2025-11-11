@@ -97,11 +97,6 @@ function SolutionContent({ id }: { id: string }) {
   }
 
   if (error) {
-    const status = (error as any).status;
-    if (status === 401) {
-      router.push("/signin");
-      return null;
-    }
     return (
       <PaperNotFound
         onRetry={() =>

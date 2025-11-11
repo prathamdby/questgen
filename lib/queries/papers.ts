@@ -33,11 +33,7 @@ export function usePaper(
     queryKey: ["paper", id],
     queryFn: async () => {
       const res = await fetch(`/api/papers/${id}`);
-      if (!res.ok) {
-        const error = new Error("Failed to fetch paper");
-        (error as any).status = res.status;
-        throw error;
-      }
+      if (!res.ok) throw new Error("Failed to fetch paper");
       return res.json();
     },
     enabled: !!session && !!id,
@@ -55,11 +51,7 @@ export function useSolution(
     queryKey: ["solution", id],
     queryFn: async () => {
       const res = await fetch(`/api/solutions/${id}`);
-      if (!res.ok) {
-        const error = new Error("Failed to fetch solution");
-        (error as any).status = res.status;
-        throw error;
-      }
+      if (!res.ok) throw new Error("Failed to fetch solution");
       return res.json();
     },
     enabled: !!session && !!id,
