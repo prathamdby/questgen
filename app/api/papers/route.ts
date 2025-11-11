@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { title, pattern, duration, totalMarks, content } =
+    const { title, pattern, duration, totalMarks, content, solution } =
       await request.json();
 
     const paper = await prisma.paper.create({
@@ -118,7 +118,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ paperId: paper.id });
+    let createdSolutionId: string | null = null;
+
+    if (solution && typeof solution.content === "string") {
+      const createdSolution = await prisma.solution.create({
+        data: {
+          userId: session.user.id,
+          paperId: paper.id,
+          content: solution.content,
+          status:
+            solution.status === "in_progress" ? "IN_PROGRESS" : "COMPLETED",
+        },
+      });
+
+      createdSolutionId = createdSolution.id;
+    }
+
+    return NextResponse.json({
+      paperId: paper.id,
+      solutionId: createdSolutionId,
+    });
   } catch (error) {
     console.error("Create paper error:", error);
     return NextResponse.json(

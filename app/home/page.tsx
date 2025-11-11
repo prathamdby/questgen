@@ -155,104 +155,143 @@ export default function Home() {
     }
   }, []);
 
-  const handleDuplicate = useCallback(async (paperId: string) => {
-    setOpenMenuId(null);
+  const handleDuplicate = useCallback(
+    async (paperId: string) => {
+      setOpenMenuId(null);
 
-    let tempId: string | null = null;
+      let tempId: string | null = null;
+      let tempSolutionId: string | null = null;
 
-    try {
-      const response = await fetch(`/api/papers/${paperId}`);
-      const data = await response.json();
+      try {
+        const response = await fetch(`/api/papers/${paperId}`);
+        const data = await response.json();
 
-      if (!data.paper) {
-        throw new Error("Paper not found");
-      }
+        if (!data.paper) {
+          throw new Error("Paper not found");
+        }
 
-      tempId = `temp-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+        const hasSolution = !!data.paper.solution;
+        let solutionContent: string | null = null;
+        let solutionStatus: "completed" | "in_progress" = "completed";
 
-      const optimisticPaper: QuestionPaper = {
-        id: tempId,
-        title: `${data.paper.title} (Copy)`,
-        pattern: data.paper.pattern,
-        duration: data.paper.duration,
-        totalMarks: data.paper.totalMarks,
-        createdAt: new Date().toISOString(),
-        status: "completed",
-        files: (data.paper.files ?? []).map(
-          (file: { name: string; size: number; mimeType: string }) => ({
-            name: file.name,
-            size: file.size,
-            mimeType: file.mimeType,
-          }),
-        ),
-        solution: null,
-      };
+        if (hasSolution) {
+          const solutionResponse = await fetch(
+            `/api/solutions/${data.paper.solution.id}`,
+          );
+          const solutionData = await solutionResponse.json();
 
-      setPapersData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          papers: [optimisticPaper, ...prev.papers],
+          if (solutionData.solution) {
+            solutionContent = solutionData.solution.content;
+            solutionStatus = solutionData.solution.status;
+            tempSolutionId = `temp-sol-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+          }
+        }
+
+        tempId = `temp-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+
+        if (!tempId) {
+          throw new Error("Failed to prepare duplicate");
+        }
+
+        const optimisticPaperId: string = tempId;
+
+        const optimisticPaper: QuestionPaper = {
+          id: optimisticPaperId,
+          title: `${data.paper.title} (Copy)`,
+          pattern: data.paper.pattern,
+          duration: data.paper.duration,
+          totalMarks: data.paper.totalMarks,
+          createdAt: new Date().toISOString(),
+          status: "completed",
+          files: (data.paper.files ?? []).map(
+            (file: { name: string; size: number; mimeType: string }) => ({
+              name: file.name,
+              size: file.size,
+              mimeType: file.mimeType,
+            }),
+          ),
+          solution: tempSolutionId ? { id: tempSolutionId } : null,
         };
-      });
 
-      const duplicateResponse = await fetch("/api/papers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        setPapersData((prev) => {
+          if (!prev) return prev;
+
+          const newSolutions = tempSolutionId
+            ? [
+                { paperId: optimisticPaperId, id: tempSolutionId },
+                ...prev.solutions,
+              ]
+            : prev.solutions;
+
+          return {
+            ...prev,
+            papers: [optimisticPaper, ...prev.papers],
+            solutions: newSolutions,
+          };
+        });
+
+        const requestBody: {
+          title: string;
+          pattern: string;
+          duration: string;
+          totalMarks: number;
+          content: string;
+          solution?: { content: string; status: string };
+        } = {
           title: optimisticPaper.title,
           pattern: optimisticPaper.pattern,
           duration: optimisticPaper.duration,
           totalMarks: optimisticPaper.totalMarks,
           content: data.paper.content,
-        }),
-      });
-
-      if (!duplicateResponse.ok) {
-        throw new Error("Failed to duplicate paper");
-      }
-
-      const result = await duplicateResponse.json();
-
-      if (!result.paperId) {
-        throw new Error("Failed to duplicate paper");
-      }
-
-      const createdAt = new Date().toISOString();
-
-      setPapersData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          papers: prev.papers.map((paper) =>
-            paper.id === tempId
-              ? {
-                  ...paper,
-                  id: result.paperId,
-                  createdAt,
-                }
-              : paper,
-          ),
         };
-      });
 
-      toast.success("Paper duplicated");
-    } catch (error) {
-      if (tempId) {
-        setPapersData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            papers: prev.papers.filter((paper) => paper.id !== tempId),
+        if (solutionContent) {
+          requestBody.solution = {
+            content: solutionContent,
+            status: solutionStatus,
           };
-        });
-      }
+        }
 
-      toast.error(
-        error instanceof Error ? error.message : "Failed to duplicate paper",
-      );
-    }
-  }, []);
+        const duplicateResponse = await fetch("/api/papers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!duplicateResponse.ok) {
+          throw new Error("Failed to duplicate paper");
+        }
+
+        const result = await duplicateResponse.json();
+
+        if (!result.paperId) {
+          throw new Error("Failed to duplicate paper");
+        }
+
+        await fetchPapers();
+
+        const message = solutionContent
+          ? "Paper and solution duplicated"
+          : "Paper duplicated";
+        toast.success(message);
+      } catch (error) {
+        if (tempId || tempSolutionId) {
+          setPapersData((prev) => {
+            if (!prev) return prev;
+            return {
+              papers: prev.papers.filter((paper) => paper.id !== tempId),
+              solutions: prev.solutions.filter((s) => s.id !== tempSolutionId),
+            };
+          });
+        }
+
+        toast.error(
+          error instanceof Error ? error.message : "Failed to duplicate paper",
+        );
+      }
+    },
+    [fetchPapers],
+  );
 
   const handleDelete = useCallback(async (paperId: string) => {
     if (
