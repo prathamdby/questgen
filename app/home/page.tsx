@@ -308,7 +308,10 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-white dark:bg-black">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
-          <SignedInHeader onSignOut={handleSignOut} />
+          <SignedInHeader
+            onSignOut={handleSignOut}
+            isPending={sessionPending}
+          />
           <div className="mt-12 text-center">
             <p className="text-[17px] text-red-500 dark:text-red-400">
               Failed to load papers. Please try again.
@@ -353,7 +356,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:py-24">
-        <SignedInHeader onSignOut={handleSignOut} />
+        <SignedInHeader onSignOut={handleSignOut} isPending={sessionPending} />
 
         <header className="mb-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
