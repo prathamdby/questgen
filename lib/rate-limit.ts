@@ -27,7 +27,7 @@ setInterval(
       }
     }
   },
-  5 * 60 * 1000
+  5 * 60 * 1000,
 );
 
 function getClientIdentifier(request: NextRequest, userId?: string): string {
@@ -48,7 +48,7 @@ function getClientIdentifier(request: NextRequest, userId?: string): string {
 async function updateDatabaseAsync(
   key: string,
   count: number,
-  resetAt: number
+  resetAt: number,
 ) {
   try {
     await prisma.rateLimit.update({
@@ -66,7 +66,7 @@ async function updateDatabaseAsync(
 export async function checkRateLimit(
   request: NextRequest,
   userId: string | undefined,
-  routePath: string
+  routePath: string,
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (DISABLE_RATE_LIMITING) {
     return { allowed: true };
@@ -84,7 +84,7 @@ export async function checkRateLimit(
       if (cached.count >= config.max) {
         const retryAfter = Math.ceil((cached.resetAt - Date.now()) / 1000);
         console.log(
-          `[Rate Limit] ${routePath} - Rate limit exceeded. ${cached.count}/${config.max} requests used. Retry after ${retryAfter}s`
+          `[Rate Limit] ${routePath} - Rate limit exceeded. ${cached.count}/${config.max} requests used. Retry after ${retryAfter}s`,
         );
         return { allowed: false, retryAfter };
       }
@@ -94,7 +94,7 @@ export async function checkRateLimit(
 
       const remaining = config.max - cached.count;
       console.log(
-        `[Rate Limit] ${routePath} - ${cached.count}/${config.max} requests used. ${remaining} remaining.`
+        `[Rate Limit] ${routePath} - ${cached.count}/${config.max} requests used. ${remaining} remaining.`,
       );
 
       updateDatabaseAsync(key, cached.count, cached.resetAt);
@@ -124,7 +124,7 @@ export async function checkRateLimit(
         });
         const remaining = config.max - record.count;
         console.log(
-          `[Rate Limit] ${routePath} - ${record.count}/${config.max} requests used. ${remaining} remaining.`
+          `[Rate Limit] ${routePath} - ${record.count}/${config.max} requests used. ${remaining} remaining.`,
         );
       }
       return { allowed: true };
@@ -156,14 +156,14 @@ export async function checkRateLimit(
 
       const remaining = config.max - 1;
       console.log(
-        `[Rate Limit] ${routePath} - Window reset. 1/${config.max} requests used. ${remaining} remaining.`
+        `[Rate Limit] ${routePath} - Window reset. 1/${config.max} requests used. ${remaining} remaining.`,
       );
 
       return { allowed: true };
     }
 
     const retryAfter = Math.ceil(
-      (existing.resetAt.getTime() - now.getTime()) / 1000
+      (existing.resetAt.getTime() - now.getTime()) / 1000,
     );
     rateLimitCache.set(key, {
       count: existing.count,
@@ -172,7 +172,7 @@ export async function checkRateLimit(
     });
 
     console.log(
-      `[Rate Limit] ${routePath} - Rate limit exceeded. ${existing.count}/${config.max} requests used. Retry after ${retryAfter}s`
+      `[Rate Limit] ${routePath} - Rate limit exceeded. ${existing.count}/${config.max} requests used. Retry after ${retryAfter}s`,
     );
 
     return { allowed: false, retryAfter };
