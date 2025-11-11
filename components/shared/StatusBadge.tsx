@@ -1,5 +1,3 @@
-"use client";
-
 interface StatusBadgeProps {
   status: "completed" | "in_progress";
   size?: "sm" | "md";

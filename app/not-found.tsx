@@ -1,5 +1,3 @@
-"use client";
-
 import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -8,17 +6,17 @@ const floatingPaperLayers = [
   {
     className:
       "absolute left-0 top-0 h-20 w-16 animate-[float_6s_ease-in-out_infinite] rounded-[4px] bg-[#fafafa] opacity-40 dark:bg-[#171717]",
-    style: { transform: "rotate(-12deg)" },
+    style: { "--rotate": "-12deg" } as React.CSSProperties,
   },
   {
     className:
       "absolute right-0 top-4 h-20 w-16 animate-[float_6s_ease-in-out_infinite_2s] rounded-[4px] bg-[#f5f5f5] opacity-40 dark:bg-[#262626]",
-    style: { transform: "rotate(8deg)" },
+    style: { "--rotate": "8deg" } as React.CSSProperties,
   },
   {
     className:
       "absolute bottom-0 left-8 h-20 w-16 animate-[float_6s_ease-in-out_infinite_4s] rounded-[4px] bg-[#f0f0f0] opacity-40 dark:bg-[#1a1a1a]",
-    style: { transform: "rotate(-5deg)" },
+    style: { "--rotate": "-5deg" } as React.CSSProperties,
   },
 ] as const;
 
@@ -100,18 +98,6 @@ export default function NotFound() {
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(var(--rotate));
-          }
-          50% {
-            transform: translateY(-20px) rotate(var(--rotate));
-          }
-        }
-      `}</style>
     </div>
   );
 }

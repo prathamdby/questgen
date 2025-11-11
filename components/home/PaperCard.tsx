@@ -108,7 +108,7 @@ export const PaperCard = React.memo(
                 e.stopPropagation();
                 onOpenSolution?.();
               }}
-              className="flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#171717] focus:outline-none focus:underline dark:hover:text-white"
+              className="flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] focus-visible:ring-offset-2 focus-visible:rounded-[4px] dark:hover:text-white dark:focus-visible:ring-white"
             >
               <FileCheck
                 className="h-3.5 w-3.5 flex-shrink-0"

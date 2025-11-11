@@ -13,7 +13,7 @@ Software engineers joining the QuestGen codebase who need repeatable mental mode
 ### Phase 1 – Architectural overwhelm (0–6 hours)
 
 - Inventory core entry points: `app/layout.tsx`, `app/home/page.tsx`, `app/generate/page.tsx`, `app/paper/[id]/page.tsx`, and `app/solution/[id]/page.tsx`.
-- Confirm runtime context: App Router with React 19 Server Components by default; opt into client work with `"use client"`.
+- Confirm runtime context: App Router with React 19 Server Components by default; opt into client work with `"use client"` only when necessary (mutations, hooks, browser APIs).
 - Trace authentication first: Better Auth session helpers in `lib/auth-client.ts` and rate-limited API surfaces in `lib/auth.ts`.
 
 ### Phase 2 – Pattern recognition relief (6–18 hours)
@@ -46,6 +46,46 @@ Software engineers joining the QuestGen codebase who need repeatable mental mode
 - AI generation: Google Gemini (`lib/ai.ts`) with shared `DEFAULT_MODEL` and `DEFAULT_GENERATION_CONFIG`.
 - PDF export: Pure client render-to-print pipeline in `lib/pdf-export-client.ts` using `marked` for Markdown → HTML and Apple/Vercel design tokens.
 
+### Server-first component pattern
+
+**Default: Server Components** — All components are Server Components by default. They render on the server, reducing JavaScript bundle size and improving initial load performance.
+
+**Opt-in: Client Components** — Use `"use client"` only when a component requires:
+
+- React hooks (`useState`, `useEffect`, `useCallback`, etc.)
+- Browser APIs (`window`, `document`, `localStorage`, etc.)
+- Event handlers (`onClick`, `onChange`, etc.)
+- Context providers or consumers
+- Third-party libraries that require client-side rendering (e.g., Radix UI primitives, Streamdown)
+
+**Examples:**
+
+- ✅ **Server Components**: `StatusBadge`, `FileIcon`, `MetadataGrid`, `EmptyState`, `LandingHeader`, `PaperCardSkeleton` — Pure presentational components with no interactivity.
+- ❌ **Client Components**: `PaperCard` (onClick handlers), `HeroSection` (onClick + dynamic imports), `MarkdownPreview` (Streamdown), `Dialog` (Radix UI), pages with state/hooks (`home`, `generate`, `paper/[id]`).
+
+**Enforcement**: Before adding `"use client"`, verify the component actually needs client-side features. Most presentational components can remain server components, improving performance and reducing bundle size.
+
+### TailwindCSS-first styling pattern
+
+**Default: TailwindCSS utilities** — Use TailwindCSS utility classes for all styling. Tailwind provides comprehensive coverage for spacing, typography, colors, layouts, and responsive design.
+
+**Opt-in: Custom CSS** — Only use custom CSS (in `globals.css` or component styles) when:
+
+- **Animations**: Complex keyframe animations that can't be expressed with Tailwind's `animate-*` utilities (e.g., `@keyframes float` in `globals.css`)
+- **CSS custom properties**: Dynamic values that need to be passed from JavaScript (e.g., `--rotate` for animations)
+- **Third-party library requirements**: When a library requires specific CSS (e.g., Radix UI primitives, Streamdown)
+- **Global resets**: Base styles that apply globally (e.g., scrollbar hiding, base typography)
+
+**Examples:**
+
+- ✅ **TailwindCSS**: `className="rounded-[8px] border border-[#e5e5e5] bg-white p-8"` — Standard styling
+- ✅ **TailwindCSS**: `className="animate-[float_6s_ease-in-out_infinite]"` — Simple animations
+- ❌ **Custom CSS**: Avoid `style={{ margin: "8px" }}` when `className="m-2"` works
+- ✅ **Custom CSS**: `@keyframes float` in `globals.css` — Complex animation requiring keyframes
+- ✅ **Custom CSS**: `style={{ "--rotate": "-12deg" }}` — CSS custom property for dynamic animation values
+
+**Enforcement**: Before writing custom CSS, check if TailwindCSS utilities can achieve the same result. Use Tailwind's arbitrary value syntax (`[value]`) for one-off values. Only resort to custom CSS when TailwindCSS cannot express the required styling.
+
 ### API surface (App Router route handlers)
 
 | Route                                | Responsibility              | Hidden requirements                                                                                                  |
@@ -60,17 +100,19 @@ Software engineers joining the QuestGen codebase who need repeatable mental mode
 
 ## Ghost contracts (invisible but enforced)
 
-| Contract                                | Location                                                                 | Enforcement rationale                                                                                              |
-| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| **Status translation**                  | All API route handlers                                                   | UI discriminated unions expect lowercase snake case; breaking this crashes status badges and regeneration toggles. |
-| **Paper ⇄ Solution one-to-one**         | `prisma/schema.prisma`, API upserts                                      | Companion solution buttons assume unique `paperId`; duplication flow omits solutions by design.                    |
-| **Gemini file lifecycle**               | `app/api/papers/generate/route.ts`, `app/api/papers/regenerate/route.ts` | Temporary URIs must be deleted after generation to avoid quota exhaustion.                                         |
-| **Mark reconciliation**                 | `analyzePatternMarks` + prompt in `app/api/papers/generate/route.ts`     | Prevents mismatch between user-entered total and pattern-implied marks; removing it breaks exam validity.          |
-| **Toast-first error reporting**         | Client pages in `app/home`, `app/generate`, `app/paper`, `app/solution`  | Every async path must surface errors via `sonner`. Silence here leads to abandoned sessions.                       |
-| **Apple/Vercel typography**             | `components/*`, `lib/pdf-export-client.ts`                               | Typography, spacing, and radius selections are standardized; deviations fail design review.                        |
-| **`use` + Suspense for dynamic routes** | `app/paper/[id]/page.tsx`, `app/solution/[id]/page.tsx`                  | React 19 pattern keeps server data loading deterministic; bypassing Suspense reintroduces waterfalls.              |
-| **File acceptance and size limits**     | `app/generate/page.tsx`, `lib/file-types.ts`                             | Gemini rejects unsupported MIME types; UI validates 10 MB/file, 50 MB total before API call.                       |
-| **Rate limiting via Better Auth**       | `lib/auth.ts`                                                            | Generation/regeneration capped at 2/min; additional endpoints inherit global 100/min limit.                        |
+| Contract                                | Location                                                                 | Enforcement rationale                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **Status translation**                  | All API route handlers                                                   | UI discriminated unions expect lowercase snake case; breaking this crashes status badges and regeneration toggles.        |
+| **Paper ⇄ Solution one-to-one**         | `prisma/schema.prisma`, API upserts                                      | Companion solution buttons assume unique `paperId`; duplication flow omits solutions by design.                           |
+| **Gemini file lifecycle**               | `app/api/papers/generate/route.ts`, `app/api/papers/regenerate/route.ts` | Temporary URIs must be deleted after generation to avoid quota exhaustion.                                                |
+| **Mark reconciliation**                 | `analyzePatternMarks` + prompt in `app/api/papers/generate/route.ts`     | Prevents mismatch between user-entered total and pattern-implied marks; removing it breaks exam validity.                 |
+| **Toast-first error reporting**         | Client pages in `app/home`, `app/generate`, `app/paper`, `app/solution`  | Every async path must surface errors via `sonner`. Silence here leads to abandoned sessions.                              |
+| **Apple/Vercel typography**             | `components/*`, `lib/pdf-export-client.ts`                               | Typography, spacing, and radius selections are standardized; deviations fail design review.                               |
+| **`use` + Suspense for dynamic routes** | `app/paper/[id]/page.tsx`, `app/solution/[id]/page.tsx`                  | React 19 pattern keeps server data loading deterministic; bypassing Suspense reintroduces waterfalls.                     |
+| **File acceptance and size limits**     | `app/generate/page.tsx`, `lib/file-types.ts`                             | Gemini rejects unsupported MIME types; UI validates 10 MB/file, 50 MB total before API call.                              |
+| **Rate limiting via Better Auth**       | `lib/auth.ts`                                                            | Generation/regeneration capped at 2/min; additional endpoints inherit global 100/min limit.                               |
+| **Server-first components**             | All components                                                           | Default to Server Components; only add `"use client"` when hooks, browser APIs, or event handlers are required.           |
+| **TailwindCSS-first styling**           | All components, `globals.css`                                            | Use TailwindCSS utilities by default; only use custom CSS for animations, CSS custom properties, or library requirements. |
 
 ## Decision log (implicit historical context)
 

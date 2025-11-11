@@ -46,7 +46,7 @@ export function UploadedFilesList({ files, onRemove }: UploadedFilesListProps) {
               e.stopPropagation();
               onRemove(uploadedFile.id);
             }}
-            className="ml-4 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:hover:bg-[#171717] dark:hover:text-white dark:focus:ring-white"
+            className="ml-4 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[4px] text-[#737373] transition-all duration-150 hover:bg-[#fafafa] hover:text-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] focus-visible:ring-offset-2 dark:hover:bg-[#171717] dark:hover:text-white dark:focus-visible:ring-white"
             aria-label={`Remove ${uploadedFile.file.name}`}
           >
             <X className="h-4 w-4" aria-hidden="true" />

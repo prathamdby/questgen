@@ -1,5 +1,3 @@
-"use client";
-
 import { Calendar, Clock, FileText } from "lucide-react";
 
 interface MetadataGridProps {
@@ -21,7 +19,7 @@ export function MetadataGrid({
           Pattern
         </div>
         <p
-          className="min-w-0 text-[14px] text-[#171717] dark:text-white line-clamp-2"
+          className="min-w-0 truncate text-[14px] text-[#171717] dark:text-white"
           title={pattern}
         >
           {pattern}

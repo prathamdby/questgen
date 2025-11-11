@@ -1,5 +1,3 @@
-"use client";
-
 import { FileText, Image as ImageIcon, File } from "lucide-react";
 
 interface FileIconProps {

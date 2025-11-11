@@ -1,5 +1,3 @@
-"use client";
-
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateLong } from "@/lib/format-utils";
 
