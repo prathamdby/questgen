@@ -41,3 +41,13 @@ export interface SolutionDetail {
     files?: Array<{ name: string; mimeType: string; size: number }>;
   };
 }
+
+export interface RegeneratePaperResponse {
+  success: boolean;
+  content: string;
+  updatedAt: string;
+  solutionId?: string;
+  solutionContent?: string;
+  solutionUpdatedAt?: string;
+  solutionError?: string | null;
+}

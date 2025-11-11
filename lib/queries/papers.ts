@@ -6,7 +6,12 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-import type { QuestionPaper, PapersData, SolutionDetail } from "./types";
+import type {
+  QuestionPaper,
+  PapersData,
+  SolutionDetail,
+  RegeneratePaperResponse,
+} from "./types";
 
 class RateLimitError extends Error {
   constructor(public retryAfter: string | null) {
@@ -332,7 +337,7 @@ export function useRegeneratePaper() {
     }: {
       paperId: string;
       instructions: string;
-    }) => {
+    }): Promise<RegeneratePaperResponse> => {
       const res = await fetch("/api/papers/regenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -349,7 +354,6 @@ export function useRegeneratePaper() {
     },
 
     onMutate: async ({ paperId }) => {
-      const loadingToastId = toast.loading("Regenerating paper...");
       await queryClient.cancelQueries({ queryKey: ["paper", paperId] });
       await queryClient.cancelQueries({ queryKey: ["papers"] });
 
@@ -358,6 +362,9 @@ export function useRegeneratePaper() {
         paperId,
       ]);
       const previousPapers = queryClient.getQueryData<PapersData>(["papers"]);
+
+      const solutionId = previousPaper?.paper.solution?.id;
+      let previousSolution = null;
 
       if (previousPaper) {
         queryClient.setQueryData<{ paper: QuestionPaper }>(
@@ -384,13 +391,41 @@ export function useRegeneratePaper() {
         });
       }
 
-      return { previousPaper, previousPapers, loadingToastId };
+      if (solutionId) {
+        await queryClient.cancelQueries({ queryKey: ["solution", solutionId] });
+        previousSolution = queryClient.getQueryData(["solution", solutionId]);
+
+        if (previousSolution) {
+          queryClient.setQueryData(["solution", solutionId], (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              solution: { ...old.solution, status: "in_progress" },
+            };
+          });
+        }
+      }
+
+      const loadingToastId = toast.loading(
+        solutionId
+          ? "Regenerating paper and solution..."
+          : "Regenerating paper...",
+      );
+
+      return {
+        previousPaper,
+        previousPapers,
+        previousSolution,
+        solutionId,
+        loadingToastId,
+      };
     },
 
     onSuccess: (data, { paperId }, context) => {
       if (context?.loadingToastId) {
         toast.dismiss(context.loadingToastId);
       }
+
       queryClient.setQueryData<{ paper: QuestionPaper }>(
         ["paper", paperId],
         (old) => {
@@ -407,34 +442,57 @@ export function useRegeneratePaper() {
         },
       );
 
-      queryClient.setQueryData<PapersData>(["papers"], (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          papers: old.papers.map((p) =>
-            p.id === paperId
-              ? {
-                  ...p,
-                  status: "completed" as const,
-                  updatedAt: data.updatedAt,
-                }
-              : p,
-          ),
-        };
-      });
-      toast.success("Paper regenerated successfully");
+      if (context?.solutionId && data.solutionContent) {
+        queryClient.setQueryData(
+          ["solution", context.solutionId],
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              solution: {
+                ...old.solution,
+                content: data.solutionContent,
+                status: "completed",
+                updatedAt: data.solutionUpdatedAt,
+              },
+            };
+          },
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["papers"] });
+
+      if (data.solutionError && context?.solutionId) {
+        toast.success("Paper regenerated successfully");
+        toast.warning("Solution regeneration failed", {
+          description: data.solutionError,
+        });
+      } else if (data.solutionContent && context?.solutionId) {
+        toast.success("Paper and solution regenerated successfully");
+      } else {
+        toast.success("Paper regenerated successfully");
+      }
     },
 
     onError: (error, { paperId }, context) => {
       if (context?.loadingToastId) {
         toast.dismiss(context.loadingToastId);
       }
+
       if (context?.previousPaper) {
         queryClient.setQueryData(["paper", paperId], context.previousPaper);
       }
       if (context?.previousPapers) {
         queryClient.setQueryData(["papers"], context.previousPapers);
       }
+
+      if (context?.solutionId && context?.previousSolution) {
+        queryClient.setQueryData(
+          ["solution", context.solutionId],
+          context.previousSolution,
+        );
+      }
+
       toast.error("Regeneration failed", {
         description:
           error instanceof RateLimitError

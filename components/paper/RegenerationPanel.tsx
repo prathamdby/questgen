@@ -1,14 +1,12 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Loader2 } from "lucide-react";
 
 interface RegenerationPanelProps {
   isOpen: boolean;
   notes: string;
   onNotesChange: (notes: string) => void;
   onRegenerate: (notes: string) => void;
-  onSkipInstructions: () => void;
   isRegenerating: boolean;
   panelId: string;
 }
@@ -18,7 +16,6 @@ export function RegenerationPanel({
   notes,
   onNotesChange,
   onRegenerate,
-  onSkipInstructions,
   isRegenerating,
   panelId,
 }: RegenerationPanelProps) {
@@ -61,8 +58,7 @@ export function RegenerationPanel({
         id="regen-notes-helper"
         className="mt-2 text-[12px] leading-[1.6] text-[#6d6d6d] dark:text-[#737373]"
       >
-        Keep the structure intact—only describe the adjustments you want. Leave
-        blank and use Skip instructions to rerun as-is.
+        Keep the structure intact—only describe the adjustments you want.
       </p>
       <div className="mt-3 flex flex-wrap gap-2 sm:justify-end">
         <button
@@ -75,19 +71,7 @@ export function RegenerationPanel({
               : "bg-[#171717] text-white hover:bg-[#404040] focus:ring-[#171717] active:scale-[0.98] dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5] dark:focus:ring-white"
           }`}
         >
-          {isRegenerating ? "Regenerating..." : "Regenerate with instructions"}
-        </button>
-        <button
-          type="button"
-          onClick={onSkipInstructions}
-          disabled={isRegenerating}
-          className={`inline-flex h-[36px] items-center justify-center rounded-[6px] border px-4 text-[13px] font-[500] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            isRegenerating
-              ? "cursor-not-allowed border-[#e5e5e5] text-[#a3a3a3] dark:border-[#2a2a2a] dark:text-[#4d4d4d]"
-              : "border-[#e5e5e5] text-[#171717] hover:border-[#d4d4d4] hover:bg-[#f5f5f5] focus:ring-[#171717] dark:border-[#333333] dark:text-white dark:hover:border-[#525252] dark:hover:bg-[#0a0a0a] dark:focus:ring-white"
-          }`}
-        >
-          {isRegenerating ? "Please wait" : "Skip instructions"}
+          {isRegenerating ? "Regenerating..." : "Regenerate"}
         </button>
       </div>
     </div>

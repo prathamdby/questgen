@@ -221,7 +221,6 @@ function PaperContent({ id }: { id: string }) {
             notes={regenNotes}
             onNotesChange={setRegenNotes}
             onRegenerate={triggerRegeneration}
-            onSkipInstructions={() => triggerRegeneration("")}
             isRegenerating={isRegenerating}
             panelId={regenPanelId}
           />
