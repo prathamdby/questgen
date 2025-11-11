@@ -1,14 +1,36 @@
 "use client";
 
 import Image from "next/image";
-import { useSession } from "@/lib/auth-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SignedInHeaderProps {
   onSignOut: () => void;
+  isPending?: boolean;
+  session?: {
+    user: {
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  } | null;
 }
 
-export function SignedInHeader({ onSignOut }: SignedInHeaderProps) {
-  const { data: session } = useSession();
+export function SignedInHeader({
+  onSignOut,
+  isPending,
+  session,
+}: SignedInHeaderProps) {
+  if (isPending) {
+    return (
+      <div className="mb-8 flex items-center justify-between">
+        <div className="inline-flex items-center gap-2">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <Skeleton className="h-[14px] w-[180px]" />
+        </div>
+        <Skeleton className="h-[14px] w-[70px]" />
+      </div>
+    );
+  }
 
   if (!session) return null;
 
