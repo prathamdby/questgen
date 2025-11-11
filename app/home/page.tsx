@@ -24,6 +24,7 @@ import { PaperCardSkeleton } from "@/components/home/PaperCardSkeleton";
 import { PaperListSkeleton } from "@/components/home/PaperListSkeleton";
 import { EmptyState } from "@/components/home/EmptyState";
 import { NoResultsState } from "@/components/home/NoResultsState";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function Home() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function Home() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewMode, setViewModeState] = useState<"card" | "list">("card");
   const [exportingPaperId, setExportingPaperId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paperToDelete, setPaperToDelete] = useState<string | null>(null);
   const menuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { data: papersData, isPending, error } = usePapers();
@@ -160,22 +163,19 @@ export default function Home() {
     [duplicatePaper],
   );
 
-  const handleDelete = useCallback(
-    (paperId: string) => {
-      if (
-        !confirm(
-          "Are you sure you want to delete this paper? This action cannot be undone.",
-        )
-      ) {
-        setOpenMenuId(null);
-        return;
-      }
+  const handleDelete = useCallback((paperId: string) => {
+    setOpenMenuId(null);
+    setPaperToDelete(paperId);
+    setDeleteDialogOpen(true);
+  }, []);
 
-      setOpenMenuId(null);
-      deletePaper.mutate(paperId);
-    },
-    [deletePaper],
-  );
+  const handleConfirmDelete = useCallback(() => {
+    if (paperToDelete) {
+      deletePaper.mutate(paperToDelete);
+      setDeleteDialogOpen(false);
+      setPaperToDelete(null);
+    }
+  }, [paperToDelete, deletePaper]);
 
   const handleOpenSolution = useCallback(
     (solutionId: string) => {
@@ -370,6 +370,16 @@ export default function Home() {
 
         {content}
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Paper"
+        description="Are you sure you want to delete this paper? This action cannot be undone."
+        confirmLabel="Delete Paper"
+        onConfirm={handleConfirmDelete}
+        isLoading={deletePaper.isPending}
+      />
     </div>
   );
 }

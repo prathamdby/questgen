@@ -21,6 +21,7 @@ import { RegenerationPanel } from "@/components/paper/RegenerationPanel";
 import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { PaperDetailSkeleton } from "@/components/paper/PaperDetailSkeleton";
 import { PaperNotFound } from "@/components/paper/PaperNotFound";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 interface UploadedFile {
   name: string;
@@ -40,6 +41,7 @@ function PaperContent({ id }: { id: string }) {
   const [isExporting, setIsExporting] = useState(false);
   const [isRegenPanelOpen, setIsRegenPanelOpen] = useState(false);
   const [regenNotes, setRegenNotes] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const regenPanelId = "paper-regenerate-panel";
 
   const paper = data?.paper || null;
@@ -107,18 +109,16 @@ function PaperContent({ id }: { id: string }) {
 
   const handleDelete = () => {
     if (!paper) return;
+    setDeleteDialogOpen(true);
+  };
 
-    if (
-      confirm(
-        "Are you sure you want to delete this paper? This action cannot be undone.",
-      )
-    ) {
-      deletePaper.mutate(paper.id, {
-        onSuccess: () => {
-          router.push("/home");
-        },
-      });
-    }
+  const handleConfirmDelete = () => {
+    if (!paper) return;
+    deletePaper.mutate(paper.id, {
+      onSuccess: () => {
+        router.push("/home");
+      },
+    });
   };
 
   if (isLoading) {
@@ -218,6 +218,16 @@ function PaperContent({ id }: { id: string }) {
 
         <MarkdownPreview content={paper.content ?? ""} />
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Paper"
+        description="Are you sure you want to delete this paper? This action cannot be undone."
+        confirmLabel="Delete Paper"
+        onConfirm={handleConfirmDelete}
+        isLoading={deletePaper.isPending}
+      />
     </div>
   );
 }
