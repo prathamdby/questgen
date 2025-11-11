@@ -27,7 +27,7 @@ export function usePapers(): UseQueryResult<PapersData, Error> {
 
 // Fetch single paper - SESSION GUARDED
 export function usePaper(
-  id: string
+  id: string,
 ): UseQueryResult<{ paper: QuestionPaper }, Error> {
   const { data: session } = useSession();
 
@@ -46,7 +46,7 @@ export function usePaper(
 
 // Fetch single solution - SESSION GUARDED
 export function useSolution(
-  id: string
+  id: string,
 ): UseQueryResult<{ solution: SolutionDetail }, Error> {
   const { data: session } = useSession();
 
@@ -98,7 +98,7 @@ export function useDuplicatePaper() {
           solutionStatus = cachedSol.solution.status;
         } else {
           const solRes = await fetch(
-            `/api/solutions/${paperData.paper.solution.id}`
+            `/api/solutions/${paperData.paper.solution.id}`,
           );
           if (solRes.ok) {
             const solData = await solRes.json();
@@ -320,7 +320,7 @@ export function useDeleteSolution() {
       if (context?.previousSolution) {
         queryClient.setQueryData(
           ["solution", solutionId],
-          context.previousSolution
+          context.previousSolution,
         );
       }
       if (context?.previousPapers) {
@@ -378,7 +378,7 @@ export function useRegeneratePaper() {
               ...old,
               paper: { ...old.paper, status: "in_progress" },
             };
-          }
+          },
         );
       }
 
@@ -388,7 +388,7 @@ export function useRegeneratePaper() {
           return {
             ...old,
             papers: old.papers.map((p) =>
-              p.id === paperId ? { ...p, status: "in_progress" as const } : p
+              p.id === paperId ? { ...p, status: "in_progress" as const } : p,
             ),
           };
         });
@@ -415,7 +415,7 @@ export function useRegeneratePaper() {
               updatedAt: data.updatedAt,
             },
           };
-        }
+        },
       );
 
       queryClient.setQueryData<PapersData>(["papers"], (old) => {
@@ -429,7 +429,7 @@ export function useRegeneratePaper() {
                   status: "completed" as const,
                   updatedAt: data.updatedAt,
                 }
-              : p
+              : p,
           ),
         };
       });
