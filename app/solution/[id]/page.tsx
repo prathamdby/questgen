@@ -19,6 +19,7 @@ import { SolutionActionButtons } from "@/components/paper/SolutionActionButtons"
 import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { PaperDetailSkeleton } from "@/components/paper/PaperDetailSkeleton";
 import { PaperNotFound } from "@/components/paper/PaperNotFound";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 interface UploadedFile {
   name: string;
@@ -35,6 +36,7 @@ function SolutionContent({ id }: { id: string }) {
 
   const [isExporting, setIsExporting] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const solution = data?.solution || null;
   const isLoading = isPending && !solution;
@@ -78,18 +80,27 @@ function SolutionContent({ id }: { id: string }) {
 
   const handleDelete = () => {
     if (!solution) return;
+    setDeleteDialogOpen(true);
+  };
 
-    if (
-      confirm(
-        "Are you sure you want to delete this solution? This action cannot be undone.",
-      )
-    ) {
-      deleteSolution.mutate(solution.id, {
-        onSuccess: () => {
-          router.push("/home");
-        },
-      });
-    }
+  const handleConfirmDelete = () => {
+    if (!solution) return;
+    deleteSolution.mutate(solution.id, {
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        router.push("/home");
+      },
+      onError: (error) => {
+        toast.error("Unable to delete solution", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred. Please try again.",
+        });
+        // Keep dialog open for user to retry or cancel
+        setDeleteDialogOpen(true);
+      },
+    });
   };
 
   if (isLoading) {
@@ -178,6 +189,16 @@ function SolutionContent({ id }: { id: string }) {
 
         <MarkdownPreview content={solution.content} />
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Solution"
+        description="Are you sure you want to delete this solution? This action cannot be undone."
+        confirmLabel="Delete Solution"
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteSolution.isPending}
+      />
     </div>
   );
 }
