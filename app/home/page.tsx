@@ -171,9 +171,21 @@ export default function Home() {
 
   const handleConfirmDelete = useCallback(() => {
     if (paperToDelete) {
-      deletePaper.mutate(paperToDelete);
-      setDeleteDialogOpen(false);
-      setPaperToDelete(null);
+      deletePaper.mutate(paperToDelete, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setPaperToDelete(null);
+        },
+        onError: (error) => {
+          toast.error("Failed to delete paper", {
+            description:
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred. Please try again.",
+          });
+          // Keep dialog open for user to retry or cancel
+        },
+      });
     }
   }, [paperToDelete, deletePaper]);
 
@@ -211,6 +223,14 @@ export default function Home() {
         menuRefs.current.delete(id);
       }
     };
+  }, []);
+
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setDeleteDialogOpen(open);
+    if (!open) {
+      // Clear paperToDelete when dialog closes manually
+      setPaperToDelete(null);
+    }
   }, []);
 
   const papersSection = useMemo(() => {
@@ -373,7 +393,7 @@ export default function Home() {
 
       <ConfirmDialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         title="Delete Paper"
         description="Are you sure you want to delete this paper? This action cannot be undone."
         confirmLabel="Delete Paper"

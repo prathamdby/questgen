@@ -87,7 +87,18 @@ function SolutionContent({ id }: { id: string }) {
     if (!solution) return;
     deleteSolution.mutate(solution.id, {
       onSuccess: () => {
+        setDeleteDialogOpen(false);
         router.push("/home");
+      },
+      onError: (error) => {
+        toast.error("Unable to delete solution", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred. Please try again.",
+        });
+        // Keep dialog open for user to retry or cancel
+        setDeleteDialogOpen(true);
       },
     });
   };

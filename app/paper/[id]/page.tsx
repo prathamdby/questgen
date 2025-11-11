@@ -116,7 +116,18 @@ function PaperContent({ id }: { id: string }) {
     if (!paper) return;
     deletePaper.mutate(paper.id, {
       onSuccess: () => {
+        setDeleteDialogOpen(false);
         router.push("/home");
+      },
+      onError: (error) => {
+        toast.error("Failed to delete paper", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred. Please try again.",
+        });
+        // Keep dialog open for user to retry or cancel
+        setDeleteDialogOpen(true);
       },
     });
   };

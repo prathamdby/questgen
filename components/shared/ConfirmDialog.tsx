@@ -30,10 +30,6 @@ export function ConfirmDialog({
   onConfirm,
   isLoading = false,
 }: ConfirmDialogProps) {
-  const handleConfirm = () => {
-    onConfirm();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
@@ -53,7 +49,7 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
+            onClick={onConfirm}
             disabled={isLoading}
             className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[6px] bg-[#ef4444] px-6 text-[15px] font-[500] text-white transition-all duration-150 hover:bg-[#dc2626] focus:outline-none focus:ring-2 focus:ring-[#ef4444] focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] active:bg-[#b91c1c] dark:focus:ring-offset-black"
             style={{ touchAction: "manipulation" }}
