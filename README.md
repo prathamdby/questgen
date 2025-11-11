@@ -1,121 +1,109 @@
 # QuestGen
 
-AI-powered question paper generator for everyone. Upload source materials and generate custom exam papers, quizzes, or study materials with intelligent question design.
+QuestGen is an AI-native workspace for crafting beautiful, assessment-ready question papers. Every surface borrows warmth from Apple’s human-centric typography while honoring Vercel’s precision and minimalism so teams can focus on ideas, not interfaces.
 
-## Features
+## Experience principles
 
-- **AI-Powered Generation**: Uses Google Gemini AI to create questions from any uploaded materials
-- **Flexible Pattern Design**: Customizable paper structure for any use case - exams, quizzes, practice tests
-- **Multi-format Support**: Accepts PDFs and images as source materials
-- **Professional Export**: Generate print-ready PDFs with Apple-inspired design
-- **Paper Management**: Organize, search, duplicate, and export generated papers
-- **User Authentication**: Secure Google OAuth login with session management
+- **Apple-level craft:** Soft gradients, generous white space, and `tracking-[-0.01em]` typography showcase generated content without distraction.
+- **Vercel-grade clarity:** Dark and light modes stay pixel-perfect, grids snap to 8pt rhythm, and micro-interactions feel somatically calm.
+- **Trust through transparency:** Toast-first feedback, optimistic UI, and audit-friendly history keep educators in control of the AI pipeline.
 
-## Tech Stack
+## Core capabilities
 
-- **Framework**: Next.js 16 (App Router), React 19, TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-- **AI**: Google Gemini API (`@google/genai`)
-- **Auth**: Better Auth (Google OAuth)
-- **PDF Export**: Client-side browser print with custom styling
-- **UI**: Tailwind CSS 4, shadcn/ui components
-- **Deployment**: Vercel
+- **AI question synthesis:** Upload PDFs or images and let Google Gemini reconcile intent, difficulty, and marks.
+- **Pattern-first workflows:** Compose section blueprints (MCQ, subjective, etc.) and reuse them across papers.
+- **Companion solutions:** Optionally spin up detailed answer keys in the same pass.
+- **Apple-inspired exports:** Print-ready PDFs echo the native design language with calibrated typography and spacing.
+- **Paper operations:** Duplicate, archive, search, and regenerate with state-aware toasts and optimistic transitions.
 
-## Quick Start
+## Architecture snapshot
+
+| Layer        | What happens                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| UI           | Next.js 16 App Router + React 19 components styled with Tailwind CSS 4 and shadcn/ui primitives       |
+| Client state | TanStack Query orchestrates mutations, Sonner surfaces feedback, next-themes handles appearance modes |
+| API          | App Router route handlers gated by Better Auth sessions with Prisma-backed persistence                |
+| Data         | PostgreSQL schema (Prisma) links Users ⇄ Papers ⇄ Files; Paper ↔ Solution remains one-to-one         |
+| AI pipeline  | Google Gemini via `@google/genai` uploads sources, generates markdown, and cleans temp artifacts      |
+| Export       | `lib/pdf-export-client` renders Apple/Vercel print templates directly in the browser                  |
+
+## Key contracts
+
+- Translate Prisma enum statuses (`IN_PROGRESS`/`COMPLETED`) to UI strings (`"in_progress"`/`"completed"`).
+- Delete Gemini file uploads post-generation to avoid quota leaks.
+- Maintain Paper ↔ Solution uniqueness; duplication intentionally omits solutions.
+- All async paths must resolve with a Sonner toast to preserve operator confidence.
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18+
-- PostgreSQL database
+- Bun (or Node.js ≥ 18) for runtime and scripts
+- PostgreSQL
 - Google Gemini API key
 - Google OAuth credentials
 
-### Setup
+### Installation
 
-1. **Clone and install**
-
-   ```bash
-   git clone <repository-url>
-   cd questgen
-   bun install
-   ```
-
-2. **Environment variables**
-   Copy `.env.example` to `.env.local` and fill in your values:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Then update `.env.local` with your actual credentials:
-   - `DATABASE_URL` and `DIRECT_DATABASE_URL`: PostgreSQL connection strings
-   - `GEMINI_API_KEY`: From [Google AI Studio](https://aistudio.google.com/app/apikey)
-   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: From [Google Cloud Console](https://console.cloud.google.com/)
-   - `BETTER_AUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - `BETTER_AUTH_URL`: Auth API endpoint (default: `http://localhost:3000/api/auth`)
-   - `NEXT_PUBLIC_APP_URL`: Your application URL
-
-3. **Database setup**
-
-   ```bash
-   bunx prisma generate
-   bunx prisma db push
-   ```
-
-4. **Development**
-   ```bash
-   bun dev
-   ```
-
-## Usage
-
-1. **Sign in** with Google OAuth
-2. **Create new quest** - configure paper name, pattern, duration, and total marks
-3. **Upload materials** - add PDFs or images as source content
-4. **Generate** - AI creates questions based on uploaded materials
-5. **Export** - download as professionally formatted PDF
-
-## Use Cases
-
-- **Students**: Create practice tests from study materials
-- **Educators**: Generate exam papers from textbooks
-- **Tutors**: Design custom quizzes for students
-- **Parents**: Create study materials for children
-- **Professionals**: Generate assessment questions from training materials
-
-## Paper Patterns
-
-Use flexible pattern syntax for any format:
-
-```
-Section A: 10 MCQs (20 marks)
-Section B: 5 Short Answers (30 marks)
-Section C: 3 Long Answers (50 marks)
+```bash
+bun install
 ```
 
-## API Rate Limits
+### Environment
 
-- Paper generation: 2 papers per minute
-- General API: 100 requests per minute
+Copy the template and populate your secrets:
 
-## Development
+```bash
+cp .env.example .env.local
+```
 
-### Database Schema
+| Variable                  | Purpose                                        |
+| ------------------------- | ---------------------------------------------- |
+| `DATABASE_URL`            | Prisma primary connection string               |
+| `DIRECT_DATABASE_URL`     | Shadow/management connection                   |
+| `GEMINI_API_KEY`          | Google Gemini access                           |
+| `GOOGLE_CLIENT_ID/SECRET` | Google OAuth client                            |
+| `BETTER_AUTH_SECRET`      | Session encryption                             |
+| `BETTER_AUTH_URL`         | Better Auth handler URL (usually `/api/auth`)  |
+| `NEXT_PUBLIC_APP_URL`     | Absolute app origin for callbacks and previews |
 
-- `User`: Authentication and preferences
-- `Paper`: Generated question papers
-- `PaperFile`: Source materials
-- `UserPreference`: Theme and view settings
+### Database
 
-### Key Files
+```bash
+bunx prisma generate
+bunx prisma db push
+```
 
-- `app/api/papers/generate/route.ts` - AI generation logic
-- `lib/pdf-export-client.ts` - Client-side PDF export with styling
-- `lib/auth.ts` - Authentication configuration
-- `prisma/schema.prisma` - Database models
+### Development
+
+```bash
+bun dev
+```
+
+Visit `http://localhost:3000`, sign in with Google, upload source material, and watch QuestGen compose a paper end-to-end.
+
+## Script reference
+
+| Command                | Description                              |
+| ---------------------- | ---------------------------------------- |
+| `bun dev`              | Start the Next.js development server     |
+| `bunx prisma generate` | Regenerate Prisma client                 |
+| `bunx prisma db push`  | Apply schema to the connected database   |
+| `bun test`             | Run project test suites (when available) |
+
+## Folder tour
+
+- `app/` – App Router routes, server actions, and Suspense-driven detail views
+- `components/` – Shared Apple/Vercel-aligned primitives and domain widgets
+- `lib/` – Authentication, AI, PDF export, and utility layers
+- `prisma/` – Schema and seed helpers
+- `public/` – Fonts and static assets
+
+## API rate limits
+
+- Paper generation/regeneration: 2 requests per minute (Better Auth throttle)
+- Global API: 100 requests per minute
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-Copyright (c) 2025 Pratham Dubey
+MIT License © 2025 Pratham Dubey
