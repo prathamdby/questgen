@@ -110,7 +110,10 @@ export const cacheKeyUtils = {
    */
   getNamespace: (key: string): string | null => {
     const namespace = key.split(":")[0];
-    return Object.values(CACHE_NAMESPACES).includes(namespace as any)
+    const validNamespaces = Object.values(CACHE_NAMESPACES);
+    return validNamespaces.includes(
+      namespace as (typeof CACHE_NAMESPACES)[keyof typeof CACHE_NAMESPACES],
+    )
       ? namespace
       : null;
   },
