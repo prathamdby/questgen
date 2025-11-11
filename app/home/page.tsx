@@ -122,6 +122,7 @@ export default function Home() {
 
   const handleQuickExport = useCallback(async (paperId: string) => {
     setExportingPaperId(paperId);
+    setOpenMenuId(null);
 
     try {
       const response = await fetch(`/api/papers/${paperId}`);
@@ -141,6 +142,7 @@ export default function Home() {
       };
 
       await exportToPDF(paperData);
+      toast.success("Paper exported successfully");
     } catch (error) {
       toast.error("Unable to export your paper", {
         description:
@@ -150,12 +152,16 @@ export default function Home() {
       });
     } finally {
       setExportingPaperId(null);
-      setOpenMenuId(null);
     }
   }, []);
 
   const handleDuplicate = useCallback(
     async (paperId: string) => {
+      setOpenMenuId(null);
+
+      let tempId: string | null = null;
+      let tempSolutionId: string | null = null;
+
       try {
         const response = await fetch(`/api/papers/${paperId}`);
         const data = await response.json();
@@ -164,54 +170,168 @@ export default function Home() {
           throw new Error("Paper not found");
         }
 
+        const hasSolution = !!data.paper.solution;
+        let solutionContent: string | null = null;
+        let solutionStatus: "completed" | "in_progress" = "completed";
+
+        if (hasSolution) {
+          const solutionResponse = await fetch(
+            `/api/solutions/${data.paper.solution.id}`,
+          );
+          const solutionData = await solutionResponse.json();
+
+          if (solutionData.solution) {
+            solutionContent = solutionData.solution.content;
+            solutionStatus = solutionData.solution.status;
+            tempSolutionId = `temp-sol-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+          }
+        }
+
+        tempId = `temp-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+
+        if (!tempId) {
+          throw new Error("Failed to prepare duplicate");
+        }
+
+        const optimisticPaperId: string = tempId;
+
+        const optimisticPaper: QuestionPaper = {
+          id: optimisticPaperId,
+          title: `${data.paper.title} (Copy)`,
+          pattern: data.paper.pattern,
+          duration: data.paper.duration,
+          totalMarks: data.paper.totalMarks,
+          createdAt: new Date().toISOString(),
+          status: "completed",
+          files: (data.paper.files ?? []).map(
+            (file: { name: string; size: number; mimeType: string }) => ({
+              name: file.name,
+              size: file.size,
+              mimeType: file.mimeType,
+            }),
+          ),
+          solution: tempSolutionId ? { id: tempSolutionId } : null,
+        };
+
+        setPapersData((prev) => {
+          if (!prev) return prev;
+
+          const newSolutions = tempSolutionId
+            ? [
+                { paperId: optimisticPaperId, id: tempSolutionId },
+                ...prev.solutions,
+              ]
+            : prev.solutions;
+
+          return {
+            ...prev,
+            papers: [optimisticPaper, ...prev.papers],
+            solutions: newSolutions,
+          };
+        });
+
+        const requestBody: {
+          title: string;
+          pattern: string;
+          duration: string;
+          totalMarks: number;
+          content: string;
+          solution?: { content: string; status: string };
+        } = {
+          title: optimisticPaper.title,
+          pattern: optimisticPaper.pattern,
+          duration: optimisticPaper.duration,
+          totalMarks: optimisticPaper.totalMarks,
+          content: data.paper.content,
+        };
+
+        if (solutionContent) {
+          requestBody.solution = {
+            content: solutionContent,
+            status: solutionStatus,
+          };
+        }
+
         const duplicateResponse = await fetch("/api/papers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: `${data.paper.title} (Copy)`,
-            pattern: data.paper.pattern,
-            duration: data.paper.duration,
-            totalMarks: data.paper.totalMarks,
-            content: data.paper.content,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
-        if (duplicateResponse.ok) {
-          await fetchPapers();
+        if (!duplicateResponse.ok) {
+          throw new Error("Failed to duplicate paper");
         }
+
+        const result = await duplicateResponse.json();
+
+        if (!result.paperId) {
+          throw new Error("Failed to duplicate paper");
+        }
+
+        await fetchPapers();
+
+        const message = solutionContent
+          ? "Paper and solution duplicated"
+          : "Paper duplicated";
+        toast.success(message);
       } catch (error) {
-        toast.error("Failed to duplicate paper");
-      }
-      setOpenMenuId(null);
-    },
-    [fetchPapers],
-  );
-
-  const handleDelete = useCallback(
-    async (paperId: string) => {
-      if (
-        confirm(
-          "Are you sure you want to delete this paper? This action cannot be undone.",
-        )
-      ) {
-        try {
-          const response = await fetch(`/api/papers/${paperId}`, {
-            method: "DELETE",
+        if (tempId || tempSolutionId) {
+          setPapersData((prev) => {
+            if (!prev) return prev;
+            return {
+              papers: prev.papers.filter((paper) => paper.id !== tempId),
+              solutions: prev.solutions.filter((s) => s.id !== tempSolutionId),
+            };
           });
-
-          if (response.ok) {
-            await fetchPapers();
-          } else {
-            throw new Error("Failed to delete paper");
-          }
-        } catch (error) {
-          toast.error("Failed to delete paper");
         }
+
+        toast.error(
+          error instanceof Error ? error.message : "Failed to duplicate paper",
+        );
       }
-      setOpenMenuId(null);
     },
     [fetchPapers],
   );
+
+  const handleDelete = useCallback(async (paperId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this paper? This action cannot be undone.",
+      )
+    ) {
+      setOpenMenuId(null);
+      return;
+    }
+
+    let snapshot: PapersData | null = null;
+
+    setPapersData((prev) => {
+      if (!prev) return prev;
+      snapshot = prev;
+      return {
+        ...prev,
+        papers: prev.papers.filter((p) => p.id !== paperId),
+        solutions: prev.solutions.filter((s) => s.paperId !== paperId),
+      };
+    });
+
+    setOpenMenuId(null);
+
+    try {
+      const response = await fetch(`/api/papers/${paperId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete paper");
+      }
+    } catch (error) {
+      toast.error("Failed to delete paper");
+      if (snapshot) {
+        setPapersData(snapshot);
+      }
+    }
+  }, []);
 
   const handleOpenSolution = useCallback(
     (solutionId: string) => {
