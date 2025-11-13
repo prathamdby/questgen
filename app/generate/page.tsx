@@ -298,7 +298,7 @@ export default function Generate() {
           >
             <TabsList ariaLabel="Generation mode">
               <TabsTrigger value="from_scratch">From Scratch</TabsTrigger>
-              <TabsTrigger value="past_papers">Past Papers</TabsTrigger>
+              <TabsTrigger value="past_papers">From Past Papers</TabsTrigger>
             </TabsList>
 
             <div className="mt-10 space-y-10">
