@@ -1,11 +1,24 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
-import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
+import {
+  buildSystemPrompt,
+  buildPastPapersSystemPrompt,
+  buildSolutionSystemPrompt,
+} from "@/lib/ai-prompts";
+import { pastPaperStrategies } from "@/lib/past-paper-strategies";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+
+type IncomingFilePayload = {
+  name: string;
+  size: number;
+  type: string;
+  data: string;
+  role: "source" | "past_paper";
+};
 
 function cleanMarkdownContent(content: string): string {
   let cleaned = content.trim();
@@ -43,7 +56,11 @@ export async function POST(request: NextRequest) {
   }
 
   let paperId: string | null = null;
-  const uploadedFileUris: Array<{ uri: string; mimeType: string }> = [];
+  const uploadedFileUris: Array<{
+    uri: string;
+    mimeType: string;
+    role: "source" | "past_paper";
+  }> = [];
 
   try {
     const {
@@ -51,11 +68,33 @@ export async function POST(request: NextRequest) {
       paperPattern,
       duration,
       totalMarks,
-      files,
+      generationMode,
+      strategy,
+      sourceFiles,
+      pastPaperFiles,
       generateSolution,
     } = await request.json();
 
     const shouldGenerateSolution = Boolean(generateSolution);
+    const mode =
+      generationMode === "past_papers" ? "PAST_PAPERS" : "FROM_SCRATCH";
+    const selectedStrategy =
+      mode === "PAST_PAPERS"
+        ? (pastPaperStrategies.find((item) => item.id === strategy) ??
+          pastPaperStrategies[0])
+        : null;
+
+    const sourceFilePayloads = (sourceFiles || []) as IncomingFilePayload[];
+    const pastPaperFilePayloads = (pastPaperFiles ||
+      []) as IncomingFilePayload[];
+    const allFiles: IncomingFilePayload[] = [
+      ...sourceFilePayloads,
+      ...pastPaperFilePayloads,
+    ];
+
+    if (allFiles.length === 0) {
+      throw new Error("At least one file is required");
+    }
 
     const paper = await prisma.paper.create({
       data: {
@@ -66,12 +105,21 @@ export async function POST(request: NextRequest) {
         totalMarks: parseInt(totalMarks),
         content: "",
         status: "IN_PROGRESS",
+        generationMode: mode,
+        strategy:
+          mode === "PAST_PAPERS" ? (selectedStrategy?.id ?? null) : null,
         files: {
-          create: files.map(
-            (f: { name: string; size: number; type: string }) => ({
+          create: allFiles.map(
+            (f: {
+              name: string;
+              size: number;
+              type: string;
+              role: "source" | "past_paper";
+            }) => ({
               name: f.name,
               size: f.size,
               mimeType: f.type,
+              role: f.role === "past_paper" ? "PAST_PAPER" : "SOURCE",
             }),
           ),
         },
@@ -82,40 +130,34 @@ export async function POST(request: NextRequest) {
     paperId = paper.id;
 
     const uploadResults = await Promise.allSettled(
-      files.map(
-        async (fileData: {
-          name: string;
-          size: number;
-          type: string;
-          data: string;
-        }) => {
-          const blob = new Blob([Buffer.from(fileData.data, "base64")], {
-            type: fileData.type,
-          });
-          const uploaded = await ai.files.upload({
-            file: blob,
-            config: {
-              mimeType: fileData.type,
-              displayName: fileData.name,
-            },
-          });
+      allFiles.map(async (fileData: IncomingFilePayload) => {
+        const blob = new Blob([Buffer.from(fileData.data, "base64")], {
+          type: fileData.type,
+        });
+        const uploaded = await ai.files.upload({
+          file: blob,
+          config: {
+            mimeType: fileData.type,
+            displayName: fileData.name,
+          },
+        });
 
-          let fileStatus = await ai.files.get({ name: uploaded.name! });
-          while (fileStatus.state === "PROCESSING") {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            fileStatus = await ai.files.get({ name: uploaded.name! });
-          }
+        let fileStatus = await ai.files.get({ name: uploaded.name! });
+        while (fileStatus.state === "PROCESSING") {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          fileStatus = await ai.files.get({ name: uploaded.name! });
+        }
 
-          if (fileStatus.state === "FAILED") {
-            throw new Error(`File processing failed: ${fileData.name}`);
-          }
+        if (fileStatus.state === "FAILED") {
+          throw new Error(`File processing failed: ${fileData.name}`);
+        }
 
-          return {
-            uri: uploaded.uri!,
-            mimeType: uploaded.mimeType!,
-          };
-        },
-      ),
+        return {
+          uri: uploaded.uri!,
+          mimeType: uploaded.mimeType!,
+          role: fileData.role,
+        };
+      }),
     );
 
     const failures = uploadResults.filter((r) => r.status === "rejected");
@@ -128,7 +170,11 @@ export async function POST(request: NextRequest) {
       const successfulUploads = uploadResults
         .filter((r) => r.status === "fulfilled")
         .map((r) => (r.status === "fulfilled" ? r.value : null))
-        .filter(Boolean) as Array<{ uri: string; mimeType: string }>;
+        .filter(Boolean) as Array<{
+        uri: string;
+        mimeType: string;
+        role: "source" | "past_paper";
+      }>;
 
       await Promise.all(
         successfulUploads.map((file) => {
@@ -147,20 +193,54 @@ export async function POST(request: NextRequest) {
     uploadedFileUris.push(
       ...(uploadResults
         .map((r) => (r.status === "fulfilled" ? r.value : null))
-        .filter(Boolean) as Array<{ uri: string; mimeType: string }>),
+        .filter(Boolean) as Array<{
+        uri: string;
+        mimeType: string;
+        role: "source" | "past_paper";
+      }>),
     );
 
-    const contents: Part[] = [
-      {
-        text: buildSystemPrompt(paperName, paperPattern, duration, totalMarks),
-      },
-      {
-        text: "Based on the following materials, generate the question paper:",
-      },
-    ];
+    const pastPaperUris = uploadedFileUris.filter(
+      (f) => f.role === "past_paper",
+    );
+    const sourceUris = uploadedFileUris.filter((f) => f.role === "source");
 
-    for (const file of uploadedFileUris) {
-      contents.push(createPartFromUri(file.uri, file.mimeType));
+    const systemPromptText =
+      mode === "PAST_PAPERS" && selectedStrategy
+        ? buildPastPapersSystemPrompt(
+            paperName,
+            paperPattern,
+            duration,
+            totalMarks,
+            selectedStrategy.promptDirective,
+          )
+        : buildSystemPrompt(paperName, paperPattern, duration, totalMarks);
+
+    const contents: Part[] = [{ text: systemPromptText }];
+
+    if (mode === "PAST_PAPERS" && pastPaperUris.length > 0) {
+      contents.push({
+        text: "First, analyze the following past examination papers to identify patterns, common question formats, topic distributions, and difficulty levels:",
+      });
+      for (const file of pastPaperUris) {
+        contents.push(createPartFromUri(file.uri, file.mimeType));
+      }
+    }
+
+    if (sourceUris.length > 0) {
+      contents.push({
+        text:
+          mode === "PAST_PAPERS"
+            ? "Now, use the following source materials as content for generating NEW questions that follow the patterns identified above:"
+            : "Based on the following materials, generate the question paper:",
+      });
+      for (const file of sourceUris) {
+        contents.push(createPartFromUri(file.uri, file.mimeType));
+      }
+    } else if (mode === "PAST_PAPERS") {
+      contents.push({
+        text: "Generate the new question paper based on the patterns identified in the past papers above, maintaining similar structure and difficulty while creating fresh questions.",
+      });
     }
 
     const response = await ai.models.generateContent({
@@ -184,17 +264,39 @@ export async function POST(request: NextRequest) {
 
     if (shouldGenerateSolution) {
       try {
+        const solutionIntroText =
+          mode === "PAST_PAPERS"
+            ? "Based on the question paper above, the source materials provided, and insights gleaned from the analyzed past papers (use them only to ensure alignment, never to copy answers), generate comprehensive solutions:"
+            : "Based on the question paper above and the following source materials, generate comprehensive solutions:";
+
         const solutionContents: Part[] = [
           {
             text: buildSolutionSystemPrompt(paperName, generatedContent),
           },
           {
-            text: "Based on the question paper above and the following source materials, generate comprehensive solutions:",
+            text: solutionIntroText,
           },
         ];
 
-        for (const file of uploadedFileUris) {
-          solutionContents.push(createPartFromUri(file.uri, file.mimeType));
+        if (sourceUris.length > 0) {
+          for (const file of sourceUris) {
+            solutionContents.push(createPartFromUri(file.uri, file.mimeType));
+          }
+        }
+
+        if (mode === "PAST_PAPERS" && pastPaperUris.length > 0) {
+          solutionContents.push({
+            text: "Past papers (for pattern reference only, do not replicate their content verbatim in solutions):",
+          });
+          for (const file of pastPaperUris) {
+            solutionContents.push(createPartFromUri(file.uri, file.mimeType));
+          }
+        }
+
+        if (sourceUris.length === 0 && pastPaperUris.length === 0) {
+          for (const file of uploadedFileUris) {
+            solutionContents.push(createPartFromUri(file.uri, file.mimeType));
+          }
         }
 
         const solutionResponse = await ai.models.generateContent({

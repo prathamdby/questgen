@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
           duration: true,
           totalMarks: true,
           status: true,
+          generationMode: true,
+          strategy: true,
           createdAt: true,
           updatedAt: true,
           files: {
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest) {
               name: true,
               size: true,
               mimeType: true,
+              role: true,
               createdAt: true,
             },
           },
