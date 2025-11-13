@@ -64,7 +64,7 @@ export function TabsList({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`inline-flex h-[42px] items-center justify-start gap-1 rounded-[8px] border border-[#e5e5e5] bg-[#fafafa] p-1 dark:border-[#262626] dark:bg-[#0f0f0f] ${className}`}
+      className={`flex h-[42px] w-full items-center justify-start gap-1 rounded-[8px] border border-[#e5e5e5] bg-[#fafafa] p-1 dark:border-[#262626] dark:bg-[#0f0f0f] ${className}`}
     >
       {children}
     </div>
@@ -93,7 +93,7 @@ export function TabsTrigger({
       aria-controls={`tabpanel-${value}`}
       id={`tab-${value}`}
       onClick={() => onValueChange(value)}
-      className={`inline-flex h-[34px] items-center justify-center whitespace-nowrap rounded-[6px] px-4 text-[14px] font-[500] tracking-[-0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fafafa] disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-white dark:focus-visible:ring-offset-[#0f0f0f] ${
+      className={`flex h-[34px] flex-1 items-center justify-center whitespace-nowrap rounded-[6px] px-4 text-[14px] font-[500] tracking-[-0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fafafa] disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-white dark:focus-visible:ring-offset-[#0f0f0f] ${
         isSelected
           ? "bg-white text-[#171717] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:bg-[#171717] dark:text-white dark:shadow-[0_2px_6px_rgba(0,0,0,0.4)]"
           : "text-[#737373] hover:text-[#171717] dark:text-[#8c8c8c] dark:hover:text-white"

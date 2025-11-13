@@ -409,31 +409,6 @@ export default function Generate() {
                 />
               </FormField>
 
-              <div className="flex flex-wrap items-start justify-between gap-4 rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-5 dark:border-[#262626] dark:bg-[#0f0f0f]">
-                <div className="min-w-[220px] flex-1">
-                  <p
-                    id="generate-solution-label"
-                    className="text-[14px] font-[500] tracking-[-0.01em] text-[#171717] dark:text-white"
-                  >
-                    Generate companion solution
-                  </p>
-                  <p
-                    id="generate-solution-description"
-                    className="mt-2 text-[13px] leading-[1.5] text-[#595959] dark:text-[#8c8c8c]"
-                  >
-                    When enabled, QuestGen will craft a step-by-step answer set
-                    strictly from your uploaded materials and the generated
-                    paper.
-                  </p>
-                </div>
-                <Switch
-                  checked={shouldGenerateSolution}
-                  onCheckedChange={setShouldGenerateSolution}
-                  ariaLabelledBy="generate-solution-label"
-                  ariaDescribedBy="generate-solution-description"
-                />
-              </div>
-
               <TabsContent value="from_scratch">
                 <div>
                   <label className="mb-3 block text-[13px] font-[500] text-[#525252] dark:text-[#a3a3a3]">
@@ -513,6 +488,31 @@ export default function Generate() {
                   </p>
                 </div>
               </TabsContent>
+
+              <div className="flex flex-wrap items-start justify-between gap-4 rounded-[6px] border border-[#e5e5e5] bg-[#fafafa] p-5 dark:border-[#262626] dark:bg-[#0f0f0f]">
+                <div className="min-w-[220px] flex-1">
+                  <p
+                    id="generate-solution-label"
+                    className="text-[14px] font-[500] tracking-[-0.01em] text-[#171717] dark:text-white"
+                  >
+                    Generate companion solution
+                  </p>
+                  <p
+                    id="generate-solution-description"
+                    className="mt-2 text-[13px] leading-[1.5] text-[#595959] dark:text-[#8c8c8c]"
+                  >
+                    When enabled, QuestGen will craft a step-by-step answer set
+                    strictly from your uploaded materials and the generated
+                    paper.
+                  </p>
+                </div>
+                <Switch
+                  checked={shouldGenerateSolution}
+                  onCheckedChange={setShouldGenerateSolution}
+                  ariaLabelledBy="generate-solution-label"
+                  ariaDescribedBy="generate-solution-description"
+                />
+              </div>
             </div>
           </Tabs>
 
