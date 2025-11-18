@@ -7,6 +7,9 @@ import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
+const FILE_PROCESSING_TIMEOUT_MS = 60_000;
+const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
+
 function cleanMarkdownContent(content: string): string {
   let cleaned = content.trim();
   cleaned = cleaned.replace(/^```(?:markdown|md)?\s*\n/i, "");
@@ -100,9 +103,18 @@ export async function POST(request: NextRequest) {
             },
           });
 
+          const startTime = Date.now();
+
           let fileStatus = await ai.files.get({ name: uploaded.name! });
           while (fileStatus.state === "PROCESSING") {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            if (Date.now() - startTime > FILE_PROCESSING_TIMEOUT_MS) {
+              throw new Error(
+                `File processing timeout (>60s): ${fileData.name}`,
+              );
+            }
+            await new Promise((resolve) =>
+              setTimeout(resolve, FILE_PROCESSING_POLL_INTERVAL_MS),
+            );
             fileStatus = await ai.files.get({ name: uploaded.name! });
           }
 

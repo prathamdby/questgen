@@ -37,6 +37,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const url = request.nextUrl;
+    const limitParam = url.searchParams.get("limit");
+    const cursor = url.searchParams.get("cursor") || undefined;
+
+    const shouldPaginate = Boolean(limitParam || cursor);
+    const limitValue = limitParam
+      ? parseInt(limitParam, 10)
+      : cursor
+        ? 50
+        : undefined;
+    const effectiveLimit = limitValue
+      ? Math.min(Math.max(limitValue, 1), 100)
+      : undefined;
+    const paginationArgs = effectiveLimit
+      ? {
+          take: effectiveLimit + 1,
+          ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+        }
+      : {};
+
     const [papersResult, solutionsResult] = await Promise.allSettled([
       prisma.paper.findMany({
         where: { userId: session.user.id },
@@ -71,6 +91,7 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: { createdAt: "desc" },
+        ...paginationArgs,
       }),
       prisma.solution.findMany({
         where: { userId: session.user.id },
@@ -94,7 +115,20 @@ export async function GET(request: NextRequest) {
     const solutions =
       solutionsResult.status === "fulfilled" ? solutionsResult.value : [];
 
-    const transformedPapers = papers.map((paper) => ({
+    let hasMore = false;
+    let nextCursor = null;
+    let finalPapers = papers;
+
+    if (effectiveLimit !== undefined) {
+      hasMore = papers.length > effectiveLimit;
+      finalPapers = hasMore ? papers.slice(0, -1) : papers;
+      nextCursor =
+        hasMore && finalPapers.length > 0
+          ? finalPapers[finalPapers.length - 1].id
+          : null;
+    }
+
+    const transformedPapers = finalPapers.map((paper) => ({
       ...paper,
       status: transformStatus(paper.status),
     }));
@@ -104,10 +138,28 @@ export async function GET(request: NextRequest) {
       status: transformStatus(solution.status),
     }));
 
-    return NextResponse.json({
+    const response: {
+      papers: typeof transformedPapers;
+      solutions: typeof transformedSolutions;
+      pagination?: {
+        hasMore: boolean;
+        nextCursor: string | null;
+        limit: number;
+      };
+    } = {
       papers: transformedPapers,
       solutions: transformedSolutions,
-    });
+    };
+
+    if (shouldPaginate && effectiveLimit !== undefined) {
+      response.pagination = {
+        hasMore,
+        nextCursor,
+        limit: effectiveLimit,
+      };
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Failed to fetch papers:", error);
     return NextResponse.json(

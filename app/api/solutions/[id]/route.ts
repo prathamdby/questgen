@@ -46,9 +46,10 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const solution = await prisma.solution.findUnique({
+    const solution = await prisma.solution.findFirst({
       where: {
         id,
+        userId: session.user.id,
       },
       include: {
         paper: {
@@ -59,7 +60,7 @@ export async function GET(
       },
     });
 
-    if (!solution || solution.userId !== session.user.id) {
+    if (!solution) {
       return NextResponse.json(
         { error: "Solution not found" },
         { status: 404 },
@@ -121,22 +122,19 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const solution = await prisma.solution.findUnique({
-      where: { id },
+    const result = await prisma.solution.deleteMany({
+      where: {
+        id,
+        userId: session.user.id,
+      },
     });
 
-    if (!solution || solution.userId !== session.user.id) {
+    if (result.count === 0) {
       return NextResponse.json(
         { error: "Solution not found" },
         { status: 404 },
       );
     }
-
-    await prisma.solution.delete({
-      where: {
-        id,
-      },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

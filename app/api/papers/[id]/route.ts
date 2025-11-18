@@ -41,8 +41,8 @@ export async function GET(
   }
 
   try {
-    const paper = await prisma.paper.findUnique({
-      where: { id },
+    const paper = await prisma.paper.findFirst({
+      where: { id, userId: session.user.id },
       include: {
         files: true,
         tags: true,
@@ -54,7 +54,7 @@ export async function GET(
       },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
+    if (!paper) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
 
@@ -108,17 +108,16 @@ export async function DELETE(
   }
 
   try {
-    const paper = await prisma.paper.findUnique({
-      where: { id },
+    const result = await prisma.paper.deleteMany({
+      where: {
+        id,
+        userId: session.user.id,
+      },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
+    if (result.count === 0) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
-
-    await prisma.paper.delete({
-      where: { id },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
