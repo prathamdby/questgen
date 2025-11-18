@@ -1,48 +1,35 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-
-function transformStatus(dbStatus: string): "completed" | "in_progress" {
-  return dbStatus === "COMPLETED" ? "completed" : "in_progress";
-}
+import { transformStatus } from "@/lib/transformers";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
 
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
+    authResult.userId,
     "/api/papers/[id]",
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const paper = await prisma.paper.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId: authResult.userId },
       include: {
         files: true,
         tags: true,
@@ -65,13 +52,7 @@ export async function GET(
 
     return NextResponse.json({ paper: transformedPaper });
   } catch (error) {
-    console.error("Failed to fetch paper:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch paper",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to fetch paper");
   }
 }
 
@@ -80,38 +61,26 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
 
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
+    authResult.userId,
     "/api/papers/[id]",
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const result = await prisma.paper.deleteMany({
       where: {
         id,
-        userId: session.user.id,
+        userId: authResult.userId,
       },
     });
 
@@ -121,12 +90,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete paper:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to delete paper",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to delete paper");
   }
 }

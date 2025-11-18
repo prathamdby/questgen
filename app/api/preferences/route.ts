@@ -1,96 +1,66 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
+    authResult.userId,
     "/api/preferences",
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const preferences = await prisma.userPreference.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: authResult.userId },
     });
 
     return NextResponse.json({
       preferences: preferences || { theme: "DARK", viewMode: "CARD" },
     });
   } catch (error) {
-    console.error("Failed to fetch preferences:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch preferences",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to fetch preferences");
   }
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
+    authResult.userId,
     "/api/preferences",
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const { theme, viewMode } = await request.json();
 
     const preferences = await prisma.userPreference.upsert({
-      where: { userId: session.user.id },
+      where: { userId: authResult.userId },
       update: {
         ...(theme && { theme }),
         ...(viewMode && { viewMode }),
         updatedAt: new Date(),
       },
       create: {
-        userId: session.user.id,
+        userId: authResult.userId,
         theme: theme || "DARK",
         viewMode: viewMode || "CARD",
       },
@@ -98,12 +68,6 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ preferences });
   } catch (error) {
-    console.error("Failed to update preferences:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to update preferences",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to update preferences");
   }
 }
