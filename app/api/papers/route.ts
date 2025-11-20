@@ -1,39 +1,26 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-
-function transformStatus(dbStatus: string): "completed" | "in_progress" {
-  return dbStatus === "COMPLETED" ? "completed" : "in_progress";
-}
+import { transformStatus } from "@/lib/transformers";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/papers",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.PAPERS,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
@@ -59,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     const [papersResult, solutionsResult] = await Promise.allSettled([
       prisma.paper.findMany({
-        where: { userId: session.user.id },
+        where: { userId: authResult.userId },
         select: {
           id: true,
           title: true,
@@ -94,7 +81,7 @@ export async function GET(request: NextRequest) {
         ...paginationArgs,
       }),
       prisma.solution.findMany({
-        where: { userId: session.user.id },
+        where: { userId: authResult.userId },
         include: {
           paper: {
             select: {
@@ -161,42 +148,23 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Failed to fetch papers:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch papers",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to fetch papers");
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/papers",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.PAPERS,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
@@ -205,7 +173,7 @@ export async function POST(request: NextRequest) {
 
     const paper = await prisma.paper.create({
       data: {
-        userId: session.user.id,
+        userId: authResult.userId,
         title,
         pattern,
         duration,
@@ -220,7 +188,7 @@ export async function POST(request: NextRequest) {
     if (solution && typeof solution.content === "string") {
       const createdSolution = await prisma.solution.create({
         data: {
-          userId: session.user.id,
+          userId: authResult.userId,
           paperId: paper.id,
           content: solution.content,
           status:
@@ -236,12 +204,6 @@ export async function POST(request: NextRequest) {
       solutionId: createdSolutionId,
     });
   } catch (error) {
-    console.error("Create paper error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create paper",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to create paper");
   }
 }

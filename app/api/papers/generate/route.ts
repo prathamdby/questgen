@@ -1,48 +1,29 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
 import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { cleanMarkdownContent } from "@/lib/transformers";
+import { deleteGeminiFiles } from "@/lib/ai-utils";
+import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 const FILE_PROCESSING_TIMEOUT_MS = 60_000;
 const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
 
-function cleanMarkdownContent(content: string): string {
-  let cleaned = content.trim();
-  cleaned = cleaned.replace(/^```(?:markdown|md)?\s*\n/i, "");
-  cleaned = cleaned.replace(/\n```\s*$/i, "");
-  return cleaned.trim();
-}
-
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/papers/generate",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.PAPERS_GENERATE,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   let paperId: string | null = null;
@@ -62,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const paper = await prisma.paper.create({
       data: {
-        userId: session.user.id,
+        userId: authResult.userId,
         title: paperName,
         pattern: paperPattern,
         duration,
@@ -142,11 +123,8 @@ export async function POST(request: NextRequest) {
         .map((r) => (r.status === "fulfilled" ? r.value : null))
         .filter(Boolean) as Array<{ uri: string; mimeType: string }>;
 
-      await Promise.all(
-        successfulUploads.map((file) => {
-          const fileName = file.uri.split("/").pop()!;
-          return ai.files.delete({ name: fileName }).catch(() => {});
-        }),
+      await deleteGeminiFiles(
+        successfulUploads as Array<{ uri: string; mimeType: string }>,
       );
 
       await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
@@ -227,7 +205,7 @@ export async function POST(request: NextRequest) {
           },
           create: {
             paperId: paper.id,
-            userId: session.user.id,
+            userId: authResult.userId,
             content: generatedSolutionContent,
             status: "COMPLETED",
           },
@@ -241,12 +219,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await Promise.all(
-      uploadedFileUris.map((file) => {
-        const fileName = file.uri.split("/").pop()!;
-        return ai.files.delete({ name: fileName }).catch(() => {});
-      }),
-    );
+    await deleteGeminiFiles(uploadedFileUris);
 
     return NextResponse.json({
       success: true,
@@ -260,12 +233,7 @@ export async function POST(request: NextRequest) {
       await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
     }
 
-    await Promise.all(
-      uploadedFileUris.map((file) => {
-        const fileName = file.uri.split("/").pop()!;
-        return ai.files.delete({ name: fileName }).catch(() => {});
-      }),
-    );
+    await deleteGeminiFiles(uploadedFileUris);
 
     console.error("Generation error:", error);
     return NextResponse.json(

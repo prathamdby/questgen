@@ -1,35 +1,25 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/solutions",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.SOLUTIONS,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
@@ -46,7 +36,7 @@ export async function POST(request: NextRequest) {
       where: { id: paperId },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
+    if (!paper || paper.userId !== authResult.userId) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
 
@@ -63,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const solution = await prisma.solution.create({
       data: {
-        userId: session.user.id,
+        userId: authResult.userId,
         paperId,
         content,
         status: "COMPLETED",
@@ -72,12 +62,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ solutionId: solution.id });
   } catch (error) {
-    console.error("Create solution error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create solution",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to create solution");
   }
 }
