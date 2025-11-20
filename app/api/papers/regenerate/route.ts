@@ -4,6 +4,7 @@ import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = await withRateLimit(
     request,
     authResult.userId,
-    "/api/papers/regenerate",
+    RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE,
   );
   if (!rateLimitResult.success) {
     return rateLimitResult.response;

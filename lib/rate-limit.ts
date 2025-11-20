@@ -1,9 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
+export const RATE_LIMIT_ENDPOINTS = {
+  PAPERS: "/api/papers",
+  PAPERS_ID: "/api/papers/[id]",
+  PAPERS_GENERATE: "/api/papers/generate",
+  PAPERS_REGENERATE: "/api/papers/regenerate",
+  SOLUTIONS: "/api/solutions",
+  SOLUTIONS_ID: "/api/solutions/[id]",
+  PREFERENCES: "/api/preferences",
+} as const;
+
 export const RATE_LIMIT_CONFIG = {
-  "/api/papers/generate": { window: 60, max: 2 },
-  "/api/papers/regenerate": { window: 60, max: 2 },
+  [RATE_LIMIT_ENDPOINTS.PAPERS_GENERATE]: { window: 60, max: 2 },
+  [RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE]: { window: 60, max: 2 },
   default: { window: 60, max: 100 },
 } as const;
 
@@ -81,16 +91,17 @@ export async function checkRateLimit(
   try {
     const cached = rateLimitCache.get(key);
     if (cached && cached.resetAt > Date.now()) {
-      if (cached.count >= config.max) {
+      cached.count++;
+      cached.lastUpdated = Date.now();
+      rateLimitCache.set(key, cached);
+
+      if (cached.count > config.max) {
         const retryAfter = Math.ceil((cached.resetAt - Date.now()) / 1000);
         console.log(
           `[Rate Limit] ${routePath} - Rate limit exceeded. ${cached.count}/${config.max} requests used. Retry after ${retryAfter}s`,
         );
         return { allowed: false, retryAfter };
       }
-      cached.count++;
-      cached.lastUpdated = Date.now();
-      rateLimitCache.set(key, cached);
 
       const remaining = config.max - cached.count;
       console.log(

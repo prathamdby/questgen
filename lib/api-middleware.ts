@@ -21,11 +21,11 @@ export interface AuthError {
 export async function withAuth(
   request: NextRequest,
 ): Promise<AuthResult | AuthError> {
-  const session = (await auth.api.getSession({
+  const session = await auth.api.getSession({
     headers: await headers(),
-  })) as SessionResponse;
+  });
 
-  if (!session?.user) {
+  if (!session || !session.user || !session.user.id) {
     return {
       success: false,
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
@@ -78,10 +78,12 @@ export function createErrorResponse(
   message: string,
   status: number = 500,
 ): NextResponse {
-  console.error(`${message}:`, error);
+  const requestId = crypto.randomUUID();
+  console.error(`[${requestId}] ${message}:`, error);
   return NextResponse.json(
     {
       error: message,
+      requestId,
     },
     { status },
   );

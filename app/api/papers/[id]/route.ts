@@ -6,6 +6,7 @@ import {
   withRateLimit,
   createErrorResponse,
 } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +22,7 @@ export async function GET(
   const rateLimitResult = await withRateLimit(
     request,
     authResult.userId,
-    "/api/papers/[id]",
+    RATE_LIMIT_ENDPOINTS.PAPERS_ID,
   );
   if (!rateLimitResult.success) {
     return rateLimitResult.response;
@@ -70,7 +71,7 @@ export async function DELETE(
   const rateLimitResult = await withRateLimit(
     request,
     authResult.userId,
-    "/api/papers/[id]",
+    RATE_LIMIT_ENDPOINTS.PAPERS_ID,
   );
   if (!rateLimitResult.success) {
     return rateLimitResult.response;

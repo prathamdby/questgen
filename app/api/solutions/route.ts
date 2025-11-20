@@ -5,6 +5,7 @@ import {
   withRateLimit,
   createErrorResponse,
 } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = await withRateLimit(
     request,
     authResult.userId,
-    "/api/solutions",
+    RATE_LIMIT_ENDPOINTS.SOLUTIONS,
   );
   if (!rateLimitResult.success) {
     return rateLimitResult.response;

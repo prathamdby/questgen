@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
 import { deleteGeminiFiles } from "@/lib/ai-utils";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 const FILE_PROCESSING_TIMEOUT_MS = 60_000;
 const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = await withRateLimit(
     request,
     authResult.userId,
-    "/api/papers/generate",
+    RATE_LIMIT_ENDPOINTS.PAPERS_GENERATE,
   );
   if (!rateLimitResult.success) {
     return rateLimitResult.response;
