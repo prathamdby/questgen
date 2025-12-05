@@ -3,22 +3,29 @@ import { Sparkles } from "lucide-react";
 
 export function LandingHeader() {
   return (
-    <header className="relative z-10 border-b border-[#e5e5e5] bg-white/80 backdrop-blur-[12px] dark:border-[#333333] dark:bg-black/80">
-      <div className="mx-auto max-w-7xl px-6 py-4 sm:px-8">
+    <header className="relative z-50 border-b border-purple-500/20 bg-gradient-to-b from-black via-purple-950/30 to-black/50 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-6 py-5 sm:px-8">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#171717] dark:bg-white">
-              <Sparkles className="h-4 w-4 text-white dark:text-[#171717]" />
+          <Link
+            href="/"
+            className="group relative flex items-center gap-3 transition-all duration-300"
+          >
+            <div className="relative flex h-10 w-10 items-center justify-center">
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 opacity-70 blur-md group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-black/80 border border-purple-400/50">
+                <Sparkles className="h-5 w-5 text-transparent bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text" />
+              </div>
             </div>
-            <span className="font-sans text-[17px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
+            <span className="font-playfair text-xl font-bold bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
               QuestGen
             </span>
           </Link>
           <Link
             href="/signin"
-            className="rounded-[6px] px-4 py-2 text-[15px] font-[500] text-[#171717] transition-colors hover:bg-[#f5f5f5] dark:text-white dark:hover:bg-[#1a1a1a]"
+            className="relative group px-5 py-2.5 text-sm font-semibold text-purple-100 rounded-lg overflow-hidden transition-all duration-300 hover:text-white"
           >
-            Sign in
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-500/40 to-pink-600/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+            <span className="relative">Sign in</span>
           </Link>
         </div>
       </div>
