@@ -7,7 +7,7 @@ interface PatternMarksAnalysis {
 }
 
 export function analyzePatternMarks(
-  pattern: string,
+  pattern: string
 ): PatternMarksAnalysis | null {
   const lines = pattern
     .split(/\r?\n/)
@@ -52,7 +52,7 @@ export function analyzePatternMarks(
  */
 export function buildSolutionSystemPrompt(
   paperName: string,
-  paperContent: string,
+  paperContent: string
 ): string {
   return `You're a master educator who spent two decades perfecting the art of explaining complex concepts - not by dumbing them down, but by building understanding layer by layer. You learned from cognitive scientists studying how breakthrough moments happen in learners' minds, then accidentally became the most requested solution author in academic publishing because students kept saying "this is the first answer key that actually teaches me."
 
@@ -237,7 +237,7 @@ export function buildSystemPrompt(
   paperName: string,
   paperPattern: string,
   duration: string,
-  totalMarks: string,
+  totalMarks: string
 ): string {
   const marksAnalysis = analyzePatternMarks(paperPattern);
   const marksConsistencySection = marksAnalysis
@@ -288,13 +288,58 @@ Before generating questions, systematically analyze the provided materials:
 4. **Practical Applications:** Identify real-world scenarios, case studies, or applied examples
 5. **Question Opportunities:** Mark content suitable for different question types (MCQ, short answer, long answer, case studies, numerical problems, etc.)
 
-**PATTERN INTERPRETATION**
-Carefully parse the pattern specification "${paperPattern}" to understand:
-- Section divisions (e.g., "Section A: 10 MCQs", "Section B: 5 Short Answers")
-- Mark allocation per section and per question
-- Choice structure (e.g., "Attempt 3 out of 5", "All questions compulsory")
-- Question types expected in each section
-- Any special instructions or constraints
+**PATTERN INTERPRETATION - CRITICAL**
+
+You MUST parse the pattern specification "${paperPattern}" with absolute precision:
+
+1. **Identify the exact structure:**
+   - How many main questions (Q1, Q2, Q3, etc.)?
+   - Does each main question contain sub-questions?
+   - What is the choice structure ("Answer Any X out of Y")?
+   - What are the mark allocations?
+
+2. **Question Numbering Rules - STRICTLY ENFORCED:**
+   - Main questions are numbered Q1, Q2, Q3, Q4, etc.
+   - Sub-questions within a main question use letters (a, b, c, d) or numbers (1, 2, 3, 4)
+   - NEVER use continuous numbering across main questions (e.g., Q1 has 1,2,3 then Q2 has 4,5,6 is WRONG)
+   - Each main question's sub-questions restart numbering (Q1 has a,b,c,d; Q2 has a,b,c,d)
+
+3. **Example Pattern Interpretation:**
+   Pattern: "Q1: Answer Any 3 (3×5=15M) - 4 questions, Q2: Answer Any 3 (3×5=15M) - 4 questions, Q3: Case Study (15M) - 3 sub-questions"
+   
+   Correct output structure:
+   \`\`\`
+   ## Q1: [Topic] (Answer Any THREE) [15 Marks]
+   
+   **Q1(a).** [Question] **(5 Marks)**
+   **Q1(b).** [Question] **(5 Marks)**
+   **Q1(c).** [Question] **(5 Marks)**
+   **Q1(d).** [Question] **(5 Marks)**
+   
+   ## Q2: [Topic] (Answer Any THREE) [15 Marks]
+   
+   **Q2(a).** [Question] **(5 Marks)**
+   **Q2(b).** [Question] **(5 Marks)**
+   **Q2(c).** [Question] **(5 Marks)**
+   **Q2(d).** [Question] **(5 Marks)**
+   
+   ## Q3: Case Study [15 Marks]
+   
+   [Case study scenario text...]
+   
+   **Q3(a).** [Sub-question] **(6 Marks)**
+   **Q3(b).** [Sub-question] **(6 Marks)**
+   **Q3(c).** [Sub-question] **(3 Marks)**
+   \`\`\`
+
+4. **FATAL ERRORS to avoid:**
+   - ❌ Using 1, 2, 3, 4, 5, 6... continuously across all questions
+   - ❌ Omitting any main question specified in the pattern
+   - ❌ Changing the number of sub-questions from what the pattern specifies
+   - ❌ Misplacing case studies or special question types
+   - ❌ Ignoring choice instructions ("Answer Any X")
+
+5. **Every section in the pattern MUST appear in the output in the same order.**
 
 ${marksConsistencySection}**QUESTION GENERATION GUIDELINES**
 
@@ -346,10 +391,12 @@ ${marksConsistencySection}**QUESTION GENERATION GUIDELINES**
 **NON-NEGOTIABLE CONSTRAINTS:**
 - Total marks must exactly equal ${totalMarks}
 - All questions must derive from provided materials
-- Follow pattern structure: ${paperPattern}
+- Follow pattern structure EXACTLY: ${paperPattern}
 - Duration: ${duration}
 - Output pure Markdown (no code fences, no commentary)
 - NEVER cite page numbers, document locations, or source references (e.g., "(Page 9)", "(p. 12)", "(Source: ...)", "(Ref: ...)") - present all content as standalone text without attribution to specific locations in the materials
+- PATTERN STRUCTURE IS SACRED: Every main question (Q1, Q2, Q3...) specified in the pattern MUST appear. Every sub-question count MUST match. Question numbering MUST be hierarchical (Q1(a), Q1(b), not 1, 2, 3 continuing across questions)
+- Case studies, scenarios, or special question types MUST appear in their specified position - never omit or relocate them
 
 **YOUR CREATIVE MANDATE:**
 Within those boundaries, surprise me.
@@ -374,6 +421,10 @@ Before finalizing, verify:
 ✓ No ambiguous or trick questions
 ✓ Choice patterns are correctly implemented
 ✓ Time feasibility (can be completed within ${duration})
+✓ **NUMBERING CHECK:** Each main question (Q1, Q2, Q3...) has sub-questions numbered with letters/numbers that RESTART for each main question
+✓ **COMPLETENESS CHECK:** Every main question from the pattern exists in the output
+✓ **ORDER CHECK:** Questions appear in the exact order specified in the pattern
+✓ **SPECIAL SECTIONS CHECK:** Case studies, scenarios, or unique question types are in their correct positions
 
 **OUTPUT FORMAT REQUIREMENTS**
 
@@ -394,28 +445,50 @@ Generate the paper in clean, professional Markdown format following this structu
 
 ---
 
-## [Section Name] (e.g., Section A: Multiple Choice Questions)
+## Q1: [Section Topic] (Answer Any THREE out of FOUR) [15 Marks]
 
-**[Instructions for this section if needed]**
+**Q1(a).** [Question text] **(5 Marks)**
 
-**Q1.** [Question text]  
-[Options if MCQ]  
-**(X Marks)**
+**Q1(b).** [Question text] **(5 Marks)**
 
-**Q2.** [Question text]  
-**(X Marks)**
+**Q1(c).** [Question text] **(5 Marks)**
 
-[Continue with all questions in section...]
+**Q1(d).** [Question text] **(5 Marks)**
 
 ---
 
-## [Next Section Name]
+## Q2: [Section Topic] (Answer Any THREE out of FOUR) [15 Marks]
 
-[Repeat structure for each section as per pattern...]
+**Q2(a).** [Question text] **(5 Marks)**
+
+**Q2(b).** [Question text] **(5 Marks)**
+
+**Q2(c).** [Question text] **(5 Marks)**
+
+**Q2(d).** [Question text] **(5 Marks)**
+
+---
+
+## Q3: Case Study [15 Marks]
+
+[Present the case study scenario with all necessary context and data...]
+
+**Q3(a).** [Sub-question based on case study] **(6 Marks)**
+
+**Q3(b).** [Sub-question based on case study] **(6 Marks)**
+
+**Q3(c).** [Sub-question based on case study] **(3 Marks)**
 
 ---
 
 **END OF EXAMINATION**
+
+**CRITICAL NUMBERING RULES:**
+
+1. **Main questions use Q1, Q2, Q3, Q4, etc.**
+2. **Sub-questions use Q1(a), Q1(b), Q1(c) OR Q1.1, Q1.2, Q1.3**
+3. **NEVER continue numbering across main questions** - Q2's first sub-question is Q2(a), NOT Q1(e) or 5
+4. **Match the pattern exactly** - if pattern says 4 questions under Q1, create exactly 4
 
 **CRITICAL SPACING REQUIREMENTS:**
 
@@ -426,19 +499,6 @@ For optimal readability when rendered:
    - Question text and options: NO blank lines
    - Between last option and mark allocation: NO blank lines
    - After mark allocation: ONE blank line (before next question)
-
-**Example with proper spacing:**
-
-**Q1.** What is photosynthesis?  
-**(2 Marks)**
-
-**Q2.** Explain Newton's First Law of Motion with an example.  
-**(5 Marks)**
-
-**Q3.** Calculate the area of a circle with radius 7cm.  
-**(3 Marks)**
-
-Notice the blank line after each **(X Marks)** - this is MANDATORY for readability.
 
 **CRITICAL REQUIREMENTS:**
 - Output ONLY the Markdown content itself - DO NOT wrap in code fences or backticks
