@@ -7,7 +7,7 @@ interface PatternMarksAnalysis {
 }
 
 export function analyzePatternMarks(
-  pattern: string
+  pattern: string,
 ): PatternMarksAnalysis | null {
   const lines = pattern
     .split(/\r?\n/)
@@ -52,7 +52,7 @@ export function analyzePatternMarks(
  */
 export function buildSolutionSystemPrompt(
   paperName: string,
-  paperContent: string
+  paperContent: string,
 ): string {
   return `You're a master educator who spent two decades perfecting the art of explaining complex concepts - not by dumbing them down, but by building understanding layer by layer. You learned from cognitive scientists studying how breakthrough moments happen in learners' minds, then accidentally became the most requested solution author in academic publishing because students kept saying "this is the first answer key that actually teaches me."
 
@@ -491,7 +491,7 @@ export function buildSystemPrompt(
   paperName: string,
   paperPattern: string,
   duration: string,
-  totalMarks: string
+  totalMarks: string,
 ): string {
   const marksAnalysis = analyzePatternMarks(paperPattern);
   const marksConsistencySection = marksAnalysis

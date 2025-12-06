@@ -13,14 +13,11 @@ import { deleteGeminiFiles } from "@/lib/ai-utils";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
-const FILE_PROCESSING_TIMEOUT_MS = 60_000;
-const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
-
 type IncomingFilePayload = {
+  uri: string;
+  mimeType: string;
   name: string;
   size: number;
-  type: string;
-  data: string;
   role: "source" | "past_paper";
 };
 
@@ -54,8 +51,7 @@ export async function POST(request: NextRequest) {
       totalMarks,
       generationMode,
       strategy,
-      sourceFiles,
-      pastPaperFiles,
+      fileUris,
       generateSolution,
     } = await request.json();
 
@@ -68,13 +64,8 @@ export async function POST(request: NextRequest) {
           pastPaperStrategies[0])
         : null;
 
-    const sourceFilePayloads = (sourceFiles || []) as IncomingFilePayload[];
-    const pastPaperFilePayloads = (pastPaperFiles ||
+    const allFiles: IncomingFilePayload[] = (fileUris ||
       []) as IncomingFilePayload[];
-    const allFiles: IncomingFilePayload[] = [
-      ...sourceFilePayloads,
-      ...pastPaperFilePayloads,
-    ];
 
     if (allFiles.length === 0) {
       throw new Error("At least one file is required");
@@ -93,19 +84,12 @@ export async function POST(request: NextRequest) {
         strategy:
           mode === "PAST_PAPERS" ? (selectedStrategy?.id ?? null) : null,
         files: {
-          create: allFiles.map(
-            (f: {
-              name: string;
-              size: number;
-              type: string;
-              role: "source" | "past_paper";
-            }) => ({
-              name: f.name,
-              size: f.size,
-              mimeType: f.type,
-              role: f.role === "past_paper" ? "PAST_PAPER" : "SOURCE",
-            }),
-          ),
+          create: allFiles.map((f) => ({
+            name: f.name,
+            size: f.size,
+            mimeType: f.mimeType,
+            role: f.role === "past_paper" ? "PAST_PAPER" : "SOURCE",
+          })),
         },
       },
       include: { files: true },
@@ -113,81 +97,12 @@ export async function POST(request: NextRequest) {
 
     paperId = paper.id;
 
-    const uploadResults = await Promise.allSettled(
-      allFiles.map(async (fileData: IncomingFilePayload) => {
-        const blob = new Blob([Buffer.from(fileData.data, "base64")], {
-          type: fileData.type,
-        });
-        const uploaded = await ai.files.upload({
-          file: blob,
-          config: {
-            mimeType: fileData.type,
-            displayName: fileData.name,
-          },
-        });
-
-const startTime = Date.now();
-
-        let fileStatus = await ai.files.get({ name: uploaded.name! });
-        while (fileStatus.state === "PROCESSING") {
-          if (Date.now() - startTime > FILE_PROCESSING_TIMEOUT_MS) {
-            throw new Error(
-              `File processing timeout (>60s): ${fileData.name}`,
-            );
-          }
-          await new Promise((resolve) =>
-            setTimeout(resolve, FILE_PROCESSING_POLL_INTERVAL_MS),
-          );
-          fileStatus = await ai.files.get({ name: uploaded.name! });
-        }
-
-        if (fileStatus.state === "FAILED") {
-          throw new Error(`File processing failed: ${fileData.name}`);
-        }
-
-        return {
-          uri: uploaded.uri!,
-          mimeType: uploaded.mimeType!,
-          role: fileData.role,
-        };
-      }),
-    );
-
-    const failures = uploadResults.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      const failureMessages = failures
-        .map((r) => (r.status === "rejected" ? r.reason?.message : null))
-        .filter(Boolean)
-        .join(", ");
-
-      const successfulUploads = uploadResults
-        .filter((r) => r.status === "fulfilled")
-        .map((r) => (r.status === "fulfilled" ? r.value : null))
-        .filter(Boolean) as Array<{
-        uri: string;
-        mimeType: string;
-        role: "source" | "past_paper";
-      }>;
-
-      await deleteGeminiFiles(
-        successfulUploads as Array<{ uri: string; mimeType: string }>,
-      );
-
-      await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
-
-      throw new Error(
-        `${failures.length} file(s) failed to upload: ${failureMessages}`,
-      );
-    }
-
     uploadedFileUris.push(
-      ...(uploadResults
-        .map((r) => (r.status === "fulfilled" ? r.value : null))
-        .filter(Boolean) as Array<{
-        uri: string;
-        mimeType: string;
-        role: "source" | "past_paper";
-      }>),
+      ...allFiles.map((f) => ({
+        uri: f.uri,
+        mimeType: f.mimeType,
+        role: f.role,
+      })),
     );
 
     const pastPaperUris = uploadedFileUris.filter(
