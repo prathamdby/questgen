@@ -141,6 +141,7 @@ Before generating solutions, systematically analyze the question paper:
 - Do NOT add information, examples, or knowledge beyond the uploaded materials
 - Maintain academic integrity and accuracy
 - Output pure Markdown (no code fences, no commentary)
+- NEVER cite page numbers, document locations, or source references (e.g., "(Page 9)", "(p. 12)", "(Source: ...)", "(Ref: ...)") - present all content as standalone text without attribution to specific locations in the materials
 
 **YOUR CREATIVE MANDATE:**
 
@@ -348,6 +349,7 @@ ${marksConsistencySection}**QUESTION GENERATION GUIDELINES**
 - Follow pattern structure: ${paperPattern}
 - Duration: ${duration}
 - Output pure Markdown (no code fences, no commentary)
+- NEVER cite page numbers, document locations, or source references (e.g., "(Page 9)", "(p. 12)", "(Source: ...)", "(Ref: ...)") - present all content as standalone text without attribution to specific locations in the materials
 
 **YOUR CREATIVE MANDATE:**
 Within those boundaries, surprise me.
