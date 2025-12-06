@@ -1,44 +1,24 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
 import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-
-function cleanMarkdownContent(content: string): string {
-  let cleaned = content.trim();
-  cleaned = cleaned.replace(/^```(?:markdown|md)?\s*\n/i, "");
-  cleaned = cleaned.replace(/\n```\s*$/i, "");
-  return cleaned.trim();
-}
+import { cleanMarkdownContent } from "@/lib/transformers";
+import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/papers/regenerate",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
@@ -49,7 +29,7 @@ export async function POST(request: NextRequest) {
       include: { solution: true },
     });
 
-    if (!paper || paper.userId !== session.user.id) {
+    if (!paper || paper.userId !== authResult.userId) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
 

@@ -1,9 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
+export const RATE_LIMIT_ENDPOINTS = {
+  PAPERS: "/api/papers",
+  PAPERS_ID: "/api/papers/[id]",
+  PAPERS_GENERATE: "/api/papers/generate",
+  PAPERS_REGENERATE: "/api/papers/regenerate",
+  SOLUTIONS: "/api/solutions",
+  SOLUTIONS_ID: "/api/solutions/[id]",
+  PREFERENCES: "/api/preferences",
+} as const;
+
 export const RATE_LIMIT_CONFIG = {
-  "/api/papers/generate": { window: 60, max: 2 },
-  "/api/papers/regenerate": { window: 60, max: 2 },
+  [RATE_LIMIT_ENDPOINTS.PAPERS_GENERATE]: { window: 60, max: 2 },
+  [RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE]: { window: 60, max: 2 },
   default: { window: 60, max: 100 },
 } as const;
 
@@ -81,16 +91,17 @@ export async function checkRateLimit(
   try {
     const cached = rateLimitCache.get(key);
     if (cached && cached.resetAt > Date.now()) {
-      if (cached.count >= config.max) {
+      cached.count++;
+      cached.lastUpdated = Date.now();
+      rateLimitCache.set(key, cached);
+
+      if (cached.count > config.max) {
         const retryAfter = Math.ceil((cached.resetAt - Date.now()) / 1000);
         console.log(
           `[Rate Limit] ${routePath} - Rate limit exceeded. ${cached.count}/${config.max} requests used. Retry after ${retryAfter}s`,
         );
         return { allowed: false, retryAfter };
       }
-      cached.count++;
-      cached.lastUpdated = Date.now();
-      rateLimitCache.set(key, cached);
 
       const remaining = config.max - cached.count;
       console.log(
@@ -105,28 +116,28 @@ export async function checkRateLimit(
     const now = new Date();
     const resetAt = new Date(now.getTime() + config.window * 1000);
 
-    const updated = await prisma.$executeRaw`
+    const result = await prisma.$queryRaw<
+      Array<{ count: number; resetAt: Date }>
+    >`
       UPDATE "RateLimit"
       SET count = count + 1,
           "lastRequest" = ${Math.floor(now.getTime() / 1000)}
       WHERE key = ${key}
         AND count < ${config.max}
         AND "resetAt" > ${now}
+      RETURNING count, "resetAt"
     `;
 
-    if (updated > 0) {
-      const record = await prisma.rateLimit.findUnique({ where: { key } });
-      if (record) {
-        rateLimitCache.set(key, {
-          count: record.count,
-          resetAt: record.resetAt.getTime(),
-          lastUpdated: Date.now(),
-        });
-        const remaining = config.max - record.count;
-        console.log(
-          `[Rate Limit] ${routePath} - ${record.count}/${config.max} requests used. ${remaining} remaining.`,
-        );
-      }
+    if (result.length > 0) {
+      rateLimitCache.set(key, {
+        count: result[0].count,
+        resetAt: result[0].resetAt.getTime(),
+        lastUpdated: Date.now(),
+      });
+      const remaining = config.max - result[0].count;
+      console.log(
+        `[Rate Limit] ${routePath} - ${result[0].count}/${config.max} requests used. ${remaining} remaining.`,
+      );
       return { allowed: true };
     }
 

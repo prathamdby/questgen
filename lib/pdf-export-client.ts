@@ -1,5 +1,7 @@
 "use client";
 
+import { cleanMarkdownContent } from "@/lib/transformers";
+
 export interface PaperData {
   title: string;
   pattern: string;
@@ -16,13 +18,6 @@ export interface SolutionData {
   totalMarks: number;
   content: string;
   createdAt: string;
-}
-
-export function cleanMarkdownContent(content: string): string {
-  return content
-    .replace(/^```(?:markdown|md)?\s*\n/i, "")
-    .replace(/\n```\s*$/i, "")
-    .trim();
 }
 
 function generateHTMLTemplate(

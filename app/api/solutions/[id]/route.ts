@@ -1,12 +1,12 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-
-function transformStatus(dbStatus: string): "completed" | "in_progress" {
-  return dbStatus === "COMPLETED" ? "completed" : "in_progress";
-}
+import { transformStatus } from "@/lib/transformers";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
+import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 /**
  * GET /api/solutions/[id]
@@ -16,39 +16,27 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/solutions/[id]",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.SOLUTIONS_ID,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const { id } = await params;
 
-    const solution = await prisma.solution.findUnique({
+    const solution = await prisma.solution.findFirst({
       where: {
         id,
+        userId: authResult.userId,
       },
       include: {
         paper: {
@@ -59,7 +47,7 @@ export async function GET(
       },
     });
 
-    if (!solution || solution.userId !== session.user.id) {
+    if (!solution) {
       return NextResponse.json(
         { error: "Solution not found" },
         { status: 404 },
@@ -73,13 +61,7 @@ export async function GET(
 
     return NextResponse.json({ solution: transformedSolution });
   } catch (error) {
-    console.error("Failed to fetch solution:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch solution",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to fetch solution");
   }
 }
 
@@ -91,61 +73,39 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult.response;
   }
 
-  // Rate limit check
-  const rateLimitResult = await checkRateLimit(
+  const rateLimitResult = await withRateLimit(
     request,
-    session.user.id,
-    "/api/solutions/[id]",
+    authResult.userId,
+    RATE_LIMIT_ENDPOINTS.SOLUTIONS_ID,
   );
-
-  if (!rateLimitResult.allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      {
-        status: 429,
-        headers: {
-          "X-Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-        },
-      },
-    );
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response;
   }
 
   try {
     const { id } = await params;
 
-    const solution = await prisma.solution.findUnique({
-      where: { id },
+    const result = await prisma.solution.deleteMany({
+      where: {
+        id,
+        userId: authResult.userId,
+      },
     });
 
-    if (!solution || solution.userId !== session.user.id) {
+    if (result.count === 0) {
       return NextResponse.json(
         { error: "Solution not found" },
         { status: 404 },
       );
     }
 
-    await prisma.solution.delete({
-      where: {
-        id,
-      },
-    });
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete solution:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to delete solution",
-      },
-      { status: 500 },
-    );
+    return createErrorResponse(error, "Failed to delete solution");
   }
 }

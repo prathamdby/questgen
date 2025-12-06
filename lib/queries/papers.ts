@@ -138,21 +138,10 @@ export function useDuplicatePaper() {
       const previousData = queryClient.getQueryData<PapersData>(["papers"]);
 
       if (previousData) {
-        let cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
+        const cached = queryClient.getQueryData<{ paper: QuestionPaper }>([
           "paper",
           paperId,
         ]);
-
-        if (!cached) {
-          try {
-            const paperRes = await fetch(`/api/papers/${paperId}`);
-            if (paperRes.ok) {
-              cached = await paperRes.json();
-            }
-          } catch {
-            // Skip optimistic update if fetch fails
-          }
-        }
 
         if (cached) {
           const tempId = `temp-${Date.now()}`;
