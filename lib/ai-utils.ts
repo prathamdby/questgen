@@ -1,4 +1,5 @@
 import { ai } from "@/lib/ai";
+import { ApiError } from "@google/genai";
 
 const FILE_PROCESSING_TIMEOUT_MS = 60_000;
 const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
@@ -64,4 +65,52 @@ export async function deleteGeminiFiles(
   }
 
   return { succeeded: results.length - failed, failed };
+}
+
+function tryParseGeminiJson(
+  message: string,
+): { code: number; message: string } | null {
+  try {
+    const json = JSON.parse(message);
+    const err = json.error ?? json;
+    if (typeof err.code === "number" && typeof err.message === "string") {
+      return { code: err.code, message: err.message };
+    }
+  } catch {
+    // Not valid JSON or doesn't match expected structure
+  }
+  return null;
+}
+
+function mapStatusToMessage(code: number, rawMessage: string): string {
+  switch (code) {
+    case 503:
+      return "The AI model is currently overloaded. Please try again in a few moments.";
+    case 429:
+      return "Too many requests. Please wait before trying again.";
+    case 400:
+      return `Invalid request: ${rawMessage}`;
+    case 401:
+      return "Authentication failed. Please sign in again.";
+    case 404:
+      return "The requested model is not available.";
+    default:
+      return rawMessage || "An unexpected error occurred";
+  }
+}
+
+export function parseGeminiError(error: unknown): string {
+  if (error instanceof ApiError) {
+    return mapStatusToMessage(error.status, error.message);
+  }
+
+  if (error instanceof Error) {
+    const parsed = tryParseGeminiJson(error.message);
+    if (parsed) {
+      return mapStatusToMessage(parsed.code, parsed.message);
+    }
+    return error.message;
+  }
+
+  return "An unexpected error occurred";
 }

@@ -9,7 +9,7 @@ import { pastPaperStrategies } from "@/lib/past-paper-strategies";
 import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
-import { deleteGeminiFiles } from "@/lib/ai-utils";
+import { deleteGeminiFiles, parseGeminiError } from "@/lib/ai-utils";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
@@ -231,8 +231,7 @@ export async function POST(request: NextRequest) {
         solutionId = solution.id;
       } catch (err) {
         console.error("Solution generation error:", err);
-        solutionError =
-          err instanceof Error ? err.message : "Solution generation failed";
+        solutionError = parseGeminiError(err);
       }
     }
 
@@ -256,7 +255,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Generation failed",
+        error: parseGeminiError(error),
       },
       { status: 500 },
     );

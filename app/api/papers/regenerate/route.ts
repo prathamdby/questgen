@@ -3,6 +3,7 @@ import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
 import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
+import { parseGeminiError } from "@/lib/ai-utils";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
@@ -100,8 +101,9 @@ export async function POST(request: NextRequest) {
     ) {
       solutionContent = cleanMarkdownContent(solutionResult.value.text || "");
     } else if (paper.solution && solutionResult.status === "rejected") {
-      solutionError =
-        solutionResult.reason?.message || "Solution regeneration failed";
+      solutionError = parseGeminiError(
+        solutionResult.reason || new Error("Solution regeneration failed"),
+      );
     }
 
     const results = await prisma.$transaction([
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Regeneration failed",
+        error: parseGeminiError(error),
       },
       { status: 500 },
     );

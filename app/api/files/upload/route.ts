@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-middleware";
-import { uploadFileToGemini } from "@/lib/ai-utils";
+import { uploadFileToGemini, parseGeminiError } from "@/lib/ai-utils";
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "File upload failed",
+        error: parseGeminiError(error),
       },
       { status: 500 },
     );
