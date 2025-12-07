@@ -9,11 +9,15 @@ export const RATE_LIMIT_ENDPOINTS = {
   SOLUTIONS: "/api/solutions",
   SOLUTIONS_ID: "/api/solutions/[id]",
   PREFERENCES: "/api/preferences",
+  FILES_UPLOAD: "/api/files/upload",
+  FILES_CLEANUP: "/api/files/cleanup",
 } as const;
 
 export const RATE_LIMIT_CONFIG = {
   [RATE_LIMIT_ENDPOINTS.PAPERS_GENERATE]: { window: 60, max: 2 },
   [RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE]: { window: 60, max: 2 },
+  [RATE_LIMIT_ENDPOINTS.FILES_UPLOAD]: { window: 60, max: 50 },
+  [RATE_LIMIT_ENDPOINTS.FILES_CLEANUP]: { window: 60, max: 20 },
   default: { window: 60, max: 100 },
 } as const;
 

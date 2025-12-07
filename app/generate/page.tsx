@@ -30,6 +30,14 @@ interface UploadedFile {
   id: string;
 }
 
+interface UploadedFileUri {
+  uri: string;
+  mimeType: string;
+  name: string;
+  size: number;
+  role: "source" | "past_paper";
+}
+
 type GenerationMode = "from_scratch" | "past_papers";
 
 const normalizePattern = (value: string): string =>
@@ -142,6 +150,34 @@ export default function Generate() {
     setPastPaperFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
+  const uploadFile = async (
+    file: File,
+    role: "source" | "past_paper",
+  ): Promise<UploadedFileUri> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("role", role);
+
+    const response = await fetch("/api/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "File upload failed");
+    }
+
+    return {
+      uri: result.uri,
+      mimeType: result.mimeType,
+      name: result.name,
+      size: result.size,
+      role: result.role,
+    };
+  };
+
   const handleGeneratePaper = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -176,27 +212,53 @@ export default function Generate() {
     }
 
     setIsGenerating(true);
+    let uploadedFileUris: UploadedFileUri[] = [];
 
     try {
-      const sourceFilesData = await Promise.all(
-        sourceFiles.map(async (uf) => ({
-          name: uf.file.name,
-          type: uf.file.type,
-          size: uf.file.size,
-          data: await fileToBase64(uf.file),
-          role: "source" as const,
-        })),
+      const sourceFileUploads = sourceFiles.map((uf) =>
+        uploadFile(uf.file, "source"),
+      );
+      const pastPaperFileUploads = pastPaperFiles.map((uf) =>
+        uploadFile(uf.file, "past_paper"),
       );
 
-      const pastPaperFilesData = await Promise.all(
-        pastPaperFiles.map(async (uf) => ({
-          name: uf.file.name,
-          type: uf.file.type,
-          size: uf.file.size,
-          data: await fileToBase64(uf.file),
-          role: "past_paper" as const,
-        })),
-      );
+      const uploadResults = await Promise.allSettled([
+        ...sourceFileUploads,
+        ...pastPaperFileUploads,
+      ]);
+
+      const successfulUploads = uploadResults
+        .filter(
+          (r): r is PromiseFulfilledResult<UploadedFileUri> =>
+            r.status === "fulfilled",
+        )
+        .map((r) => r.value);
+
+      const failures = uploadResults.filter((r) => r.status === "rejected");
+
+      if (failures.length > 0) {
+        if (successfulUploads.length > 0) {
+          await fetch("/api/files/cleanup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileUris: successfulUploads.map((f) => ({
+                uri: f.uri,
+                mimeType: f.mimeType,
+              })),
+            }),
+          }).catch(() => {});
+        }
+
+        const failureMessage =
+          failures.length === 1 && failures[0].status === "rejected"
+            ? (failures[0].reason as Error).message
+            : `${failures.length} file(s) failed to upload`;
+
+        throw new Error(failureMessage);
+      }
+
+      uploadedFileUris = successfulUploads;
 
       const response = await fetch("/api/papers/generate", {
         method: "POST",
@@ -208,8 +270,7 @@ export default function Generate() {
           totalMarks,
           generationMode,
           strategy: generationMode === "past_papers" ? selectedStrategy : null,
-          sourceFiles: sourceFilesData,
-          pastPaperFiles: pastPaperFilesData,
+          fileUris: uploadedFileUris,
           generateSolution: shouldGenerateSolution,
         }),
       });
@@ -248,22 +309,6 @@ export default function Generate() {
       setIsGenerating(false);
     }
   };
-
-  async function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        if (typeof result === "string") {
-          resolve(result.split(",")[1]);
-        } else {
-          reject(new Error("Failed to read file"));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
