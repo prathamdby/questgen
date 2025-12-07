@@ -163,13 +163,9 @@ export default function Generate() {
       body: formData,
     });
 
-    if (!response.ok) {
-      const result = await response.json();
-      throw new Error(result.error || "File upload failed");
-    }
-
     const result = await response.json();
-    if (!result.success) {
+
+    if (!response.ok || !result.success) {
       throw new Error(result.error || "File upload failed");
     }
 
@@ -231,13 +227,16 @@ export default function Generate() {
         ...pastPaperFileUploads,
       ]);
 
-      const failures = uploadResults.filter((r) => r.status === "rejected");
-      if (failures.length > 0) {
-        const successfulUploads = uploadResults
-          .filter((r) => r.status === "fulfilled")
-          .map((r) => (r.status === "fulfilled" ? r.value : null))
-          .filter(Boolean) as UploadedFileUri[];
+      const successfulUploads = uploadResults
+        .filter(
+          (r): r is PromiseFulfilledResult<UploadedFileUri> =>
+            r.status === "fulfilled",
+        )
+        .map((r) => r.value);
 
+      const failures = uploadResults.filter((r) => r.status === "rejected");
+
+      if (failures.length > 0) {
         if (successfulUploads.length > 0) {
           await fetch("/api/files/cleanup", {
             method: "POST",
@@ -259,9 +258,7 @@ export default function Generate() {
         throw new Error(failureMessage);
       }
 
-      uploadedFileUris = uploadResults
-        .map((r) => (r.status === "fulfilled" ? r.value : null))
-        .filter(Boolean) as UploadedFileUri[];
+      uploadedFileUris = successfulUploads;
 
       const response = await fetch("/api/papers/generate", {
         method: "POST",

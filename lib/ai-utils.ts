@@ -23,28 +23,54 @@ export async function uploadFileToGemini(
     },
   });
 
-  const startTime = Date.now();
-  let fileStatus = await ai.files.get({ name: uploaded.name! });
+  const uploadedName = uploaded.name!;
 
-  while (fileStatus.state === "PROCESSING") {
-    if (Date.now() - startTime > FILE_PROCESSING_TIMEOUT_MS) {
-      throw new Error(`File processing timeout (>60s): ${displayName}`);
+  try {
+    const startTime = Date.now();
+    let fileStatus = await ai.files.get({ name: uploadedName });
+
+    while (fileStatus.state === "PROCESSING") {
+      if (Date.now() - startTime > FILE_PROCESSING_TIMEOUT_MS) {
+        throw new Error(`File processing timeout (>60s): ${displayName}`);
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, FILE_PROCESSING_POLL_INTERVAL_MS),
+      );
+      fileStatus = await ai.files.get({ name: uploadedName });
     }
-    await new Promise((resolve) =>
-      setTimeout(resolve, FILE_PROCESSING_POLL_INTERVAL_MS),
-    );
-    fileStatus = await ai.files.get({ name: uploaded.name! });
-  }
 
-  if (fileStatus.state === "FAILED") {
-    throw new Error(`File processing failed: ${displayName}`);
-  }
+    if (fileStatus.state === "FAILED") {
+      throw new Error(`File processing failed: ${displayName}`);
+    }
 
-  return {
-    uri: uploaded.uri!,
-    mimeType: uploaded.mimeType!,
-    name: uploaded.name!,
-  };
+    if (fileStatus.state === "STATE_UNSPECIFIED") {
+      throw new Error(
+        `File state unknown - upload may need retry: ${displayName}`,
+      );
+    }
+
+    if (fileStatus.state !== "ACTIVE") {
+      throw new Error(
+        `Unexpected file state "${fileStatus.state}": ${displayName}`,
+      );
+    }
+
+    return {
+      uri: uploaded.uri!,
+      mimeType: uploaded.mimeType!,
+      name: uploadedName,
+    };
+  } catch (error) {
+    try {
+      await ai.files.delete({ name: uploadedName });
+    } catch (cleanupError) {
+      console.error(
+        `Failed to cleanup file "${displayName}" after error:`,
+        cleanupError,
+      );
+    }
+    throw error;
+  }
 }
 
 export async function deleteGeminiFiles(
