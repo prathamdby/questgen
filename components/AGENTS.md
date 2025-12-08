@@ -80,13 +80,13 @@ Follow `DESIGN_SYSTEM.md` strictly. Key patterns:
 
 ```tsx
 // Card pattern (from PaperCard.tsx)
-className="group block w-full rounded-[8px] border border-[#e5e5e5] bg-white p-5 
-  transition-all duration-150 hover:border-[#d4d4d4] hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)] 
+className="group block w-full rounded-[8px] border border-[#e5e5e5] bg-white p-5
+  transition-all duration-150 hover:border-[#d4d4d4] hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]
   dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040]"
 
 // Button pattern
-className="h-[44px] px-6 rounded-[6px] bg-[#171717] text-white 
-  hover:bg-[#404040] active:scale-[0.98] 
+className="h-[44px] px-6 rounded-[6px] bg-[#171717] text-white
+  hover:bg-[#404040] active:scale-[0.98]
   dark:bg-white dark:text-[#171717] dark:hover:bg-[#e5e5e5]"
 
 // Typography
@@ -107,10 +107,7 @@ className="text-[16px] font-[500] leading-[1.3] text-[#171717] dark:text-white"
 ```tsx
 import { IconName } from "lucide-react";
 
-<IconName 
-  className="h-4 w-4 flex-shrink-0" 
-  aria-hidden="true" 
-/>
+<IconName className="h-4 w-4 flex-shrink-0" aria-hidden="true" />;
 ```
 
 Always include `aria-hidden="true"` for decorative icons.
@@ -142,13 +139,13 @@ Installed: `dialog`, `skeleton`, `sonner`, `switch`, `tabs`
 
 ## Touch Points / Key Files
 
-| File | Purpose | Pattern Reference |
-|------|---------|-------------------|
-| `home/PaperCard.tsx` | Card with menu, memoization | Primary card pattern |
-| `generate/FileUploadZone.tsx` | Drag-drop upload | Form input pattern |
-| `shared/ConfirmDialog.tsx` | Modal dialog | Dialog pattern |
-| `shared/StatusBadge.tsx` | Status indicator | Badge pattern |
-| `landing/HeroSection.tsx` | Hero section | Typography at scale |
+| File                          | Purpose                     | Pattern Reference    |
+| ----------------------------- | --------------------------- | -------------------- |
+| `home/PaperCard.tsx`          | Card with menu, memoization | Primary card pattern |
+| `generate/FileUploadZone.tsx` | Drag-drop upload            | Form input pattern   |
+| `shared/ConfirmDialog.tsx`    | Modal dialog                | Dialog pattern       |
+| `shared/StatusBadge.tsx`      | Status indicator            | Badge pattern        |
+| `landing/HeroSection.tsx`     | Hero section                | Typography at scale  |
 
 ## JIT Index Hints
 
@@ -186,4 +183,3 @@ bunx tsc --noEmit
 # Check for unused exports
 bunx knip --include exports --include files components/
 ```
-

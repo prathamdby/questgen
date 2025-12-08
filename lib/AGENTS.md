@@ -112,13 +112,13 @@ export function useDeletePaper() {
     onMutate: async (paperId) => {
       // 1. Show loading toast
       const loadingToastId = toast.loading("Deleting paper...");
-      
+
       // 2. Cancel in-flight queries
       await queryClient.cancelQueries({ queryKey: ["papers"] });
-      
+
       // 3. Snapshot previous data
       const previousPapers = queryClient.getQueryData<PapersData>(["papers"]);
-      
+
       // 4. Optimistically update cache
       queryClient.setQueryData<PapersData>(["papers"], (old) => {
         if (!old) return old;
@@ -153,7 +153,11 @@ export function useDeletePaper() {
 
 ```tsx
 // lib/api-middleware.ts exports:
-import { withAuth, withRateLimit, createErrorResponse } from "@/lib/api-middleware";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
 
 // Usage in API routes (see app/api/papers/route.ts)
 ```
@@ -188,17 +192,17 @@ import { formatDateShort } from "@/lib/format-utils";
 
 ## Touch Points / Key Files
 
-| File | Purpose | When to Edit |
-|------|---------|--------------|
-| `prisma.ts` | DB client singleton | Never (stable) |
-| `auth.ts` | Auth config | Adding providers |
-| `auth-client.ts` | Client auth hooks | Never (stable) |
-| `ai.ts` | AI client config | Changing model/config |
-| `ai-prompts.ts` | System prompts | Tuning generation |
-| `queries/papers.ts` | Data fetching | Adding paper features |
-| `queries/types.ts` | TypeScript types | Adding/changing data shapes |
-| `api-middleware.ts` | Route middleware | Adding middleware |
-| `rate-limit.ts` | Rate limiting | Adjusting limits |
+| File                | Purpose             | When to Edit                |
+| ------------------- | ------------------- | --------------------------- |
+| `prisma.ts`         | DB client singleton | Never (stable)              |
+| `auth.ts`           | Auth config         | Adding providers            |
+| `auth-client.ts`    | Client auth hooks   | Never (stable)              |
+| `ai.ts`             | AI client config    | Changing model/config       |
+| `ai-prompts.ts`     | System prompts      | Tuning generation           |
+| `queries/papers.ts` | Data fetching       | Adding paper features       |
+| `queries/types.ts`  | TypeScript types    | Adding/changing data shapes |
+| `api-middleware.ts` | Route middleware    | Adding middleware           |
+| `rate-limit.ts`     | Rate limiting       | Adjusting limits            |
 
 ## JIT Index Hints
 
@@ -236,4 +240,3 @@ bunx tsc --noEmit
 # Check for circular dependencies
 bunx madge --circular lib/
 ```
-

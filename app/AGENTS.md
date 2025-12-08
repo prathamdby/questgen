@@ -39,7 +39,11 @@ app/
 
 ```tsx
 // app/paper/[id]/page.tsx - Server component pattern
-export default async function PaperPage({ params }: { params: { id: string } }) {
+export default async function PaperPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const paper = await fetchPaper(params.id);
   return <PaperDetail paper={paper} />;
 }
@@ -54,7 +58,11 @@ export default async function PaperPage({ params }: { params: { id: string } }) 
 All API routes follow this structure (see `app/api/papers/route.ts`):
 
 ```tsx
-import { withAuth, withRateLimit, createErrorResponse } from "@/lib/api-middleware";
+import {
+  withAuth,
+  withRateLimit,
+  createErrorResponse,
+} from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
@@ -72,7 +80,9 @@ export async function GET(request: NextRequest) {
 
   // 3. Business logic in try/catch
   try {
-    const data = await prisma.model.findMany({ where: { userId: authResult.userId } });
+    const data = await prisma.model.findMany({
+      where: { userId: authResult.userId },
+    });
     return NextResponse.json({ data });
   } catch (error) {
     return createErrorResponse(error, "Failed to fetch data");
@@ -93,13 +103,17 @@ export async function GET(request: NextRequest) {
 // Root layout structure (app/layout.tsx)
 <html>
   <body>
-    <Providers>           {/* React Query */}
-      <ThemeProvider>     {/* next-themes, dark default */}
+    <Providers>
+      {" "}
+      {/* React Query */}
+      <ThemeProvider>
+        {" "}
+        {/* next-themes, dark default */}
         {children}
-        <Toaster />       {/* sonner */}
+        <Toaster /> {/* sonner */}
       </ThemeProvider>
     </Providers>
-    <Analytics />         {/* Vercel analytics */}
+    <Analytics /> {/* Vercel analytics */}
   </body>
 </html>
 ```
@@ -112,14 +126,14 @@ export async function GET(request: NextRequest) {
 
 ## Touch Points / Key Files
 
-| File | Purpose |
-|------|---------|
-| `layout.tsx` | Root layout, fonts, providers |
-| `providers.tsx` | React Query client setup |
-| `globals.css` | CSS variables, Tailwind config |
-| `api/papers/generate/route.ts` | AI generation endpoint (complex) |
-| `api/papers/route.ts` | Papers CRUD (reference pattern) |
-| `home/page.tsx` | Main dashboard (client component example) |
+| File                           | Purpose                                   |
+| ------------------------------ | ----------------------------------------- |
+| `layout.tsx`                   | Root layout, fonts, providers             |
+| `providers.tsx`                | React Query client setup                  |
+| `globals.css`                  | CSS variables, Tailwind config            |
+| `api/papers/generate/route.ts` | AI generation endpoint (complex)          |
+| `api/papers/route.ts`          | Papers CRUD (reference pattern)           |
+| `home/page.tsx`                | Main dashboard (client component example) |
 
 ## JIT Index Hints
 
@@ -152,4 +166,3 @@ find app -name "loading.tsx" -o -name "error.tsx"
 ```bash
 bunx tsc --noEmit && bun run lint && bun run build
 ```
-

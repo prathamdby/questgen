@@ -51,3 +51,30 @@ export interface RegeneratePaperResponse {
   solutionUpdatedAt?: string;
   solutionError?: string | null;
 }
+
+export interface ShareLink {
+  id: string;
+  token: string;
+  url: string;
+  paperId: string | null;
+  solutionId: string | null;
+  title: string;
+  type: "paper" | "solution";
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface ShareLinksData {
+  shareLinks: ShareLink[];
+}
+
+export interface CreateShareLinkResponse {
+  shareLink: {
+    id: string;
+    token: string;
+    url: string;
+    paperId: string | null;
+    solutionId: string | null;
+    expiresAt: string | null;
+  };
+}
