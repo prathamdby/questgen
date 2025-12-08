@@ -11,6 +11,8 @@ export const RATE_LIMIT_ENDPOINTS = {
   PREFERENCES: "/api/preferences",
   FILES_UPLOAD: "/api/files/upload",
   FILES_CLEANUP: "/api/files/cleanup",
+  SHARE: "/api/share",
+  SHARE_ID: "/api/share/[id]",
 } as const;
 
 export const RATE_LIMIT_CONFIG = {
@@ -18,6 +20,8 @@ export const RATE_LIMIT_CONFIG = {
   [RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE]: { window: 60, max: 2 },
   [RATE_LIMIT_ENDPOINTS.FILES_UPLOAD]: { window: 60, max: 50 },
   [RATE_LIMIT_ENDPOINTS.FILES_CLEANUP]: { window: 60, max: 20 },
+  [RATE_LIMIT_ENDPOINTS.SHARE]: { window: 60, max: 10 },
+  [RATE_LIMIT_ENDPOINTS.SHARE_ID]: { window: 60, max: 20 },
   default: { window: 60, max: 100 },
 } as const;
 
@@ -56,7 +60,10 @@ function getClientIdentifier(request: NextRequest, userId?: string): string {
   const realIp = request.headers.get("x-real-ip");
   if (realIp) return realIp;
 
-  return "anonymous";
+  const userAgent = request.headers.get("user-agent")?.slice(0, 50) || "";
+  const acceptLang = request.headers.get("accept-language")?.slice(0, 20) || "";
+  const fingerprint = `anon:${userAgent}:${acceptLang}`;
+  return fingerprint || "anonymous";
 }
 
 async function updateDatabaseAsync(

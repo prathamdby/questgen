@@ -101,4 +101,3 @@ This project follows a strict Apple/Vercel aesthetic. See [`DESIGN_SYSTEM.md`](D
 - Subtle animations (150-200ms, cubic-bezier)
 
 **Key rule**: When tempted to add visual flair, simplify instead. Refined restraint over flashy effects.
-

@@ -12,6 +12,7 @@ import {
   usePaper,
   useRegeneratePaper,
   useDeletePaper,
+  useCreateShareLink,
 } from "@/lib/queries/papers";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
@@ -35,6 +36,7 @@ function PaperContent({ id }: { id: string }) {
   const { data, isPending, error } = usePaper(id);
   const regeneratePaper = useRegeneratePaper();
   const deletePaper = useDeletePaper();
+  const createShareLink = useCreateShareLink();
   const queryClient = useQueryClient();
 
   const [notesExpanded, setNotesExpanded] = useState(false);
@@ -132,6 +134,11 @@ function PaperContent({ id }: { id: string }) {
     });
   };
 
+  const handleShare = () => {
+    if (!paper) return;
+    createShareLink.mutate({ paperId: paper.id });
+  };
+
   if (isLoading) {
     return <PaperDetailSkeleton />;
   }
@@ -211,8 +218,10 @@ function PaperContent({ id }: { id: string }) {
             onRegenerate={handleRegenButtonClick}
             onExport={handleExport}
             onDelete={handleDelete}
+            onShare={handleShare}
             isRegenerating={isRegenerating}
             isExporting={isExporting}
+            isSharing={createShareLink.isPending}
             disabled={false}
           />
 

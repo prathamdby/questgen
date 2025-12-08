@@ -11,7 +11,11 @@ import {
   exportSolutionToPDF,
   type SolutionData,
 } from "@/lib/pdf-export-client";
-import { useSolution, useDeleteSolution } from "@/lib/queries/papers";
+import {
+  useSolution,
+  useDeleteSolution,
+  useCreateShareLink,
+} from "@/lib/queries/papers";
 import { PaperStatusBadge } from "@/components/paper/PaperStatusBadge";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
 import { SourceFilesSection } from "@/components/paper/SourceFilesSection";
@@ -32,6 +36,7 @@ function SolutionContent({ id }: { id: string }) {
   const { data: session, isPending: sessionPending } = useSession();
   const { data, isPending, error } = useSolution(id);
   const deleteSolution = useDeleteSolution();
+  const createShareLink = useCreateShareLink();
   const queryClient = useQueryClient();
 
   const [isExporting, setIsExporting] = useState(false);
@@ -101,6 +106,11 @@ function SolutionContent({ id }: { id: string }) {
         setDeleteDialogOpen(true);
       },
     });
+  };
+
+  const handleShare = () => {
+    if (!solution) return;
+    createShareLink.mutate({ solutionId: solution.id });
   };
 
   if (isLoading) {
@@ -182,8 +192,10 @@ function SolutionContent({ id }: { id: string }) {
           <SolutionActionButtons
             onExport={handleExport}
             onDelete={handleDelete}
+            onShare={handleShare}
             isExporting={isExporting}
             isDeleting={isDeleting}
+            isSharing={createShareLink.isPending}
           />
         </header>
 

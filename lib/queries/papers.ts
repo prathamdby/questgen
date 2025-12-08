@@ -11,6 +11,8 @@ import type {
   PapersData,
   SolutionDetail,
   RegeneratePaperResponse,
+  ShareLinksData,
+  CreateShareLinkResponse,
 } from "./types";
 
 class RateLimitError extends Error {
@@ -491,5 +493,95 @@ export function useRegeneratePaper() {
               : "Unknown error",
       });
     },
+  });
+}
+
+export function useCreateShareLink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      paperId,
+      solutionId,
+      expiresInDays,
+    }: {
+      paperId?: string;
+      solutionId?: string;
+      expiresInDays?: number;
+    }): Promise<CreateShareLinkResponse> => {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paperId, solutionId, expiresInDays }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create share link");
+      }
+      return res.json();
+    },
+
+    onSuccess: (data, variables) => {
+      navigator.clipboard.writeText(data.shareLink.url);
+
+      queryClient.invalidateQueries({ queryKey: ["shareLinks"] });
+      if (variables.paperId) {
+        queryClient.invalidateQueries({
+          queryKey: ["paper", variables.paperId],
+        });
+      }
+      if (variables.solutionId) {
+        queryClient.invalidateQueries({
+          queryKey: ["solution", variables.solutionId],
+        });
+      }
+
+      toast.success("Share link copied to clipboard");
+    },
+
+    onError: (error) => {
+      toast.error("Failed to create share link", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    },
+  });
+}
+
+export function useRevokeShareLink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (shareLinkId: string) => {
+      const res = await fetch(`/api/share/${shareLinkId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to revoke share link");
+      return res.json();
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shareLinks"] });
+      queryClient.invalidateQueries({ queryKey: ["papers"] });
+      toast.success("Share link revoked");
+    },
+
+    onError: () => {
+      toast.error("Failed to revoke share link");
+    },
+  });
+}
+
+export function useShareLinks(): UseQueryResult<ShareLinksData, Error> {
+  const { data: session } = useSession();
+
+  return useQuery<ShareLinksData, Error>({
+    queryKey: ["shareLinks"],
+    queryFn: async () => {
+      const res = await fetch("/api/share");
+      if (!res.ok) throw new Error("Failed to fetch share links");
+      return res.json();
+    },
+    enabled: !!session,
+    staleTime: 30000,
   });
 }
