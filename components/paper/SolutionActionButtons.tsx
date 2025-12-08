@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Trash2, Loader2, Share2, Check } from "lucide-react";
 
 interface SolutionActionButtonsProps {
@@ -22,10 +22,19 @@ export function SolutionActionButtons({
 }: SolutionActionButtonsProps) {
   const [justCopied, setJustCopied] = useState(false);
 
+  useEffect(() => {
+    if (!justCopied) return;
+
+    const timer = setTimeout(() => {
+      setJustCopied(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [justCopied]);
+
   const handleShare = () => {
     onShare();
     setJustCopied(true);
-    setTimeout(() => setJustCopied(false), 2000);
   };
 
   return (

@@ -522,7 +522,16 @@ export function useCreateShareLink() {
     },
 
     onSuccess: (data, variables) => {
-      navigator.clipboard.writeText(data.shareLink.url);
+      navigator.clipboard
+        .writeText(data.shareLink.url)
+        .then(() => {
+          toast.success("Share link copied to clipboard");
+        })
+        .catch(() => {
+          toast.success("Share link created!", {
+            description: "You can copy the link from the share manager.",
+          });
+        });
 
       queryClient.invalidateQueries({ queryKey: ["shareLinks"] });
       if (variables.paperId) {
@@ -535,8 +544,6 @@ export function useCreateShareLink() {
           queryKey: ["solution", variables.solutionId],
         });
       }
-
-      toast.success("Share link copied to clipboard");
     },
 
     onError: (error) => {

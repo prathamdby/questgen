@@ -24,16 +24,23 @@ export async function DELETE(
   if (!rateLimitResult.success) return rateLimitResult.response;
 
   try {
-    const result = await prisma.shareLink.deleteMany({
-      where: { id, userId: authResult.userId },
+    const shareLink = await prisma.shareLink.findUnique({
+      where: { id },
+      select: { userId: true },
     });
 
-    if (result.count === 0) {
+    if (!shareLink) {
       return NextResponse.json(
         { error: "Share link not found" },
         { status: 404 },
       );
     }
+
+    if (shareLink.userId !== authResult.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    await prisma.shareLink.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

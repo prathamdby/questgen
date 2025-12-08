@@ -72,7 +72,7 @@ export default async function SharedPage({ params }: SharedPageProps) {
     return <SharedExpired />;
   }
 
-  const ownerFirstName = shareLink.user.name.split(" ")[0];
+  const ownerFirstName = shareLink.user.name?.split(" ")[0] || "Someone";
 
   if (shareLink.paper) {
     return (

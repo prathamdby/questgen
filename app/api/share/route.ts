@@ -9,6 +9,8 @@ import {
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 const DEFAULT_EXPIRATION_DAYS = 30;
+const MIN_EXPIRATION_DAYS = 1;
+const MAX_EXPIRATION_DAYS = 365;
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -56,7 +58,10 @@ export async function POST(request: NextRequest) {
 
     const days =
       typeof expiresInDays === "number"
-        ? expiresInDays
+        ? Math.max(
+            MIN_EXPIRATION_DAYS,
+            Math.min(MAX_EXPIRATION_DAYS, expiresInDays),
+          )
         : DEFAULT_EXPIRATION_DAYS;
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
