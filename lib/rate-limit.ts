@@ -63,9 +63,13 @@ function getClientIdentifier(request: NextRequest, userId?: string): string {
 
   const userAgent = request.headers.get("user-agent")?.slice(0, 50) || "";
   const acceptLang = request.headers.get("accept-language")?.slice(0, 20) || "";
-  const acceptEncoding = request.headers.get("accept-encoding")?.slice(0, 30) || "";
+  const acceptEncoding =
+    request.headers.get("accept-encoding")?.slice(0, 30) || "";
   const combined = `${userAgent}:${acceptLang}:${acceptEncoding}`;
-  const fingerprint = createHash("sha256").update(combined).digest("base64url").slice(0, 64);
+  const fingerprint = createHash("sha256")
+    .update(combined)
+    .digest("base64url")
+    .slice(0, 64);
   return `anon:${fingerprint}`;
 }
 
