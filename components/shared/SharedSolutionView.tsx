@@ -1,5 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
 import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
+import { ExportActionButton } from "@/components/shared/ExportActionButton";
+import {
+  exportSolutionToPDF,
+  type SolutionData,
+} from "@/lib/pdf-export-client";
 
 interface SharedSolutionViewProps {
   solution: {
@@ -19,6 +28,40 @@ export function SharedSolutionView({
   solution,
   ownerName,
 }: SharedSolutionViewProps) {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+
+    try {
+      if (!solution.content?.trim()) {
+        throw new Error("Solution content is unavailable");
+      }
+
+      if (!solution.paper) {
+        throw new Error("Paper information is unavailable");
+      }
+
+      const solutionData: SolutionData = {
+        paperTitle: solution.paper.title,
+        pattern: solution.paper.pattern,
+        duration: solution.paper.duration,
+        totalMarks: solution.paper.totalMarks,
+        content: solution.content,
+        createdAt: solution.createdAt.toISOString(),
+      };
+
+      await exportSolutionToPDF(solutionData);
+      toast.success("Solution exported successfully");
+    } catch {
+      toast.error("Unable to export solution", {
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
@@ -38,6 +81,13 @@ export function SharedSolutionView({
             duration={solution.paper.duration}
             totalMarks={solution.paper.totalMarks}
           />
+
+          <div className="mt-8">
+            <ExportActionButton
+              onExport={handleExport}
+              isExporting={isExporting}
+            />
+          </div>
         </header>
 
         <MarkdownPreview content={solution.content} />
