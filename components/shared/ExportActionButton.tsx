@@ -2,15 +2,15 @@
 
 import { Download, Loader2 } from "lucide-react";
 
-interface SharedPaperActionButtonsProps {
+interface ExportActionButtonProps {
   onExport: () => void;
   isExporting: boolean;
 }
 
-export function SharedPaperActionButtons({
+export function ExportActionButton({
   onExport,
   isExporting,
-}: SharedPaperActionButtonsProps) {
+}: ExportActionButtonProps) {
   return (
     <button
       onClick={onExport}

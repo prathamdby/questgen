@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
-import { SharedSolutionActionButtons } from "@/components/shared/SharedSolutionActionButtons";
+import { ExportActionButton } from "@/components/shared/ExportActionButton";
 import {
   exportSolutionToPDF,
   type SolutionData,
@@ -34,8 +34,12 @@ export function SharedSolutionView({
     setIsExporting(true);
 
     try {
-      if (!solution.content) {
+      if (!solution.content?.trim()) {
         throw new Error("Solution content is unavailable");
+      }
+
+      if (!solution.paper) {
+        throw new Error("Paper information is unavailable");
       }
 
       const solutionData: SolutionData = {
@@ -49,12 +53,9 @@ export function SharedSolutionView({
 
       await exportSolutionToPDF(solutionData);
       toast.success("Solution exported successfully");
-    } catch (error) {
+    } catch {
       toast.error("Unable to export solution", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsExporting(false);
@@ -82,7 +83,7 @@ export function SharedSolutionView({
           />
 
           <div className="mt-8">
-            <SharedSolutionActionButtons
+            <ExportActionButton
               onExport={handleExport}
               isExporting={isExporting}
             />

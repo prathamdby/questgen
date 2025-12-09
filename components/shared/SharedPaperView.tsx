@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MarkdownPreview } from "@/components/paper/MarkdownPreview";
 import { MetadataGrid } from "@/components/paper/MetadataGrid";
-import { SharedPaperActionButtons } from "@/components/shared/SharedPaperActionButtons";
+import { ExportActionButton } from "@/components/shared/ExportActionButton";
 import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
 
 interface SharedPaperViewProps {
@@ -26,7 +26,7 @@ export function SharedPaperView({ paper, ownerName }: SharedPaperViewProps) {
     setIsExporting(true);
 
     try {
-      if (!paper.content) {
+      if (!paper.content?.trim()) {
         throw new Error("Paper content is unavailable");
       }
 
@@ -41,12 +41,9 @@ export function SharedPaperView({ paper, ownerName }: SharedPaperViewProps) {
 
       await exportToPDF(paperData);
       toast.success("Paper exported successfully");
-    } catch (error) {
+    } catch {
       toast.error("Unable to export paper", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsExporting(false);
@@ -74,7 +71,7 @@ export function SharedPaperView({ paper, ownerName }: SharedPaperViewProps) {
           />
 
           <div className="mt-8">
-            <SharedPaperActionButtons
+            <ExportActionButton
               onExport={handleExport}
               isExporting={isExporting}
             />
