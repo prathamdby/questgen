@@ -1,5 +1,4 @@
-import { ai } from "@/lib/ai";
-import { ApiError } from "@google/genai";
+import { GoogleGenAI, ApiError } from "@google/genai";
 
 const FILE_PROCESSING_TIMEOUT_MS = 60_000;
 const FILE_PROCESSING_POLL_INTERVAL_MS = 2_000;
@@ -11,11 +10,12 @@ export interface GeminiFileResult {
 }
 
 export async function uploadFileToGemini(
+  client: GoogleGenAI,
   file: File | Blob,
   displayName: string,
   mimeType: string,
 ): Promise<GeminiFileResult> {
-  const uploaded = await ai.files.upload({
+  const uploaded = await client.files.upload({
     file,
     config: {
       mimeType,
@@ -27,7 +27,7 @@ export async function uploadFileToGemini(
 
   try {
     const startTime = Date.now();
-    let fileStatus = await ai.files.get({ name: uploadedName });
+    let fileStatus = await client.files.get({ name: uploadedName });
 
     while (fileStatus.state === "PROCESSING") {
       if (Date.now() - startTime > FILE_PROCESSING_TIMEOUT_MS) {
@@ -36,7 +36,7 @@ export async function uploadFileToGemini(
       await new Promise((resolve) =>
         setTimeout(resolve, FILE_PROCESSING_POLL_INTERVAL_MS),
       );
-      fileStatus = await ai.files.get({ name: uploadedName });
+      fileStatus = await client.files.get({ name: uploadedName });
     }
 
     if (fileStatus.state === "FAILED") {
@@ -62,7 +62,7 @@ export async function uploadFileToGemini(
     };
   } catch (error) {
     try {
-      await ai.files.delete({ name: uploadedName });
+      await client.files.delete({ name: uploadedName });
     } catch (cleanupError) {
       console.error(
         `Failed to cleanup file "${displayName}" after error:`,
@@ -74,12 +74,13 @@ export async function uploadFileToGemini(
 }
 
 export async function deleteGeminiFiles(
+  client: GoogleGenAI,
   fileUris: Array<{ uri: string; mimeType: string }>,
 ): Promise<{ succeeded: number; failed: number }> {
   const results = await Promise.allSettled(
     fileUris.map((file) => {
       const fileName = file.uri.split("/").pop()!;
-      return ai.files.delete({ name: fileName });
+      return client.files.delete({ name: fileName });
     }),
   );
 

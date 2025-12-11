@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth, withRateLimit } from "@/lib/api-middleware";
 import { deleteGeminiFiles } from "@/lib/ai-utils";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
+import { ai } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await deleteGeminiFiles(fileUris);
+    await deleteGeminiFiles(ai, fileUris);
 
     return NextResponse.json({
       success: true,
