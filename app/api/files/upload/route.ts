@@ -6,6 +6,7 @@ import {
   isSupportedMimeType,
   getMimeTypeFromExtension,
 } from "@/lib/file-types";
+import { createGeminiContext } from "@/lib/ai";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB - matches frontend
 
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const ctx = createGeminiContext();
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const role = formData.get("role") as string | null;
@@ -67,7 +70,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await uploadFileToGemini(file, file.name, file.type);
+    const result = await uploadFileToGemini(
+      ctx.client,
+      file,
+      file.name,
+      file.type,
+    );
 
     return NextResponse.json({
       success: true,
@@ -76,6 +84,7 @@ export async function POST(request: NextRequest) {
       name: file.name,
       size: file.size,
       role,
+      keyIndex: ctx.keyIndex,
     });
   } catch (error) {
     console.error("File upload error:", error);

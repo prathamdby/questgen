@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { ai, DEFAULT_MODEL, DEFAULT_GENERATION_CONFIG } from "@/lib/ai";
+import { API_KEYS, createGeminiContext, type GeminiContext } from "@/lib/ai";
+import { generateWithRetry } from "@/lib/ai-retry";
 import {
   buildSystemPrompt,
   buildPastPapersSystemPrompt,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/ai-prompts";
 import { pastPaperStrategies } from "@/lib/past-paper-strategies";
 import { createPartFromUri, type Part } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
 import { deleteGeminiFiles, parseGeminiError } from "@/lib/ai-utils";
@@ -19,7 +21,44 @@ type IncomingFilePayload = {
   name: string;
   size: number;
   role: "source" | "past_paper";
+  keyIndex?: number;
 };
+
+function validateFileKeyIndices(
+  files: IncomingFilePayload[],
+):
+  | { valid: true; keyIndex: number | undefined }
+  | { valid: false; error: string } {
+  if (files.length === 0) {
+    return { valid: true, keyIndex: undefined };
+  }
+
+  const keyIndices = files
+    .map((f) => f.keyIndex)
+    .filter((idx): idx is number => idx !== undefined);
+
+  if (keyIndices.length === 0) {
+    return { valid: true, keyIndex: undefined };
+  }
+
+  const firstKeyIndex = keyIndices[0];
+
+  if (!keyIndices.every((idx) => idx === firstKeyIndex)) {
+    return {
+      valid: false,
+      error: "All uploaded files must use the same API key context",
+    };
+  }
+
+  if (firstKeyIndex < 0 || firstKeyIndex >= API_KEYS.length) {
+    return {
+      valid: false,
+      error: "Invalid API key context for uploaded files",
+    };
+  }
+
+  return { valid: true, keyIndex: firstKeyIndex };
+}
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -37,6 +76,7 @@ export async function POST(request: NextRequest) {
   }
 
   let paperId: string | null = null;
+  let ctx: GeminiContext = createGeminiContext();
   const uploadedFileUris: Array<{
     uri: string;
     mimeType: string;
@@ -55,6 +95,33 @@ export async function POST(request: NextRequest) {
       generateSolution,
     } = await request.json();
 
+    const allFiles: IncomingFilePayload[] = (fileUris ||
+      []) as IncomingFilePayload[];
+
+    if (allFiles.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "At least one file is required" },
+        { status: 400 },
+      );
+    }
+
+    const keyValidation = validateFileKeyIndices(allFiles);
+    if (!keyValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: keyValidation.error },
+        { status: 400 },
+      );
+    }
+
+    if (keyValidation.keyIndex !== undefined) {
+      ctx = {
+        client: new GoogleGenAI({ apiKey: API_KEYS[keyValidation.keyIndex] }),
+        keyIndex: keyValidation.keyIndex,
+      };
+    } else {
+      ctx = createGeminiContext();
+    }
+
     const shouldGenerateSolution = Boolean(generateSolution);
     const mode =
       generationMode === "past_papers" ? "PAST_PAPERS" : "FROM_SCRATCH";
@@ -63,13 +130,6 @@ export async function POST(request: NextRequest) {
         ? (pastPaperStrategies.find((item) => item.id === strategy) ??
           pastPaperStrategies[0])
         : null;
-
-    const allFiles: IncomingFilePayload[] = (fileUris ||
-      []) as IncomingFilePayload[];
-
-    if (allFiles.length === 0) {
-      throw new Error("At least one file is required");
-    }
 
     const paper = await prisma.paper.create({
       data: {
@@ -148,11 +208,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: DEFAULT_MODEL,
-      config: DEFAULT_GENERATION_CONFIG,
-      contents,
-    });
+    const response = await generateWithRetry(ctx, (model, config) =>
+      ctx.client.models.generateContent({
+        model,
+        config,
+        contents,
+      }),
+    );
 
     const generatedContent = cleanMarkdownContent(response.text || "");
 
@@ -204,11 +266,13 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const solutionResponse = await ai.models.generateContent({
-          model: DEFAULT_MODEL,
-          config: DEFAULT_GENERATION_CONFIG,
-          contents: solutionContents,
-        });
+        const solutionResponse = await generateWithRetry(ctx, (model, config) =>
+          ctx.client.models.generateContent({
+            model,
+            config,
+            contents: solutionContents,
+          }),
+        );
 
         const generatedSolutionContent = cleanMarkdownContent(
           solutionResponse.text || "",
@@ -235,7 +299,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await deleteGeminiFiles(uploadedFileUris);
+    await deleteGeminiFiles(ctx.client, uploadedFileUris);
 
     return NextResponse.json({
       success: true,
@@ -249,7 +313,7 @@ export async function POST(request: NextRequest) {
       await prisma.paper.delete({ where: { id: paperId } }).catch(() => {});
     }
 
-    await deleteGeminiFiles(uploadedFileUris);
+    await deleteGeminiFiles(ctx.client, uploadedFileUris);
 
     console.error("Generation error:", error);
     return NextResponse.json(

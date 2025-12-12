@@ -36,6 +36,7 @@ interface UploadedFileUri {
   name: string;
   size: number;
   role: "source" | "past_paper";
+  keyIndex?: number;
 }
 
 type GenerationMode = "from_scratch" | "past_papers";
@@ -175,6 +176,7 @@ export default function Generate() {
       name: result.name,
       size: result.size,
       role: result.role,
+      keyIndex: result.keyIndex,
     };
   };
 
