@@ -21,11 +21,11 @@ export const generateWithRetry = async <T>(
     return await fn(PRIMARY_MODEL, DEFAULT_GENERATION_CONFIG);
   } catch (error) {
     if (isRetryableError(error)) {
-      try {
-        return await fn(FALLBACK_MODEL, DEFAULT_GENERATION_CONFIG);
-      } catch (fallbackError) {
-        throw fallbackError;
-      }
+      console.warn(
+        `Primary model (${PRIMARY_MODEL}) failed with retryable error, falling back to ${FALLBACK_MODEL}:`,
+        error,
+      );
+      return await fn(FALLBACK_MODEL, DEFAULT_GENERATION_CONFIG);
     }
     throw error;
   }

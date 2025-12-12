@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import {
-  DEFAULT_MODEL,
-  DEFAULT_GENERATION_CONFIG,
   API_KEYS,
   createGeminiContext,
   type GeminiContext,
@@ -29,6 +27,40 @@ type IncomingFilePayload = {
   role: "source" | "past_paper";
   keyIndex?: number;
 };
+
+function validateFileKeyIndices(
+  files: IncomingFilePayload[],
+): { valid: true; keyIndex: number | undefined } | { valid: false; error: string } {
+  if (files.length === 0) {
+    return { valid: true, keyIndex: undefined };
+  }
+
+  const keyIndices = files
+    .map((f) => f.keyIndex)
+    .filter((idx): idx is number => idx !== undefined);
+
+  if (keyIndices.length === 0) {
+    return { valid: true, keyIndex: undefined };
+  }
+
+  const firstKeyIndex = keyIndices[0];
+
+  if (!keyIndices.every((idx) => idx === firstKeyIndex)) {
+    return {
+      valid: false,
+      error: "All uploaded files must use the same API key context",
+    };
+  }
+
+  if (firstKeyIndex < 0 || firstKeyIndex >= API_KEYS.length) {
+    return {
+      valid: false,
+      error: "Invalid API key context for uploaded files",
+    };
+  }
+
+  return { valid: true, keyIndex: firstKeyIndex };
+}
 
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -67,12 +99,26 @@ export async function POST(request: NextRequest) {
 
     const allFiles: IncomingFilePayload[] = (fileUris ||
       []) as IncomingFilePayload[];
-    const keyIndex = allFiles[0]?.keyIndex;
 
-    if (keyIndex !== undefined && keyIndex >= 0 && keyIndex < API_KEYS.length) {
+    if (allFiles.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "At least one file is required" },
+        { status: 400 },
+      );
+    }
+
+    const keyValidation = validateFileKeyIndices(allFiles);
+    if (!keyValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: keyValidation.error },
+        { status: 400 },
+      );
+    }
+
+    if (keyValidation.keyIndex !== undefined) {
       ctx = {
-        client: new GoogleGenAI({ apiKey: API_KEYS[keyIndex] }),
-        keyIndex,
+        client: new GoogleGenAI({ apiKey: API_KEYS[keyValidation.keyIndex] }),
+        keyIndex: keyValidation.keyIndex,
       };
     } else {
       ctx = createGeminiContext();
@@ -86,10 +132,6 @@ export async function POST(request: NextRequest) {
         ? (pastPaperStrategies.find((item) => item.id === strategy) ??
           pastPaperStrategies[0])
         : null;
-
-    if (allFiles.length === 0) {
-      throw new Error("At least one file is required");
-    }
 
     const paper = await prisma.paper.create({
       data: {
