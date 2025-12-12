@@ -11,41 +11,11 @@ export const DEFAULT_GENERATION_CONFIG = {
   },
 };
 
-const parseApiKeys = (): string[] => {
-  const keysEnv = process.env.GEMINI_API_KEY || "";
-  const keys = keysEnv
-    .split(",")
-    .map((key) => key.trim())
-    .filter((key) => key.length > 0);
-
-  if (keys.length === 0) {
-    throw new Error(
-      "GEMINI_API_KEY environment variable must contain at least one valid API key",
-    );
-  }
-
-  return keys;
-};
-
-export const API_KEYS = parseApiKeys();
-
-const selectKeyIndex = (): number => {
-  return Math.floor(Math.random() * API_KEYS.length);
-};
-
-export interface GeminiContext {
-  client: GoogleGenAI;
-  keyIndex: number;
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY environment variable is not set or is empty");
 }
 
-export const createGeminiContext = (): GeminiContext => {
-  const keyIndex = selectKeyIndex();
-  return {
-    client: new GoogleGenAI({ apiKey: API_KEYS[keyIndex] }),
-    keyIndex,
-  };
-};
-
 export const ai = new GoogleGenAI({
-  apiKey: API_KEYS[0],
+  apiKey,
 });
