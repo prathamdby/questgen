@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createGeminiContext } from "@/lib/ai";
+import { ai } from "@/lib/ai";
 import { generateWithRetry } from "@/lib/ai-retry";
 import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
 import { NextRequest, NextResponse } from "next/server";
@@ -24,8 +24,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const ctx = createGeminiContext();
-
     const { paperId, instructions } = await request.json();
 
     const paper = await prisma.paper.findUnique({
@@ -62,16 +60,16 @@ export async function POST(request: NextRequest) {
       : `Regenerate the question paper using the specifications above.\nMaintain the same section structure, formatting, and metadata.\nNo additional user instructions were provided. Refresh the paper while preserving the structure, tone, and difficulty implied by the metadata.\nPrevious paper content:\n${paper.content}`;
 
     const [paperResult, solutionResult] = await Promise.allSettled([
-      generateWithRetry(ctx, (model, config) =>
-        ctx.client.models.generateContent({
+      generateWithRetry((model, config) =>
+        ai.models.generateContent({
           model,
           config,
           contents: [{ text: systemPrompt }, { text: userMessage }],
         }),
       ),
       paper.solution
-        ? generateWithRetry(ctx, (model, config) =>
-            ctx.client.models.generateContent({
+        ? generateWithRetry((model, config) =>
+            ai.models.generateContent({
               model,
               config,
               contents: [

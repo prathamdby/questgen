@@ -3,7 +3,6 @@ import {
   DEFAULT_GENERATION_CONFIG,
   PRIMARY_MODEL,
   FALLBACK_MODEL,
-  type GeminiContext,
 } from "@/lib/ai";
 
 export const isRetryableError = (error: unknown): boolean => {
@@ -14,7 +13,6 @@ export const isRetryableError = (error: unknown): boolean => {
 };
 
 export const generateWithRetry = async <T>(
-  ctx: GeminiContext,
   fn: (model: string, config: typeof DEFAULT_GENERATION_CONFIG) => Promise<T>,
 ): Promise<T> => {
   try {
