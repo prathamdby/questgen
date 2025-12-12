@@ -11,6 +11,11 @@ export const DEFAULT_GENERATION_CONFIG = {
   },
 };
 
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY environment variable is not set or is empty");
+}
+
 export const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey,
 });
