@@ -1,9 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  API_KEYS,
-  createGeminiContext,
-  type GeminiContext,
-} from "@/lib/ai";
+import { API_KEYS, createGeminiContext, type GeminiContext } from "@/lib/ai";
 import { generateWithRetry } from "@/lib/ai-retry";
 import {
   buildSystemPrompt,
@@ -30,7 +26,9 @@ type IncomingFilePayload = {
 
 function validateFileKeyIndices(
   files: IncomingFilePayload[],
-): { valid: true; keyIndex: number | undefined } | { valid: false; error: string } {
+):
+  | { valid: true; keyIndex: number | undefined }
+  | { valid: false; error: string } {
   if (files.length === 0) {
     return { valid: true, keyIndex: undefined };
   }

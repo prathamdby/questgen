@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const PRIMARY_MODEL = "models/gemini-2.5-flash-preview-05-20";
-export const FALLBACK_MODEL = "models/gemini-2.0-flash";
+export const PRIMARY_MODEL = "models/gemini-flash-latest";
+export const FALLBACK_MODEL = "models/gemini-flash-lite-latest";
 export const DEFAULT_MODEL = PRIMARY_MODEL;
 
 export const DEFAULT_GENERATION_CONFIG = {
