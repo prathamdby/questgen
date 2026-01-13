@@ -97,18 +97,19 @@ model RateLimit {
 // Application tables - Papers
 
 model Paper {
-  id             String          @id @default(cuid())
-  userId         String
-  title          String
-  pattern        String          @db.Text
-  duration       String
-  totalMarks     Int
-  content        String          @db.Text
-  status         PaperStatus     @default(IN_PROGRESS)
-  generationMode GenerationMode  @default(FROM_SCRATCH)
-  strategy       String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                 String          @id @default(cuid())
+  userId             String
+  title              String
+  pattern            String          @db.Text
+  duration           String
+  totalMarks         Int
+  content            String          @db.Text
+  steeringDirection  String?         @db.Text
+  status             PaperStatus     @default(IN_PROGRESS)
+  generationMode     GenerationMode  @default(FROM_SCRATCH)
+  strategy           String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   files      PaperFile[]
@@ -188,13 +189,14 @@ enum ViewMode {
 // Form draft for generate page (auto-save)
 
 model GenerateFormDraft {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  paperName    String?
-  paperPattern String?  @db.Text
-  duration     String?
-  totalMarks   String?
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  paperName          String?
+  paperPattern       String?  @db.Text
+  steeringDirection  String?  @db.Text
+  duration           String?
+  totalMarks         String?
+  updatedAt          DateTime @updatedAt
 
   // Note: No relation to User model to simplify cleanup
 }

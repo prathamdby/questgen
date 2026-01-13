@@ -55,6 +55,7 @@ export default function Generate() {
   const [arePresetsExpanded, setArePresetsExpanded] = useState(false);
   const [duration, setDuration] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
+  const [steeringDirection, setSteeringDirection] = useState("");
   const [sourceFiles, setSourceFiles] = useState<UploadedFile[]>([]);
   const [pastPaperFiles, setPastPaperFiles] = useState<UploadedFile[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState(
@@ -274,6 +275,7 @@ export default function Generate() {
           strategy: generationMode === "past_papers" ? selectedStrategy : null,
           fileUris: uploadedFileUris,
           generateSolution: shouldGenerateSolution,
+          steeringDirection,
         }),
       });
 
@@ -453,6 +455,21 @@ export default function Generate() {
                   required
                   className="block h-[44px] w-full rounded-[6px] border border-[#e5e5e5] bg-white px-3 text-[15px] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
                   aria-describedby="total-marks-description"
+                />
+              </FormField>
+
+              <FormField
+                label="Steering Direction (Optional)"
+                htmlFor="steering-direction"
+                description="Provide additional guidance to control the generated paper's style, focus, or approach"
+              >
+                <textarea
+                  id="steering-direction"
+                  value={steeringDirection}
+                  onChange={(e) => setSteeringDirection(e.target.value)}
+                  placeholder="Focus on critical thinking questions, emphasize practical applications, or include more challenging problems..."
+                  rows={3}
+                  className="block w-full resize-y rounded-[6px] border border-[#e5e5e5] bg-white px-3 py-3 text-[15px] leading-[1.6] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
                 />
               </FormField>
 
