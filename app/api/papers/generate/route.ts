@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       strategy,
       fileUris,
       generateSolution,
+      steeringDirection,
     } = await request.json();
 
     const allFiles = (fileUris || []) as IncomingFilePayload[];
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
         duration,
         totalMarks: parseInt(totalMarks),
         content: "",
+        steeringDirection: steeringDirection || null,
         status: "IN_PROGRESS",
         generationMode: mode,
         strategy:
@@ -121,8 +123,15 @@ export async function POST(request: NextRequest) {
             duration,
             totalMarks,
             selectedStrategy.promptDirective,
+            steeringDirection || undefined,
           )
-        : buildSystemPrompt(paperName, paperPattern, duration, totalMarks);
+        : buildSystemPrompt(
+            paperName,
+            paperPattern,
+            duration,
+            totalMarks,
+            steeringDirection || undefined,
+          );
 
     const contents: Part[] = [{ text: systemPromptText }];
 

@@ -68,12 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await uploadFileToGemini(
-      ai,
-      file,
-      file.name,
-      file.type,
-    );
+    const result = await uploadFileToGemini(ai, file, file.name, file.type);
 
     return NextResponse.json({
       success: true,

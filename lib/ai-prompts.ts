@@ -239,6 +239,7 @@ export function buildPastPapersSystemPrompt(
   duration: string,
   totalMarks: string,
   strategyDirective: string,
+  steeringDirection?: string,
 ): string {
   const marksAnalysis = analyzePatternMarks(paperPattern);
   const marksConsistencySection = marksAnalysis
@@ -278,11 +279,15 @@ This paper will be printed and sat by real students. Their experience depends en
 - **Paper Title:** ${paperName}
 - **Pattern/Structure:** ${paperPattern}
 - **Duration:** ${duration}
-- **Total Marks:** ${totalMarks}
+- **Total Marks:** ${totalMarks}${steeringDirection ? `\n- **Steering Direction:** ${steeringDirection}` : ""}
+
+${steeringDirection ? `**USER STEERING DIRECTION**\n\nThe user has provided the following guidance for this paper generation:\n\n${steeringDirection}\n\nHonor this guidance while maintaining academic rigor and staying within the established constraints. Use this to shape the tone, focus areas, question complexity, or overall approach of the paper.\n` : ""}
 
 **PAST PAPERS ANALYSIS STRATEGY**
 
 ${strategyDirective}
+
+${steeringDirection ? `**USER STEERING DIRECTION**\n\nThe user has provided the following guidance for this paper generation:\n\n${steeringDirection}\n\nHonor this guidance while maintaining academic rigor and staying within the established constraints. Use this to shape the tone, focus areas, question complexity, or overall approach of the paper.` : ""}
 
 **DUAL-MATERIAL ANALYSIS PHASE**
 
@@ -492,6 +497,7 @@ export function buildSystemPrompt(
   paperPattern: string,
   duration: string,
   totalMarks: string,
+  steeringDirection?: string,
 ): string {
   const marksAnalysis = analyzePatternMarks(paperPattern);
   const marksConsistencySection = marksAnalysis
@@ -531,7 +537,9 @@ This paper will be printed and sat by real students. Their experience depends en
 - **Paper Title:** ${paperName}
 - **Pattern/Structure:** ${paperPattern}
 - **Duration:** ${duration}
-- **Total Marks:** ${totalMarks}
+- **Total Marks:** ${totalMarks}${steeringDirection ? `\n- **Steering Direction:** ${steeringDirection}` : ""}
+
+${steeringDirection ? `**USER STEERING DIRECTION**\n\nThe user has provided the following guidance for this paper generation:\n\n${steeringDirection}\n\nHonor this guidance while maintaining academic rigor and staying within the established constraints. Use this to shape the tone, focus areas, question complexity, or overall approach of the paper.\n` : ""}
 
 **CONTENT ANALYSIS PHASE**
 Before generating questions, systematically analyze the provided materials:
