@@ -14,7 +14,7 @@ import {
   RefreshCw,
   ArrowRight,
 } from "lucide-react";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { LandingHeader } from "@/components/landing/LandingHeader";
@@ -56,11 +56,8 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
-  const cookieStore = await cookies();
   const session = await auth.api.getSession({
-    headers: new Headers({
-      cookie: cookieStore.toString(),
-    }),
+    headers: await headers(),
   });
 
   if (session?.user) {
