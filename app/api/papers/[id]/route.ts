@@ -2,8 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { transformStatus } from "@/lib/transformers";
 import {
-  withAuth,
-  withRateLimit,
+  withAuthAndRateLimit,
   createErrorResponse,
 } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
@@ -14,18 +13,12 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const authResult = await withAuth(request);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.PAPERS_ID,
   );
-  if (!rateLimitResult.success) {
-    return rateLimitResult.response;
+  if (!authResult.success) {
+    return authResult.response;
   }
 
   try {
@@ -63,18 +56,12 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  const authResult = await withAuth(request);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.PAPERS_ID,
   );
-  if (!rateLimitResult.success) {
-    return rateLimitResult.response;
+  if (!authResult.success) {
+    return authResult.response;
   }
 
   try {

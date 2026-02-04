@@ -1,25 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  withAuth,
-  withRateLimit,
+  withAuthAndRateLimit,
   createErrorResponse,
 } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.SOLUTIONS,
   );
-  if (!rateLimitResult.success) {
-    return rateLimitResult.response;
+  if (!authResult.success) {
+    return authResult.response;
   }
 
   try {

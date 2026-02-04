@@ -5,22 +5,16 @@ import { buildSystemPrompt, buildSolutionSystemPrompt } from "@/lib/ai-prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
 import { parseGeminiError } from "@/lib/ai-utils";
-import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { withAuthAndRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.PAPERS_REGENERATE,
   );
-  if (!rateLimitResult.success) {
-    return rateLimitResult.response;
+  if (!authResult.success) {
+    return authResult.response;
   }
 
   try {

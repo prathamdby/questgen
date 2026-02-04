@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { withAuthAndRateLimit } from "@/lib/api-middleware";
 import { deleteGeminiFiles } from "@/lib/ai-utils";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 import { ai } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.FILES_CLEANUP,
   );
-  if (!rateLimitResult.success) {
-    return rateLimitResult.response;
+  if (!authResult.success) {
+    return authResult.response;
   }
 
   try {

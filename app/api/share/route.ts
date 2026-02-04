@@ -2,8 +2,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  withAuth,
-  withRateLimit,
+  withAuthAndRateLimit,
   createErrorResponse,
 } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
@@ -13,15 +12,11 @@ const MIN_EXPIRATION_DAYS = 1;
 const MAX_EXPIRATION_DAYS = 365;
 
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request);
-  if (!authResult.success) return authResult.response;
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.SHARE,
   );
-  if (!rateLimitResult.success) return rateLimitResult.response;
+  if (!authResult.success) return authResult.response;
 
   try {
     const { paperId, solutionId, expiresInDays } = await request.json();
@@ -93,15 +88,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const authResult = await withAuth(request);
-  if (!authResult.success) return authResult.response;
-
-  const rateLimitResult = await withRateLimit(
+  const authResult = await withAuthAndRateLimit(
     request,
-    authResult.userId,
     RATE_LIMIT_ENDPOINTS.SHARE,
   );
-  if (!rateLimitResult.success) return rateLimitResult.response;
+  if (!authResult.success) return authResult.response;
 
   try {
     const shareLinks = await prisma.shareLink.findMany({

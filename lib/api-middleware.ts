@@ -88,3 +88,36 @@ export function createErrorResponse(
     { status },
   );
 }
+
+export interface AuthAndRateLimitResult {
+  success: true;
+  userId: string;
+  user: AuthUser;
+}
+
+export type AuthAndRateLimitError = AuthError | RateLimitError;
+
+export async function withAuthAndRateLimit(
+  request: NextRequest,
+  endpoint: string,
+): Promise<AuthAndRateLimitResult | AuthAndRateLimitError> {
+  const authResult = await withAuth(request);
+  if (!authResult.success) {
+    return authResult;
+  }
+
+  const rateLimitResult = await withRateLimit(
+    request,
+    authResult.userId,
+    endpoint,
+  );
+  if (!rateLimitResult.success) {
+    return rateLimitResult;
+  }
+
+  return {
+    success: true,
+    userId: authResult.userId,
+    user: authResult.user,
+  };
+}
