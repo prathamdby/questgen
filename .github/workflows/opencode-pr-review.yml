@@ -1,0 +1,139 @@
+name: OpenCode PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+  workflow_dispatch: {}
+
+concurrency:
+  group: opencode-review-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  review:
+    name: Review PR (OpenCode)
+    runs-on: ubuntu-latest
+    if: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.head.repo.full_name == github.repository) ||
+        (github.event_name == 'issue_comment' &&
+          github.event.issue.pull_request &&
+          (contains(github.event.comment.body, '/review')))
+      }}
+    steps:
+      - name: Get PR info
+        id: pr
+        if: ${{ github.event_name == 'issue_comment' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issueNumber = context.payload.issue.number;
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: issueNumber,
+            });
+
+            core.setOutput("number", pr.number.toString());
+            core.setOutput("base_sha", pr.base.sha);
+            core.setOutput("head_sha", pr.head.sha);
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.pr.outputs.head_sha || github.event.pull_request.head.sha }}
+
+      - name: Extract PR diff
+        id: diff
+        shell: bash
+        run: |
+          base_sha="${{ steps.pr.outputs.base_sha || github.event.pull_request.base.sha }}"
+          head_sha="${{ steps.pr.outputs.head_sha || github.event.pull_request.head.sha }}"
+          pr_diff="$(git diff "${base_sha}...${head_sha}")"
+          delimiter="PRDIFF_$(date +%s%N)"
+          {
+            echo "pr_diff<<${delimiter}"
+            printf '%s\n' "${pr_diff}"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: OpenCode review
+        uses: anomalyco/opencode/github@latest
+        with:
+          use_github_token: true
+          share: false
+          agent: build
+          model: opencode/big-pickle
+          prompt: |
+            You are the automated pull request reviewer. Your role is to deliver expert, actionable, and concise code review feedback that directly guides improvements without unnecessary explanation or meta-language.
+
+            REVIEW WORKFLOW (MUST follow in this exact order):
+            1. FIRST: Analyze the PR diff below to identify all libraries, frameworks, and dependencies used (e.g., Next.js, Prisma, React, Tailwind, etc.)
+            2. SECOND: Use Context7 MCP directly in the main conversation (NOT via subagents) to fetch up-to-date documentation for each identified library.
+            3. THIRD: Only after fetching Context7 documentation in the main conversation, proceed with the code review using the current library documentation
+
+            REVIEW SCOPE (MUST follow):
+            - All rules and standards in root and directory-specific `AGENTS.md`
+            - All interface standards in `DESIGN_SYSTEM.md` (Apple/Vercel aesthetic, OKLCH colors, minimal elegant shadows, subtle animation)
+            - Security, correctness, performance, accessibility (a11y), and Next.js App Router best practices; address these categories with highest priority.
+            - Use Context7-fetched documentation to verify API usage, patterns, and best practices match current library versions
+
+            REVIEW OUTPUT:
+            - Output ONLY the PR review body—no greetings, conclusions, meta comments, or process descriptions.
+            - Your very first output characters MUST be exactly: `GitHub PR Review`
+            - Structure the review as:
+              - One top-level summary (maximum 5 lines, only if needed to convey overall risk)
+              - Code review comments for each actionable issue found in changed lines
+            - For each issue, include:
+              - File path and line number(s) where the issue occurs
+              - The exact code snippet being reviewed (use code fences with language)
+              - Severity tag: P0 (blocking), P1 (important), P2 (suggestion), Nit (minor)
+              - Brief statement of the problem and why it matters
+              - Concrete, targeted fix with corrected code snippet
+            - Format each comment as:
+              ```
+              **File:** `path/to/file.ts`
+              **Lines:** X-Y
+              **Severity:** [P0/P1/P2/Nit]
+              
+              **Code:**
+              ```typescript
+              [exact code snippet from diff]
+              ```
+              
+              **Issue:** [problem description]
+              
+              **Fix:**
+              ```typescript
+              [corrected code]
+              ```
+              ```
+            - Avoid compliments, speculation you cannot clearly support, and any form of vague statements.
+
+            REVIEW CONSTRAINTS:
+            - Do not modify, commit, or open files/PRs
+            - Do not run build, test, lint, typecheck, or package-manager commands of any kind; assume ALL dependencies are missing and no project setup is possible
+            - Never leak secrets or large blocks of code
+            - ALWAYS use Context7 before reviewing—do not rely on training data for library documentation
+            - Use Context7 MCP tools directly in the main conversation thread; do NOT delegate Context7 lookups to subagents or separate agent calls
+
+            PR DIFF (already extracted; review this):
+            ---
+            ${{ steps.diff.outputs.pr_diff }}
+            ---
+
+            Deliver every review as if it is the final actionable feedback the PR author will receive before merge. Focus tightly on clarity and precision.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
