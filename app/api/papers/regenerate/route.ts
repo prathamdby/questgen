@@ -114,7 +114,11 @@ export async function POST(request: NextRequest) {
     const results = await prisma.$transaction([
       prisma.paper.update({
         where: { id: paperId },
-        data: { content: paperContent, status: "COMPLETED" },
+        data: {
+          content: paperContent,
+          status: "COMPLETED",
+          regenerateCount: { increment: 1 },
+        },
       }),
       ...(paper.solution && solutionContent
         ? [

@@ -98,6 +98,12 @@ function PaperContent({ id }: { id: string }) {
       const { exportToPDF } = await import("@/lib/pdf-export-client");
       await exportToPDF(paperData);
       toast.success("Paper exported successfully");
+
+      fetch(`/api/papers/${paper.id}/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "export" }),
+      }).catch(() => {});
     } catch (error) {
       toast.error("Unable to export your paper", {
         description:
