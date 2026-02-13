@@ -13,6 +13,9 @@ AI-powered question paper generator. Upload source materials and generate custom
 - **Paper Management**: Organize, search, duplicate, and export generated papers
 - **View Modes**: Card and list views with theme preferences
 - **User Authentication**: Secure Google OAuth login with session management
+- **Paper Sharing**: Generate public shareable links for papers and solutions
+- **Past Paper Strategies**: Specialized AI generation modes for different assessment types
+- **Recent Patterns**: Quick access to previously used paper patterns
 
 ## Tech Stack
 
@@ -142,12 +145,31 @@ QuestGen follows a server-first component pattern:
 4. Status translation: Database enums → UI-friendly strings
 5. Optimistic updates via TanStack Query
 
+### API Endpoints
+
+| Endpoint | Methods | Purpose |
+|----------|---------|---------|
+| `/api/auth/[...all]` | ALL | Better Auth OAuth |
+| `/api/papers` | GET, POST | List/create papers |
+| `/api/papers/generate` | POST | AI generation pipeline |
+| `/api/papers/regenerate` | POST | Refine existing paper |
+| `/api/papers/[id]` | GET, DELETE | Single paper operations |
+| `/api/papers/[id]/track` | POST | Analytics tracking |
+| `/api/solutions` | GET, POST | Solution CRUD |
+| `/api/solutions/[id]` | GET, DELETE | Single solution operations |
+| `/api/files/upload` | POST | Upload files to Gemini |
+| `/api/files/cleanup` | POST | Cleanup temporary files |
+| `/api/share` | POST | Create share link |
+| `/api/share/[id]` | GET | Access shared content |
+| `/api/preferences` | GET, PATCH | User preferences |
+
 ### Key Patterns
 
 - **Status Translation**: All API routes transform Prisma enums (`IN_PROGRESS`) to UI strings (`"in_progress"`)
 - **Paper ↔ Solution**: One-to-one relationship (unique constraint on `Solution.paperId`)
 - **File Lifecycle**: Gemini file URIs cleaned up after generation
 - **Toast-First Errors**: All async operations surface errors via Sonner
+- **Shared Access**: Public token-based access to papers and solutions via `/shared/[token]`
 
 ## Development
 
@@ -160,15 +182,24 @@ QuestGen follows a server-first component pattern:
 - `UserPreference`: Theme and view mode settings
 - `GenerateFormDraft`: Auto-saved form state
 - `RateLimit`: Rate limiting tracking
+- `ShareLink`: Public sharing tokens
 
 ### Key Files
 
 - `app/api/papers/generate/route.ts` — AI generation pipeline
 - `app/api/papers/regenerate/route.ts` — Paper regeneration logic
+- `app/api/share/route.ts` — Public sharing management
 - `lib/ai.ts` — Gemini client configuration
+- `lib/ai-prompts.ts` — Centralized AI system prompts
+- `lib/ai-retry.ts` — Retry logic for AI API calls
+- `lib/api-middleware.ts` — Shared API route protection
 - `lib/rate-limit.ts` — Custom rate limiting implementation
+- `lib/transformers.ts` — Prisma enum to UI string translation
 - `lib/pdf-export-client.ts` — Client-side PDF export
-- `lib/queries/papers.ts` — React Query hooks
+- `lib/queries/papers.ts` — React Query hooks for papers
+- `lib/queries/preferences.ts` — User preferences hooks
+- `lib/queries/recent-patterns.ts` — Recent patterns persistence
+- `lib/past-paper-strategies.ts` — Specialized generation strategies
 - `prisma/schema.prisma` — Database models
 
 ### Project Structure
@@ -180,18 +211,29 @@ app/
   generate/     # Paper creation form
   paper/[id]/   # Paper detail with regeneration
   solution/[id]/ # Solution detail
+  shared/[token]/ # Public shared view
+  signin/       # Authentication page
+  legal/        # Terms and privacy page
 
 lib/
   ai.ts         # Gemini client
+  ai-prompts.ts # AI system prompts
+  ai-retry.ts   # Retry logic
+  ai-utils.ts   # AI helpers
   auth.ts       # Better Auth config
+  auth-client.ts # Client auth
+  api-middleware.ts # Route protection
   rate-limit.ts # Rate limiting
+  transformers.ts # Data translation
   queries/      # React Query hooks
   pdf-export-client.ts # PDF export
+  past-paper-strategies.ts # Generation strategies
 
 components/
   home/         # Dashboard components
   paper/        # Paper detail components
   generate/     # Form components
+  landing/      # Landing page components
   shared/       # Reusable primitives
   ui/           # shadcn/ui components
 ```
