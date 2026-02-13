@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { patternPresets } from "@/lib/pattern-presets";
+import { analyzePatternMarks, suggestDuration } from "@/lib/pattern-utils";
 import { pastPaperStrategies } from "@/lib/past-paper-strategies";
 import {
   getAcceptedFileTypesArray,
@@ -73,6 +74,8 @@ export default function Generate() {
   const paperPatternRef = useRef<HTMLTextAreaElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
   const pastPaperFileInputRef = useRef<HTMLInputElement>(null);
+  const marksDirty = useRef(false);
+  const durationDirty = useRef(false);
   const presetsPanelId = "paper-pattern-presets-panel";
   const paperPatternDescribedBy =
     patternPresets.length > 0
@@ -89,10 +92,29 @@ export default function Generate() {
 
   const applyPaperPattern = (nextPattern: string, presetId?: string | null) => {
     setPaperPattern(nextPattern);
+
+    const analysis = analyzePatternMarks(nextPattern);
+
     if (presetId !== undefined) {
+      marksDirty.current = false;
+      durationDirty.current = false;
       setSelectedPresetId(presetId);
+      if (analysis && analysis.total > 0) {
+        setTotalMarks(analysis.total.toString());
+        setDuration(suggestDuration(analysis.total));
+      }
       return;
     }
+
+    if (analysis && analysis.total > 0) {
+      if (!marksDirty.current) {
+        setTotalMarks(analysis.total.toString());
+      }
+      if (!durationDirty.current) {
+        setDuration(suggestDuration(analysis.total));
+      }
+    }
+
     const matchedPreset = patternPresets.find(
       (preset) =>
         normalizePattern(preset.pattern) === normalizePattern(nextPattern),
@@ -443,7 +465,10 @@ export default function Generate() {
                   type="text"
                   id="duration"
                   value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
+                  onChange={(e) => {
+                    durationDirty.current = true;
+                    setDuration(e.target.value);
+                  }}
                   placeholder="3 hours"
                   required
                   className="block h-[44px] w-full rounded-[6px] border border-[#e5e5e5] bg-white px-3 text-[15px] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
@@ -461,7 +486,10 @@ export default function Generate() {
                   type="number"
                   id="total-marks"
                   value={totalMarks}
-                  onChange={(e) => setTotalMarks(e.target.value)}
+                  onChange={(e) => {
+                    marksDirty.current = true;
+                    setTotalMarks(e.target.value);
+                  }}
                   placeholder="100"
                   min="0"
                   required
