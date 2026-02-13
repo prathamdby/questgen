@@ -68,6 +68,13 @@ export interface ShareLinksData {
   shareLinks: ShareLink[];
 }
 
+export interface RecentPattern {
+  pattern: string;
+  duration: string;
+  totalMarks: number;
+  title: string;
+}
+
 export interface GenerationDefaults {
   defaultPattern: string | null;
   defaultPatternPresetId: string | null;

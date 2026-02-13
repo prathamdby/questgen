@@ -13,6 +13,8 @@ import {
   useGenerationDefaults,
   useSaveGenerationDefaults,
 } from "@/lib/queries/preferences";
+import { useRecentPatterns } from "@/lib/queries/recent-patterns";
+import { RecentPatterns } from "@/components/generate/RecentPatterns";
 import {
   getAcceptedFileTypesArray,
   isSupportedMimeType,
@@ -89,6 +91,7 @@ export default function Generate() {
 
   const { data: generationDefaults } = useGenerationDefaults();
   const saveGenerationDefaults = useSaveGenerationDefaults();
+  const { data: recentPatterns } = useRecentPatterns();
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -465,6 +468,18 @@ export default function Generate() {
                     />
                   )}
                 </div>
+                {recentPatterns && recentPatterns.length > 0 && (
+                  <RecentPatterns
+                    patterns={recentPatterns}
+                    onSelect={(pattern, dur, marks) => {
+                      applyPaperPattern(pattern);
+                      marksDirty.current = false;
+                      durationDirty.current = false;
+                      setDuration(dur);
+                      setTotalMarks(marks);
+                    }}
+                  />
+                )}
                 {patternPresets.length > 0 && (
                   <PatternPresetsList
                     presets={patternPresets}
