@@ -1,16 +1,12 @@
-import { auth } from "@/lib/auth";
+import { auth, type User } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-type SessionResponse = Awaited<ReturnType<typeof auth.api.getSession>>;
-type NonNullSession = NonNullable<SessionResponse>;
-type AuthUser = NonNullSession["user"];
-
 export interface AuthResult {
   success: true;
   userId: string;
-  user: AuthUser;
+  user: User;
 }
 
 export interface AuthError {
