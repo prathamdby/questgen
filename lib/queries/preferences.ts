@@ -1,4 +1,4 @@
-import { useQuery, useMutation, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
 import type { GenerationDefaults } from "./types";
 
@@ -29,6 +29,8 @@ export function useGenerationDefaults(): UseQueryResult<GenerationDefaults | nul
 }
 
 export function useSaveGenerationDefaults() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (defaults: Partial<GenerationDefaults>) => {
       const res = await fetch("/api/preferences", {
@@ -38,6 +40,9 @@ export function useSaveGenerationDefaults() {
       });
       if (!res.ok) throw new Error("Failed to save generation defaults");
       return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generation-defaults"] });
     },
   });
 }
