@@ -47,14 +47,19 @@ const normalizePattern = (value: string): string =>
 export default function Generate() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const defaultPreset = patternPresets[0];
   const [generationMode, setGenerationMode] =
     useState<GenerationMode>("from_scratch");
-  const [paperName, setPaperName] = useState("");
-  const [paperPattern, setPaperPattern] = useState("");
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const [arePresetsExpanded, setArePresetsExpanded] = useState(false);
-  const [duration, setDuration] = useState("");
-  const [totalMarks, setTotalMarks] = useState("");
+  const [paperName, setPaperName] = useState(
+    `Untitled Paper — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+  );
+  const [paperPattern, setPaperPattern] = useState(defaultPreset.pattern);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
+    defaultPreset.id,
+  );
+  const [arePresetsExpanded, setArePresetsExpanded] = useState(true);
+  const [duration, setDuration] = useState("3 hours");
+  const [totalMarks, setTotalMarks] = useState("100");
   const [steeringDirection, setSteeringDirection] = useState("");
   const [sourceFiles, setSourceFiles] = useState<UploadedFile[]>([]);
   const [pastPaperFiles, setPastPaperFiles] = useState<UploadedFile[]>([]);
@@ -188,6 +193,13 @@ export default function Generate() {
 
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+
+    if (generationMode === "from_scratch" && sourceFiles.length === 0) {
+      toast.error("Source materials required", {
+        description: "Please upload at least one source file.",
+      });
+      return;
+    }
 
     if (generationMode === "past_papers" && pastPaperFiles.length === 0) {
       toast.error("Past papers required", {
