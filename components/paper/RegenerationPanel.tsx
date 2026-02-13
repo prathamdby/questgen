@@ -59,6 +59,14 @@ export function RegenerationPanel({
 }: RegenerationPanelProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedChips, setSelectedChips] = useState<Set<string>>(new Set());
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen && selectedChips.size > 0) {
+      setSelectedChips(new Set());
+    }
+  }
 
   useEffect(() => {
     if (isOpen && textareaRef.current) {
@@ -66,12 +74,6 @@ export function RegenerationPanel({
       textarea.focus();
       const length = textarea.value.length;
       textarea.setSelectionRange(length, length);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedChips(new Set());
     }
   }, [isOpen]);
 
