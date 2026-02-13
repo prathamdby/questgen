@@ -7,7 +7,14 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { patternPresets } from "@/lib/pattern-presets";
+import { analyzePatternMarks, suggestDuration } from "@/lib/pattern-utils";
 import { pastPaperStrategies } from "@/lib/past-paper-strategies";
+import {
+  useGenerationDefaults,
+  useSaveGenerationDefaults,
+} from "@/lib/queries/preferences";
+import { useRecentPatterns } from "@/lib/queries/recent-patterns";
+import { RecentPatterns } from "@/components/generate/RecentPatterns";
 import {
   getAcceptedFileTypesArray,
   isSupportedMimeType,
@@ -47,14 +54,19 @@ const normalizePattern = (value: string): string =>
 export default function Generate() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const defaultPreset = patternPresets[0];
   const [generationMode, setGenerationMode] =
     useState<GenerationMode>("from_scratch");
-  const [paperName, setPaperName] = useState("");
-  const [paperPattern, setPaperPattern] = useState("");
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const [arePresetsExpanded, setArePresetsExpanded] = useState(false);
-  const [duration, setDuration] = useState("");
-  const [totalMarks, setTotalMarks] = useState("");
+  const [paperName, setPaperName] = useState(
+    `Untitled Paper — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+  );
+  const [paperPattern, setPaperPattern] = useState(defaultPreset.pattern);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
+    defaultPreset.id,
+  );
+  const [arePresetsExpanded, setArePresetsExpanded] = useState(true);
+  const [duration, setDuration] = useState("3 hours");
+  const [totalMarks, setTotalMarks] = useState("100");
   const [steeringDirection, setSteeringDirection] = useState("");
   const [sourceFiles, setSourceFiles] = useState<UploadedFile[]>([]);
   const [pastPaperFiles, setPastPaperFiles] = useState<UploadedFile[]>([]);
@@ -68,11 +80,18 @@ export default function Generate() {
   const paperPatternRef = useRef<HTMLTextAreaElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
   const pastPaperFileInputRef = useRef<HTMLInputElement>(null);
+  const marksDirty = useRef(false);
+  const durationDirty = useRef(false);
+  const defaultsApplied = useRef(false);
   const presetsPanelId = "paper-pattern-presets-panel";
   const paperPatternDescribedBy =
     patternPresets.length > 0
       ? "paper-pattern-presets-heading paper-pattern-description"
       : "paper-pattern-description";
+
+  const { data: generationDefaults } = useGenerationDefaults();
+  const saveGenerationDefaults = useSaveGenerationDefaults();
+  const { data: recentPatterns } = useRecentPatterns();
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -80,14 +99,52 @@ export default function Generate() {
     }
   }, [session, isPending, router]);
 
+  useEffect(() => {
+    if (!generationDefaults || defaultsApplied.current) return;
+    defaultsApplied.current = true;
+    const d = generationDefaults;
+    if (d.defaultPattern) setPaperPattern(d.defaultPattern);
+    if (d.defaultPatternPresetId) setSelectedPresetId(d.defaultPatternPresetId);
+    if (d.defaultDuration) setDuration(d.defaultDuration);
+    if (d.defaultTotalMarks) setTotalMarks(d.defaultTotalMarks);
+    if (d.defaultGenerationMode) {
+      setGenerationMode(
+        d.defaultGenerationMode === "PAST_PAPERS" ? "past_papers" : "from_scratch",
+      );
+    }
+    if (d.defaultStrategy) setSelectedStrategy(d.defaultStrategy);
+    if (d.defaultGenerateSolution) setShouldGenerateSolution(true);
+    marksDirty.current = false;
+    durationDirty.current = false;
+  }, [generationDefaults]);
+
   const acceptedFileTypes = getAcceptedFileTypesArray();
 
   const applyPaperPattern = (nextPattern: string, presetId?: string | null) => {
     setPaperPattern(nextPattern);
+
+    const analysis = analyzePatternMarks(nextPattern);
+
     if (presetId !== undefined) {
+      marksDirty.current = false;
+      durationDirty.current = false;
       setSelectedPresetId(presetId);
+      if (analysis && analysis.total > 0) {
+        setTotalMarks(analysis.total.toString());
+        setDuration(suggestDuration(analysis.total));
+      }
       return;
     }
+
+    if (analysis && analysis.total > 0) {
+      if (!marksDirty.current) {
+        setTotalMarks(analysis.total.toString());
+      }
+      if (!durationDirty.current) {
+        setDuration(suggestDuration(analysis.total));
+      }
+    }
+
     const matchedPreset = patternPresets.find(
       (preset) =>
         normalizePattern(preset.pattern) === normalizePattern(nextPattern),
@@ -188,6 +245,13 @@ export default function Generate() {
 
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+
+    if (generationMode === "from_scratch" && sourceFiles.length === 0) {
+      toast.error("Source materials required", {
+        description: "Please upload at least one source file.",
+      });
+      return;
+    }
 
     if (generationMode === "past_papers" && pastPaperFiles.length === 0) {
       toast.error("Past papers required", {
@@ -300,6 +364,18 @@ export default function Generate() {
         });
       }
 
+      saveGenerationDefaults.mutate({
+        defaultPattern: paperPattern,
+        defaultPatternPresetId: selectedPresetId,
+        defaultDuration: duration,
+        defaultTotalMarks: totalMarks,
+        defaultGenerationMode:
+          generationMode === "past_papers" ? "PAST_PAPERS" : "FROM_SCRATCH",
+        defaultStrategy:
+          generationMode === "past_papers" ? selectedStrategy : null,
+        defaultGenerateSolution: shouldGenerateSolution,
+      });
+
       router.push(`/paper/${result.paperId}`);
     } catch (error) {
       console.error("Generation error:", error);
@@ -392,6 +468,18 @@ export default function Generate() {
                     />
                   )}
                 </div>
+                {recentPatterns && recentPatterns.length > 0 && (
+                  <RecentPatterns
+                    patterns={recentPatterns}
+                    onSelect={(pattern, dur, marks) => {
+                      applyPaperPattern(pattern);
+                      marksDirty.current = false;
+                      durationDirty.current = false;
+                      setDuration(dur);
+                      setTotalMarks(marks);
+                    }}
+                  />
+                )}
                 {patternPresets.length > 0 && (
                   <PatternPresetsList
                     presets={patternPresets}
@@ -431,7 +519,10 @@ export default function Generate() {
                   type="text"
                   id="duration"
                   value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
+                  onChange={(e) => {
+                    durationDirty.current = true;
+                    setDuration(e.target.value);
+                  }}
                   placeholder="3 hours"
                   required
                   className="block h-[44px] w-full rounded-[6px] border border-[#e5e5e5] bg-white px-3 text-[15px] text-[#171717] placeholder-[#a3a3a3] transition-all duration-150 hover:border-[#d4d4d4] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] dark:border-[#333333] dark:bg-black dark:text-white dark:placeholder-[#666666] dark:hover:border-[#525252] dark:focus:border-white dark:focus:ring-white"
@@ -449,7 +540,10 @@ export default function Generate() {
                   type="number"
                   id="total-marks"
                   value={totalMarks}
-                  onChange={(e) => setTotalMarks(e.target.value)}
+                  onChange={(e) => {
+                    marksDirty.current = true;
+                    setTotalMarks(e.target.value);
+                  }}
                   placeholder="100"
                   min="0"
                   required

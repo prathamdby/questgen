@@ -25,6 +25,28 @@ export async function GET(request: NextRequest) {
 
   try {
     const url = request.nextUrl;
+
+    if (url.searchParams.get("recent_patterns") === "true") {
+      const patterns = await prisma.paper.findMany({
+        where: { userId: authResult.userId, status: "COMPLETED" },
+        select: { pattern: true, duration: true, totalMarks: true, title: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+
+      const seen = new Set<string>();
+      const unique = patterns
+        .filter((p) => {
+          const key = p.pattern.replace(/\s+/g, " ").trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 3);
+
+      return NextResponse.json({ recentPatterns: unique });
+    }
+
     const limitParam = url.searchParams.get("limit");
     const cursor = url.searchParams.get("cursor") || undefined;
 

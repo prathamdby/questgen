@@ -68,6 +68,23 @@ export interface ShareLinksData {
   shareLinks: ShareLink[];
 }
 
+export interface RecentPattern {
+  pattern: string;
+  duration: string;
+  totalMarks: number;
+  title: string;
+}
+
+export interface GenerationDefaults {
+  defaultPattern: string | null;
+  defaultPatternPresetId: string | null;
+  defaultDuration: string | null;
+  defaultTotalMarks: string | null;
+  defaultGenerationMode: "FROM_SCRATCH" | "PAST_PAPERS" | null;
+  defaultStrategy: string | null;
+  defaultGenerateSolution: boolean;
+}
+
 export interface CreateShareLinkResponse {
   shareLink: {
     id: string;
