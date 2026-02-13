@@ -5,9 +5,9 @@ interface StatusBadgeProps {
 
 const STATUS_STYLES: Record<StatusBadgeProps["status"], string> = {
   completed:
-    "bg-[#f0fdf4] text-[#15803d] dark:bg-[#052e16] dark:text-[#86efac]",
+    "bg-[oklch(0.982_0.018_155.826)] text-[oklch(0.448_0.119_151.328)] dark:bg-[oklch(0.15_0.05_150)] dark:text-[oklch(0.7_0.15_150)]",
   in_progress:
-    "bg-[#fef08a] text-[#854d0e] dark:bg-[#422006] dark:text-[#fde047]",
+    "bg-[oklch(0.943_0.109_102.126)] text-[oklch(0.412_0.109_65.638)] dark:bg-[oklch(0.15_0.08_100)] dark:text-[oklch(0.75_0.12_100)]",
 };
 
 const STATUS_TEXT: Record<StatusBadgeProps["status"], string> = {

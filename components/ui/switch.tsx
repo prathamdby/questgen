@@ -34,7 +34,7 @@ export function Switch({
       aria-describedby={ariaDescribedBy}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
-      className={`relative inline-flex h-[24px] w-[44px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-white dark:focus:ring-offset-black ${
+      className={`relative inline-flex h-[24px] w-[44px] flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-white dark:focus:ring-offset-black ${
         checked
           ? "bg-[#171717] dark:bg-white"
           : "bg-[#e5e5e5] dark:bg-[#333333]"
@@ -42,7 +42,7 @@ export function Switch({
       style={{ touchAction: "manipulation" }}
     >
       <span
-        className={`pointer-events-none inline-block h-[20px] w-[20px] transform rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.15)] transition-transform duration-200 ease-in-out dark:bg-black ${
+        className={`pointer-events-none inline-block h-[20px] w-[20px] transform rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.15)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] dark:bg-black ${
           checked ? "translate-x-[20px]" : "translate-x-0"
         }`}
       />

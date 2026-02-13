@@ -11,7 +11,7 @@ import { createPartFromUri, type Part } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanMarkdownContent } from "@/lib/transformers";
 import { deleteGeminiFiles, parseGeminiError } from "@/lib/ai-utils";
-import { withAuth, withRateLimit } from "@/lib/api-middleware";
+import { withAuth, withRateLimit, createErrorResponse } from "@/lib/api-middleware";
 import { RATE_LIMIT_ENDPOINTS } from "@/lib/rate-limit";
 
 type IncomingFilePayload = {
@@ -75,13 +75,18 @@ export async function POST(request: NextRequest) {
           pastPaperStrategies[0])
         : null;
 
+    const parsedMarks = parseInt(totalMarks);
+    if (isNaN(parsedMarks)) {
+      return createErrorResponse(new Error("Invalid totalMarks"), "Total marks must be a valid number", 400);
+    }
+
     const paper = await prisma.paper.create({
       data: {
         userId: authResult.userId,
         title: paperName,
         pattern: paperPattern,
         duration,
-        totalMarks: parseInt(totalMarks),
+        totalMarks: parsedMarks,
         content: "",
         steeringDirection: steeringDirection || null,
         status: "IN_PROGRESS",

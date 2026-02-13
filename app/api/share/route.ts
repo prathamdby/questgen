@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
       if (!paper) {
         return NextResponse.json({ error: "Paper not found" }, { status: 404 });
       }
+      if (paper.status !== "COMPLETED") {
+        return createErrorResponse(new Error("Resource not completed"), "Cannot share incomplete content", 400);
+      }
     } else {
       const solution = await prisma.solution.findFirst({
         where: { id: solutionId, userId: authResult.userId },
@@ -51,6 +54,9 @@ export async function POST(request: NextRequest) {
           { error: "Solution not found" },
           { status: 404 },
         );
+      }
+      if (solution.status !== "COMPLETED") {
+        return createErrorResponse(new Error("Resource not completed"), "Cannot share incomplete content", 400);
       }
     }
 

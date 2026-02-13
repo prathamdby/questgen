@@ -97,7 +97,7 @@ export default async function LandingPage() {
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <Sparkles className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -110,7 +110,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <FileText className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -123,7 +123,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <Zap className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -136,7 +136,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <Clock className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -149,7 +149,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <Download className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -162,7 +162,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="group rounded-[12px] border border-[#e5e5e5] bg-white p-8 transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#404040] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.03)]">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] transition-transform duration-200 group-hover:scale-105 dark:bg-white">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#171717] dark:bg-white">
                 <RefreshCw className="h-6 w-6 text-white dark:text-[#171717]" />
               </div>
               <h3 className="mb-3 font-sans text-[21px] font-[600] tracking-[-0.01em] text-[#171717] dark:text-white">
@@ -244,7 +244,7 @@ export default async function LandingPage() {
                 <div className="relative w-full max-w-md">
                   <div className="absolute inset-0 rounded-[12px] bg-gradient-to-br from-[#0066ff] to-[#00d4ff] opacity-10 blur-xl"></div>
                   <div className="relative space-y-4">
-                    <div className="rounded-[10px] border border-[#e5e5e5] bg-white p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] dark:border-[#333333] dark:bg-black">
+                    <div className="rounded-[10px] border border-[#e5e5e5] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-[#333333] dark:bg-black">
                       <div className="mb-4 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[6px] bg-[#171717] dark:bg-white">
                           <BookOpen className="h-5 w-5 text-white dark:text-[#171717]" />
@@ -268,7 +268,7 @@ export default async function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-[10px] border border-[#e5e5e5] bg-white p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] dark:border-[#333333] dark:bg-black">
+                    <div className="rounded-[10px] border border-[#e5e5e5] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-[#333333] dark:bg-black">
                       <div className="mb-4 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[6px] bg-[#171717] dark:bg-white">
                           <CheckCircle2 className="h-5 w-5 text-white dark:text-[#171717]" />

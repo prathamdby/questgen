@@ -32,17 +32,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const paper = await prisma.paper.findUnique({
-      where: { id: paperId },
-    });
+    const [paper, existingSolution] = await Promise.all([
+      prisma.paper.findUnique({
+        where: { id: paperId },
+      }),
+      prisma.solution.findUnique({
+        where: { paperId },
+      }),
+    ]);
 
     if (!paper || paper.userId !== authResult.userId) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
-
-    const existingSolution = await prisma.solution.findUnique({
-      where: { paperId },
-    });
 
     if (existingSolution) {
       return NextResponse.json(

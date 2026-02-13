@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
+import type { PaperData } from "@/lib/pdf-export-client";
 import {
   usePapers,
   useDuplicatePaper,
@@ -139,6 +139,7 @@ export default function Home() {
           throw new Error("Paper data is unavailable");
         }
 
+        const { exportToPDF } = await import("@/lib/pdf-export-client");
         await exportToPDF(paperData);
         toast.success("Paper exported successfully");
       } catch (error) {

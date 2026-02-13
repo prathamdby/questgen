@@ -387,7 +387,7 @@ export function useRegeneratePaper() {
         previousSolution = queryClient.getQueryData(["solution", solutionId]);
 
         if (previousSolution) {
-          queryClient.setQueryData(["solution", solutionId], (old: any) => {
+          queryClient.setQueryData<{ solution: SolutionDetail }>(["solution", solutionId], (old) => {
             if (!old) return old;
             return {
               ...old,
@@ -434,17 +434,17 @@ export function useRegeneratePaper() {
       );
 
       if (context?.solutionId && data.solutionContent) {
-        queryClient.setQueryData(
+        queryClient.setQueryData<{ solution: SolutionDetail }>(
           ["solution", context.solutionId],
-          (old: any) => {
+          (old) => {
             if (!old) return old;
             return {
               ...old,
               solution: {
                 ...old.solution,
-                content: data.solutionContent,
+                content: data.solutionContent!,
                 status: "completed",
-                updatedAt: data.solutionUpdatedAt,
+                updatedAt: data.solutionUpdatedAt || old.solution.updatedAt,
               },
             };
           },

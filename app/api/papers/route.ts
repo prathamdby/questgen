@@ -44,66 +44,46 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
-    const [papersResult, solutionsResult] = await Promise.allSettled([
-      prisma.paper.findMany({
-        where: { userId: authResult.userId },
-        select: {
-          id: true,
-          title: true,
-          pattern: true,
-          duration: true,
-          totalMarks: true,
-          status: true,
-          generationMode: true,
-          strategy: true,
-          createdAt: true,
-          updatedAt: true,
-          files: {
-            select: {
-              id: true,
-              name: true,
-              size: true,
-              mimeType: true,
-              role: true,
-              createdAt: true,
-            },
-          },
-          tags: {
-            select: {
-              id: true,
-              tag: true,
-            },
-          },
-          solution: {
-            select: {
-              id: true,
-            },
+    const papersResult = await prisma.paper.findMany({
+      where: { userId: authResult.userId },
+      select: {
+        id: true,
+        title: true,
+        pattern: true,
+        duration: true,
+        totalMarks: true,
+        status: true,
+        generationMode: true,
+        strategy: true,
+        createdAt: true,
+        updatedAt: true,
+        files: {
+          select: {
+            id: true,
+            name: true,
+            size: true,
+            mimeType: true,
+            role: true,
+            createdAt: true,
           },
         },
-        orderBy: { createdAt: "desc" },
-        ...paginationArgs,
-      }),
-      prisma.solution.findMany({
-        where: { userId: authResult.userId },
-        include: {
-          paper: {
-            select: {
-              id: true,
-              title: true,
-              pattern: true,
-              duration: true,
-              totalMarks: true,
-            },
+        tags: {
+          select: {
+            id: true,
+            tag: true,
           },
         },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
+        solution: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      ...paginationArgs,
+    });
 
-    const papers =
-      papersResult.status === "fulfilled" ? papersResult.value : [];
-    const solutions =
-      solutionsResult.status === "fulfilled" ? solutionsResult.value : [];
+    const papers = papersResult;
 
     let hasMore = false;
     let nextCursor = null;
@@ -117,6 +97,30 @@ export async function GET(request: NextRequest) {
           ? finalPapers[finalPapers.length - 1].id
           : null;
     }
+
+    const paperIds = finalPapers.map((p) => p.id);
+
+    const solutions =
+      paperIds.length > 0
+        ? await prisma.solution.findMany({
+            where: {
+              userId: authResult.userId,
+              paperId: { in: paperIds },
+            },
+            include: {
+              paper: {
+                select: {
+                  id: true,
+                  title: true,
+                  pattern: true,
+                  duration: true,
+                  totalMarks: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          })
+        : [];
 
     const transformedPapers = finalPapers.map((paper) => ({
       ...paper,
@@ -174,13 +178,18 @@ export async function POST(request: NextRequest) {
     const { title, pattern, duration, totalMarks, content, solution } =
       await request.json();
 
+    const parsedMarks = parseInt(totalMarks);
+    if (isNaN(parsedMarks)) {
+      return createErrorResponse(new Error("Invalid totalMarks"), "Total marks must be a valid number", 400);
+    }
+
     const paper = await prisma.paper.create({
       data: {
         userId: authResult.userId,
         title,
         pattern,
         duration,
-        totalMarks: parseInt(totalMarks),
+        totalMarks: parsedMarks,
         content,
         status: "COMPLETED",
       },

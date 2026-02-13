@@ -40,7 +40,7 @@ export function FileUploadZone({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed px-6 py-16 transition-all duration-200 ${
+        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed px-6 py-16 transition-all duration-150 ${
           isDragging
             ? "border-[#171717] bg-[#fafafa] dark:border-white dark:bg-[#0a0a0a]"
             : "border-[#e5e5e5] bg-[#fafafa] hover:border-[#d4d4d4] hover:bg-[#f5f5f5] dark:border-[#333333] dark:bg-[#0a0a0a] dark:hover:border-[#525252] dark:hover:bg-[#171717]"
@@ -57,7 +57,7 @@ export function FileUploadZone({
       >
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-black">
           <Upload
-            className="h-6 w-6 text-[#737373] transition-colors duration-200 group-hover:text-[#171717] dark:group-hover:text-white"
+            className="h-6 w-6 text-[#737373] transition-colors duration-150 group-hover:text-[#171717] dark:group-hover:text-white"
             aria-hidden="true"
           />
         </div>

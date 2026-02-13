@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, FileCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
-import { exportToPDF, type PaperData } from "@/lib/pdf-export-client";
+import type { PaperData } from "@/lib/pdf-export-client";
 import {
   usePaper,
   useRegeneratePaper,
@@ -95,6 +95,7 @@ function PaperContent({ id }: { id: string }) {
         createdAt: paper.createdAt,
       };
 
+      const { exportToPDF } = await import("@/lib/pdf-export-client");
       await exportToPDF(paperData);
       toast.success("Paper exported successfully");
     } catch (error) {

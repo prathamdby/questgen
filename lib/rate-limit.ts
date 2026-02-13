@@ -37,17 +37,14 @@ interface CacheEntry {
 const rateLimitCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 60000;
 
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, entry] of rateLimitCache.entries()) {
-      if (entry.resetAt < now || now - entry.lastUpdated > CACHE_TTL * 2) {
-        rateLimitCache.delete(key);
-      }
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitCache.entries()) {
+    if (entry.resetAt < now || now - entry.lastUpdated > CACHE_TTL * 2) {
+      rateLimitCache.delete(key);
     }
-  },
-  5 * 60 * 1000,
-);
+  }
+}
 
 function getClientIdentifier(request: NextRequest, userId?: string): string {
   if (userId) return userId;
@@ -98,6 +95,10 @@ export async function checkRateLimit(
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (DISABLE_RATE_LIMITING) {
     return { allowed: true };
+  }
+
+  if (Math.random() < 0.01) {
+    cleanupExpiredEntries();
   }
 
   const identifier = getClientIdentifier(request, userId);

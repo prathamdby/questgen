@@ -7,10 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
-import {
-  exportSolutionToPDF,
-  type SolutionData,
-} from "@/lib/pdf-export-client";
+import type { SolutionData } from "@/lib/pdf-export-client";
 import {
   useSolution,
   useDeleteSolution,
@@ -69,6 +66,7 @@ function SolutionContent({ id }: { id: string }) {
         createdAt: solution.createdAt,
       };
 
+      const { exportSolutionToPDF } = await import("@/lib/pdf-export-client");
       await exportSolutionToPDF(solutionData);
       toast.success("Solution exported successfully");
     } catch (error) {

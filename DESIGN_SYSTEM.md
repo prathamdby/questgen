@@ -54,6 +54,24 @@ QuestGen uses **OKLCH color space** for perceptual uniformity and precise dark m
 - No decorative colors: No purple, no teal, no bright blue
 - Purposeful contrast: WCAG AA minimum (4.5:1 for text)
 
+**Semantic Colors**
+
+- **Success (Green)**:
+  - Light bg: `oklch(0.982 0.018 155.826)`
+  - Dark bg: `oklch(0.22 0.04 155.826)`
+  - Light text: `oklch(0.448 0.119 151.328)`
+  - Dark text: `oklch(0.65 0.12 151.328)`
+
+- **Warning (Yellow)**:
+  - Light bg: `oklch(0.943 0.109 102.126)`
+  - Dark bg: `oklch(0.25 0.06 102.126)`
+  - Light text: `oklch(0.412 0.109 65.638)`
+  - Dark text: `oklch(0.70 0.08 65.638)`
+
+- **Danger (Red)**: Use `--destructive` CSS variable:
+  - Light: `oklch(0.577 0.245 27.325)`
+  - Dark: `oklch(0.396 0.141 25.723)`
+
 **Implementation guidelines:**
 
 - Use CSS variables exclusively (never hardcode colors)
@@ -136,6 +154,11 @@ hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]
 /* That's it. No other shadows. */
 ```
 
+**Dialog Exception**: Dialogs may use slightly elevated shadows:
+- Light: `shadow-[0_4px_12px_rgba(0,0,0,0.04)]`
+- Dark: `shadow-[0_4px_12px_rgba(0,0,0,0.4)]`
+This is the ONLY exception to the hover-only shadow rule.
+
 **Shadow philosophy:**
 
 - Light mode: Opacity `0.04` (barely perceptible)
@@ -189,6 +212,9 @@ QuestGen favors **subtle, spring-like animations** over flashy effects.
 
 **Required animation patterns:**
 
+- `duration-200` acceptable for: dialog animations, complex multi-property transitions
+- `duration-150` standard for: simple hover/active transitions
+
 ```css
 /* Standard transitions */
 transition-all duration-150
@@ -210,12 +236,13 @@ duration-200
 
 - Hover states: Background color shifts only (no scale, no shadow jumps)
 - Active states: `scale-[0.98]` (2% compression, never expansion)
-- Dialogs: Scale + opacity (0.96 → 1.0) with cubic-bezier
+- Dialogs: Scale + opacity (0.96 → 1.0) with `cubic-bezier(0.16, 1, 0.3, 1)`
 - Loading: Spinner only (`animate-spin`), no pulsing or bouncing
 - Focus rings: Instant (no transition)
 
 **What to avoid:**
 
+- `ease-in-out` (use the signature cubic-bezier instead)
 - Staggered reveals on page load
 - Parallax scrolling
 - Auto-playing animations
