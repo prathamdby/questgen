@@ -1,6 +1,44 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+
+const FEEDBACK_CHIPS = [
+  {
+    id: "too-easy",
+    label: "Too Easy",
+    instruction:
+      "Increase overall difficulty. Add more analytical and application-based questions.",
+  },
+  {
+    id: "too-hard",
+    label: "Too Hard",
+    instruction:
+      "Reduce difficulty. Favor recall and comprehension over analysis.",
+  },
+  {
+    id: "more-mcqs",
+    label: "More MCQs",
+    instruction:
+      "Replace some short/long answer questions with multiple choice questions.",
+  },
+  {
+    id: "less-theory",
+    label: "Less Theory",
+    instruction:
+      "Reduce purely theoretical questions. Add more practical and applied problems.",
+  },
+  {
+    id: "shorter",
+    label: "Shorter Questions",
+    instruction:
+      "Break long questions into shorter, more focused sub-questions.",
+  },
+  {
+    id: "more-variety",
+    label: "More Variety",
+    instruction: "Increase diversity of question types and topic coverage.",
+  },
+] as const;
 
 interface RegenerationPanelProps {
   isOpen: boolean;
@@ -20,6 +58,7 @@ export function RegenerationPanel({
   panelId,
 }: RegenerationPanelProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedChips, setSelectedChips] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen && textareaRef.current) {
@@ -30,7 +69,34 @@ export function RegenerationPanel({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedChips(new Set());
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const toggleChip = (chip: (typeof FEEDBACK_CHIPS)[number]) => {
+    setSelectedChips((prev) => {
+      const next = new Set(prev);
+      if (next.has(chip.id)) {
+        next.delete(chip.id);
+        onNotesChange(
+          notes
+            .replace(chip.instruction, "")
+            .replace(/\n{2,}/g, "\n")
+            .trim(),
+        );
+      } else {
+        next.add(chip.id);
+        onNotesChange(
+          notes ? `${notes}\n${chip.instruction}` : chip.instruction,
+        );
+      }
+      return next;
+    });
+  };
 
   return (
     <div
@@ -43,6 +109,26 @@ export function RegenerationPanel({
       >
         Regeneration notes
       </label>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FEEDBACK_CHIPS.map((chip) => {
+          const isActive = selectedChips.has(chip.id);
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => toggleChip(chip)}
+              disabled={isRegenerating}
+              className={`inline-flex h-[28px] items-center rounded-full px-3 text-[12px] font-[500] transition-all duration-150 ${
+                isActive
+                  ? "bg-[#171717] text-white dark:bg-white dark:text-[#171717]"
+                  : "border border-[#e5e5e5] bg-white text-[#525252] hover:border-[#d4d4d4] hover:text-[#171717] dark:border-[#333333] dark:bg-black dark:text-[#a3a3a3] dark:hover:border-[#525252] dark:hover:text-white"
+              } ${isRegenerating ? "cursor-not-allowed opacity-50" : ""}`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
       <textarea
         id="regen-notes"
         ref={textareaRef}
