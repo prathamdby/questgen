@@ -47,7 +47,7 @@ prisma/        → Database schema only
 
 - **Never commit**: API keys, tokens, credentials
 - **Env files**: `.env.local` for local, `.env` for defaults
-- **Required vars**: `DATABASE_URL`, `DIRECT_DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GEMINI_API_KEY`, `NEXT_PUBLIC_APP_URL`
+- **Required vars**: `DATABASE_URL`, `DIRECT_DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GEMINI_API_KEY`, `NEXT_PUBLIC_APP_URL`, `DISABLE_RATE_LIMITING`
 - **Client-safe vars**: Must use `NEXT_PUBLIC_` prefix
 
 ## JIT Index (what to open, not what to paste)

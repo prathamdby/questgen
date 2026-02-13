@@ -21,12 +21,14 @@ app/
 ├── home/page.tsx       # Dashboard (/home)
 ├── paper/[id]/page.tsx # Paper detail (/paper/:id)
 ├── solution/[id]/...   # Solution detail (/solution/:id)
+├── shared/[token]/...  # Shared views (/shared/:token)
 ├── signin/page.tsx     # Auth page (/signin)
 ├── legal/page.tsx      # Legal page (/legal)
 └── api/                # API routes
     ├── auth/[...all]/  # Better-Auth catch-all
-    ├── papers/         # Papers CRUD + generate
+    ├── papers/         # Papers CRUD + generate + regenerate
     ├── solutions/      # Solutions CRUD
+    ├── share/          # Share links CRUD
     ├── files/          # File upload/cleanup
     └── preferences/    # User preferences
 ```

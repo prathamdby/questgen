@@ -16,6 +16,7 @@ lib/
 ├── prisma.ts         # Prisma client singleton
 ├── ai.ts             # Google Gemini client config
 ├── ai-prompts.ts     # System prompts for AI generation
+├── ai-retry.ts       # AI generation retry logic
 ├── ai-utils.ts       # AI helper functions (file cleanup, error parsing)
 ├── api-middleware.ts # withAuth, withRateLimit helpers
 ├── rate-limit.ts     # Rate limiting config and implementation

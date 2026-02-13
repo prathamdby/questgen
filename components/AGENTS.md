@@ -20,17 +20,30 @@ components/
 │   └── tabs.tsx
 ├── shared/          # Cross-feature components
 │   ├── ConfirmDialog.tsx
+│   ├── ExportActionButton.tsx
 │   ├── FileIcon.tsx
+│   ├── SharedExpired.tsx
+│   ├── SharedPaperView.tsx
+│   ├── SharedSolutionView.tsx
 │   └── StatusBadge.tsx
 ├── landing/         # Landing page components
 │   ├── HeroSection.tsx
 │   ├── LandingHeader.tsx
 │   └── LandingFooter.tsx
 ├── home/            # Dashboard components
+│   ├── EmptyState.tsx
+│   ├── NoResultsState.tsx
+│   ├── PaperCardSkeleton.tsx
 │   ├── PaperCard.tsx
 │   ├── PaperListItem.tsx
+│   ├── PaperListSkeleton.tsx
+│   ├── PaperMenu.tsx
 │   ├── SearchBar.tsx
-│   └── ...
+│   ├── SignedInHeader.tsx
+│   ├── SolutionCard.tsx
+│   ├── SolutionListItem.tsx
+│   ├── SolutionMenu.tsx
+│   └── ViewToggle.tsx
 ├── generate/        # Paper generation form
 │   ├── FileUploadZone.tsx
 │   ├── FormField.tsx
@@ -38,7 +51,9 @@ components/
 └── paper/           # Paper detail page
     ├── MarkdownPreview.tsx
     ├── MetadataGrid.tsx
-    └── ...
+    ├── PaperStatusBadge.tsx
+    ├── RegenerationPanel.tsx
+    └── SolutionActionButtons.tsx
 ```
 
 ## Patterns & Conventions
