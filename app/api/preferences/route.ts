@@ -51,19 +51,42 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { theme, viewMode } = await request.json();
+    const {
+      theme,
+      viewMode,
+      defaultPattern,
+      defaultPatternPresetId,
+      defaultDuration,
+      defaultTotalMarks,
+      defaultGenerationMode,
+      defaultStrategy,
+      defaultGenerateSolution,
+    } = await request.json();
 
     const preferences = await prisma.userPreference.upsert({
       where: { userId: authResult.userId },
       update: {
-        ...(theme && { theme }),
-        ...(viewMode && { viewMode }),
-        updatedAt: new Date(),
+        ...(theme !== undefined && { theme }),
+        ...(viewMode !== undefined && { viewMode }),
+        ...(defaultPattern !== undefined && { defaultPattern }),
+        ...(defaultPatternPresetId !== undefined && { defaultPatternPresetId }),
+        ...(defaultDuration !== undefined && { defaultDuration }),
+        ...(defaultTotalMarks !== undefined && { defaultTotalMarks }),
+        ...(defaultGenerationMode !== undefined && { defaultGenerationMode }),
+        ...(defaultStrategy !== undefined && { defaultStrategy }),
+        ...(defaultGenerateSolution !== undefined && { defaultGenerateSolution }),
       },
       create: {
         userId: authResult.userId,
         theme: theme || "DARK",
         viewMode: viewMode || "CARD",
+        defaultPattern: defaultPattern ?? null,
+        defaultPatternPresetId: defaultPatternPresetId ?? null,
+        defaultDuration: defaultDuration ?? null,
+        defaultTotalMarks: defaultTotalMarks ?? null,
+        defaultGenerationMode: defaultGenerationMode ?? null,
+        defaultStrategy: defaultStrategy ?? null,
+        defaultGenerateSolution: defaultGenerateSolution ?? false,
       },
     });
 

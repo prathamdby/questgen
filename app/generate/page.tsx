@@ -10,6 +10,10 @@ import { patternPresets } from "@/lib/pattern-presets";
 import { analyzePatternMarks, suggestDuration } from "@/lib/pattern-utils";
 import { pastPaperStrategies } from "@/lib/past-paper-strategies";
 import {
+  useGenerationDefaults,
+  useSaveGenerationDefaults,
+} from "@/lib/queries/preferences";
+import {
   getAcceptedFileTypesArray,
   isSupportedMimeType,
   getMimeTypeFromExtension,
@@ -76,17 +80,40 @@ export default function Generate() {
   const pastPaperFileInputRef = useRef<HTMLInputElement>(null);
   const marksDirty = useRef(false);
   const durationDirty = useRef(false);
+  const defaultsApplied = useRef(false);
   const presetsPanelId = "paper-pattern-presets-panel";
   const paperPatternDescribedBy =
     patternPresets.length > 0
       ? "paper-pattern-presets-heading paper-pattern-description"
       : "paper-pattern-description";
 
+  const { data: generationDefaults } = useGenerationDefaults();
+  const saveGenerationDefaults = useSaveGenerationDefaults();
+
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/signin");
     }
   }, [session, isPending, router]);
+
+  useEffect(() => {
+    if (!generationDefaults || defaultsApplied.current) return;
+    defaultsApplied.current = true;
+    const d = generationDefaults;
+    if (d.defaultPattern) setPaperPattern(d.defaultPattern);
+    if (d.defaultPatternPresetId) setSelectedPresetId(d.defaultPatternPresetId);
+    if (d.defaultDuration) setDuration(d.defaultDuration);
+    if (d.defaultTotalMarks) setTotalMarks(d.defaultTotalMarks);
+    if (d.defaultGenerationMode) {
+      setGenerationMode(
+        d.defaultGenerationMode === "PAST_PAPERS" ? "past_papers" : "from_scratch",
+      );
+    }
+    if (d.defaultStrategy) setSelectedStrategy(d.defaultStrategy);
+    if (d.defaultGenerateSolution) setShouldGenerateSolution(true);
+    marksDirty.current = false;
+    durationDirty.current = false;
+  }, [generationDefaults]);
 
   const acceptedFileTypes = getAcceptedFileTypesArray();
 
@@ -333,6 +360,18 @@ export default function Generate() {
             "Your paper is ready, but the companion solution could not be generated. Please try regenerating the solution from the paper view.",
         });
       }
+
+      saveGenerationDefaults.mutate({
+        defaultPattern: paperPattern,
+        defaultPatternPresetId: selectedPresetId,
+        defaultDuration: duration,
+        defaultTotalMarks: totalMarks,
+        defaultGenerationMode:
+          generationMode === "past_papers" ? "PAST_PAPERS" : "FROM_SCRATCH",
+        defaultStrategy:
+          generationMode === "past_papers" ? selectedStrategy : null,
+        defaultGenerateSolution: shouldGenerateSolution,
+      });
 
       router.push(`/paper/${result.paperId}`);
     } catch (error) {
