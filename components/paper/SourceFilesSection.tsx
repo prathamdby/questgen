@@ -47,9 +47,9 @@ export function SourceFilesSection({
 
       {isExpanded && (
         <div id="files-content" className="mt-2 space-y-2">
-          {files.map((file, index) => (
+          {files.map((file) => (
             <div
-              key={index}
+              key={file.name}
               className="flex items-center justify-between rounded-[6px] border border-[#e5e5e5] bg-white px-4 py-3 transition-all duration-150 hover:border-[#d4d4d4] dark:border-[#262626] dark:bg-[#0a0a0a] dark:hover:border-[#404040]"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">

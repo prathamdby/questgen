@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -365,14 +366,14 @@ export default async function LandingPage() {
                 assessments faster. Start generating professional question
                 papers today.
               </p>
-              <a
+              <Link
                 href="/signin"
                 className="group mt-8 inline-flex h-[52px] items-center justify-center gap-2 rounded-[8px] bg-white px-8 text-[17px] font-[600] text-[#171717] transition-all duration-150 hover:bg-[#f5f5f5] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#171717] active:scale-[0.98]"
                 style={{ touchAction: "manipulation" }}
               >
                 <span>Start generating</span>
                 <ArrowRight className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </a>
+              </Link>
             </div>
           </div>
         </section>
