@@ -147,7 +147,7 @@ Located in `components/ui/`. These are auto-generated—avoid manual edits.
 To add new shadcn components:
 
 ```bash
-bunx shadcn@latest add <component-name>
+nubx shadcn@latest add <component-name>
 ```
 
 Installed: `dialog`, `skeleton`, `sonner`, `switch`, `tabs`
@@ -193,8 +193,8 @@ rg -n "lucide-react" components/
 
 ```bash
 # Type check components
-bunx tsc --noEmit
+nubx tsc --noEmit
 
 # Check for unused exports
-bunx knip --include exports --include files components/
+nubx knip --include exports --include files components/
 ```

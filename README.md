@@ -27,13 +27,13 @@ AI-powered question paper generator. Upload source materials and generate custom
 - **PDF Export**: Client-side browser print pipeline with custom styling
 - **UI**: Tailwind CSS 4, shadcn/ui components
 - **Markdown Rendering**: Streamdown for content preview
-- **Package Manager**: Bun
+- **Package Manager**: Nub (stock Node runtime, pinned via `.node-version`)
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ or Bun
+- Node.js 22+ (Nub provisions the pinned version)
 - PostgreSQL database
 - Google Gemini API key
 - Google OAuth credentials
@@ -45,7 +45,7 @@ AI-powered question paper generator. Upload source materials and generate custom
    ```bash
    git clone https://github.com/prathamdby/questgen
    cd questgen
-   bun install
+   nub install
    ```
 
 2. **Environment variables**
@@ -73,14 +73,14 @@ AI-powered question paper generator. Upload source materials and generate custom
 3. **Database setup**
 
    ```bash
-   bunx prisma generate
-   bunx prisma db push
+   nubx prisma generate
+   nubx prisma db push
    ```
 
 4. **Development**
 
    ```bash
-   bun dev
+   nub run dev
    ```
 
    Open [http://localhost:3000](http://localhost:3000) in your browser.

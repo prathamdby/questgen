@@ -236,8 +236,8 @@ rg -n "prisma\." lib/
 
 ```bash
 # Type check lib
-bunx tsc --noEmit
+nubx tsc --noEmit
 
 # Check for circular dependencies
-bunx madge --circular lib/
+nubx madge --circular lib/
 ```
