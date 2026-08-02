@@ -166,5 +166,5 @@ find app -name "loading.tsx" -o -name "error.tsx"
 ## Pre-PR Checks
 
 ```bash
-bunx tsc --noEmit && bun run lint && bun run build
+nubx tsc --noEmit && nub run lint && nub run build
 ```

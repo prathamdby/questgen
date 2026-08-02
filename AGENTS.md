@@ -6,17 +6,17 @@ AI agent guidance for QuestGen codebase. Sub-directories have their own AGENTS.m
 
 - **Type**: Single Next.js 16 application (App Router)
 - **Stack**: TypeScript, Tailwind v4, shadcn/ui, Prisma, Better-Auth, Google Gemini
-- **Package Manager**: Bun (`bun install`, `bun run <script>`)
+- **Package Manager**: Nub (`nub install`, `nub run <script>`; Node 22 pinned via `.node-version`)
 - **Sub-AGENTS**: See [`app/AGENTS.md`](app/AGENTS.md), [`components/AGENTS.md`](components/AGENTS.md), [`lib/AGENTS.md`](lib/AGENTS.md)
 
 ## Setup Commands
 
 ```bash
-bun install              # Install dependencies (runs prisma generate via postinstall)
-bun run dev              # Start dev server (localhost:3000)
-bun run build            # Production build
-bun run lint             # ESLint check
-bunx tsc --noEmit        # Type check
+nub install              # Install dependencies (runs prisma generate via postinstall)
+nub run dev              # Start dev server (localhost:3000)
+nub run build            # Production build
+nub run lint             # ESLint check
+nubx tsc --noEmit        # Type check
 ```
 
 ## Universal Conventions
@@ -85,9 +85,9 @@ rg -l '"use client"' app/ components/
 
 Before creating a PR:
 
-1. `bunx tsc --noEmit` passes (no type errors)
-2. `bun run lint` passes
-3. `bun run build` succeeds
+1. `nubx tsc --noEmit` passes (no type errors)
+2. `nub run lint` passes
+3. `nub run build` succeeds
 4. Manual test in browser (dev server)
 5. No console errors/warnings
 
